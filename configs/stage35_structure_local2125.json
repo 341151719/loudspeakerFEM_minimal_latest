@@ -1,0 +1,16 @@
+{
+  "extends": "stage34_structure_refined2.json",
+  "model_name": "Stage35 local red-green refinement of cone and surround domains 21/25",
+  "geometry": {
+    "structure_mesh": "inputs/meshes/comsol_official_mapped_center_split_refined2_local2125.msh",
+    "structure_mesh_provenance": "one additional conforming red-green native refinement of domains 21/25 from Stage34 level 2; tags/topology retained; no COMSOL field values"
+  },
+  "acoustics": {
+    "hybrid_sweep": {"enabled": false}
+  },
+  "diagnostic_policy": {
+    "production_default": false,
+    "COMSOL_runtime_data_consumed": false,
+    "reason": "single-variable local mesh convergence test at the data-identified cone/surround domains"
+  }
+}

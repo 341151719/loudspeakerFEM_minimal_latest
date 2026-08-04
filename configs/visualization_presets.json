@@ -1,0 +1,21 @@
+{
+  "fullfield": {
+    "solid_deformation_scale": "auto",
+    "acoustic_quantity": "SPL",
+    "phase_wrap_deg": [-180, 180],
+    "levels": 80,
+    "show_pml_outline": true,
+    "show_structure_outline": true
+  },
+  "directivity": {
+    "angle_min_deg": -90,
+    "angle_max_deg": 90,
+    "angle_points": 181,
+    "relative_floor_dB": -60
+  },
+  "comparison": {
+    "complex_scale_alignment": true,
+    "amplitude_error_clip_dB": 20,
+    "phase_error_clip_deg": 180
+  }
+}

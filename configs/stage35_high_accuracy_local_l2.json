@@ -1,0 +1,13 @@
+{
+  "extends": "stage35_high_accuracy.json",
+  "model_name": "Stage35 convergence: second local refinement of domains 21/25",
+  "geometry": {
+    "structure_mesh": "inputs/meshes/comsol_official_mapped_center_split_refined2_local2125_l2.msh",
+    "structure_mesh_provenance": "two additional conforming red-green refinements of domains 21/25 beyond Stage34 level 2; no COMSOL field values"
+  },
+  "diagnostic_policy": {
+    "production_default": false,
+    "COMSOL_runtime_data_consumed": false,
+    "reason": "finest native mesh-convergence level, approximately 0.25 mm maximum target-domain edge"
+  }
+}

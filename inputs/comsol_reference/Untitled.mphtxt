@@ -1,0 +1,1252 @@
+# Created by COMSOL Multiphysics.
+
+# Major & minor version
+0 1 
+1 # number of tags
+# Tags
+3 fin 
+1 # number of types
+# Types
+3 obj 
+
+# --------- Object 0 ----------
+
+0 0 1 
+5 Geom2 # class
+5 # version
+2 # type
+1 # voidsLabeled
+1e-10 # gtol
+0.0001 # resTol
+2 # edgeParamVersion
+
+78 # number of vertices
+# Vertices
+# X Y dom tol
+0 -180 -1 1.2000025366791279e-10 
+0 -165 -1 1.2000016838893486e-10 
+0 -32.260000000000019 -1 1.3322676295501876e-16 
+0 -31.249999999999979 -1 1.3322676295501876e-16 
+2.5258340232414168e-14 165 -1 1.2000014032411237e-10 
+2.7554552980815453e-14 180 -1 1.2000020293623866e-10 
+6 -87 -1 6.6613381477509378e-17 
+6 -52.000000000000007 -1 9.9920072216264066e-17 
+15.5 -80 -1 5.5511151231257821e-17 
+15.5 -60 -1 2.6830389761774614e-17 
+17.600000000000005 -60 -1 2.6997429727028665e-16 
+17.600000000000001 -51.999999999999993 -1 1.3415194880887307e-17 
+17.800000000000001 -59.799999999999997 -1 2.8491499437511217e-10 
+17.799999999999997 -52.200000000000003 -1 1.8127524132186747e-16 
+18.199999999999999 -64 -1 NAN 
+18.199999999999999 -60.70000000000001 -1 9.9999999999999978e-11 
+18.200000000000006 -59.799999999999997 -1 1.6653345369377344e-17 
+18.200000000000006 -52.199999999999996 -1 3.3306690738754689e-17 
+18.199999999999999 -51.300000000000004 -1 9.9999999999999978e-11 
+18.199999999999999 -44.5 -1 3.5555555555555551e-11 
+18.199999999999999 -44.100000000000001 -1 3.5555555555555551e-11 
+18.199999999999999 -40.259999999999998 -1 3.5555555555555551e-11 
+18.199999999999999 -39 -1 NAN 
+18.399999999999999 -64 -1 1.6653345369377344e-17 
+18.400000000000002 -60.70000000000001 -1 7.4476024597418179e-17 
+18.400000000000002 -59.799999999999997 -1 3.3306690738754689e-17 
+18.400000000000002 -52.199999999999996 -1 3.3306690738754689e-17 
+18.400000000000002 -51.300000000000004 -1 3.3306690738754689e-17 
+18.399999999999999 -44.5 -1 3.5555555555555551e-11 
+18.399999999999999 -44.100000000000001 -1 3.5555555555555551e-11 
+18.399999999999999 -40.259999999999998 -1 3.5555555555555551e-11 
+18.399999999999999 -38.999999999999993 -1 9.2507018797045439e-16 
+18.800000000000001 -60.70000000000001 -1 6.6613381477509378e-17 
+18.800000000000015 -59.799999999999997 -1 8.3266726846886728e-17 
+18.800000000000015 -52.199999999999996 -1 8.3266726846886728e-17 
+18.800000000000001 -51.300000000000004 -1 NAN 
+18.999999999999996 -59.799999999999997 -1 1.2101430968414203e-14 
+19 -52.200000000000003 -1 3.364958707831568e-16 
+19.199999999999999 -60 -1 5.3660779523549227e-17 
+19.199999999999996 -51.999999999999986 -1 4.2276654538265007e-10 
+23 -44.5 -1 3.3067682622417162e-16 
+23 -44.100000000000001 -1 3.9252311467094367e-17 
+25 -80 -1 9.9999999999999978e-11 
+25 -60 -1 1.0000005551115121e-10 
+25.999999999999996 -42.5 -1 2.0354088784794531e-16 
+25.999999999999996 -42.100000000000001 -1 5.7570056818405079e-17 
+32 -46.500000000000007 -1 3.3306690738754689e-17 
+32 -46.100000000000001 -1 4.070817756958907e-17 
+36 -87 -1 4.8333360163723087e-11 
+38 -42.5 -1 2.775557561562891e-17 
+38 -42.100000000000001 -1 1.8205250457146666e-16 
+44 -46.500000000000007 -1 3.762510583031605e-16 
+44 -46.100000000000001 -1 2.1975681280021238e-16 
+48 -82 -1 4.8333333333333328e-11 
+48 -80 -1 9.9999999999999978e-11 
+48 -60 -1 9.9999999999999978e-11 
+48 -52.000000000000007 -1 9.9920072216264066e-17 
+50 -42.5 -1 4.0708177569589062e-16 
+50 -42.100000000000001 -1 4.7102773760513245e-17 
+51 -80 -1 5.5511151231257821e-17 
+51 -60 -1 5.5511151231257821e-17 
+56 -46.500000000000007 -1 9.102625228573333e-17 
+56 -46.100000000000001 -1 2.5746112102895806e-16 
+59 -44.5 -1 4.070817756958907e-17 
+59 -44.100000000000001 -1 5.3076969824616322e-16 
+66 -44.5 -1 7.4476024597418179e-17 
+66 -44.100000000000001 -1 6.6613381477509378e-17 
+66 4.8985871965894079e-16 -1 2.1021399411823198e-16 
+67.5 7.9602041928367701e-16 -1 4.555560613238223e-11 
+74 6.4999999999999991 -1 6.7131781369677132e-17 
+74 8 -1 6.6613381477509378e-17 
+80.5 -1 -1 NAN 
+80.5 0 -1 4.5555555555555549e-11 
+82 0 -1 9.9999999999999978e-11 
+164.99696966914269 -1 -1 2.6645555878135614e-16 
+165 -2.0206672185931325e-14 -1 1.113890011481788e-10 
+179.9972222007884 -1 -1 1.1102230246251564e-16 
+180 -2.2043642384652358e-14 -1 1.1138901135356878e-10 
+
+102 # number of edges
+# Edges
+# vtx1 vtx2 s1 s2 up down curve tol
+1 2 0 1 0 1 1 NAN 
+2 3 0 1 0 2 2 NAN 
+3 4 0 1 0 3 3 NAN 
+4 5 0 1 0 4 4 NAN 
+5 6 0 1 0 5 5 NAN 
+7 8 0 1 2 6 6 NAN 
+49 7 0 1 2 6 7 NAN 
+8 12 0 1 2 6 8 NAN 
+10 9 0 1 7 6 9 NAN 
+9 43 0 1 7 6 10 NAN 
+11 10 0 1 7 6 11 NAN 
+14 13 0 1 8 6 12 NAN 
+17 13 0 1 7 8 13 NAN 
+14 18 0 1 2 8 14 NAN 
+15 16 0 1 7 9 15 NAN 
+24 15 0 1 7 9 16 NAN 
+16 17 0 1 7 10 17 NAN 
+25 16 0 1 9 10 18 NAN 
+17 18 0 1 8 11 19 NAN 
+26 17 0 1 10 11 20 NAN 
+18 19 0 1 2 12 21 NAN 
+18 27 0 1 12 11 22 NAN 
+19 20 0 1 2 13 23 NAN 
+19 28 0 1 13 12 24 NAN 
+20 21 0 1 2 14 25 NAN 
+20 29 0 1 14 13 26 NAN 
+21 22 0 1 2 15 27 NAN 
+21 30 0 1 15 14 28 NAN 
+22 23 0 1 3 16 29 NAN 
+22 31 0 1 16 15 30 NAN 
+23 32 0 1 4 16 31 NAN 
+25 24 0 1 7 9 32 NAN 
+26 25 0 1 17 10 33 NAN 
+33 25 0 1 7 17 34 NAN 
+27 26 0 1 18 11 35 NAN 
+34 26 0 1 17 18 36 NAN 
+28 27 0 1 19 12 37 NAN 
+27 35 0 1 19 18 38 NAN 
+29 28 0 1 2 13 39 NAN 
+28 36 0 1 2 19 40 NAN 
+30 29 0 1 20 14 41 NAN 
+41 29 0 1 2 20 42 NAN 
+31 30 0 1 2 15 43 NAN 
+30 42 0 1 2 20 44 NAN 
+32 31 0 1 21 16 45 NAN 
+69 31 0 1 2 21 46 NAN 
+32 68 0 1 4 21 47 NAN 
+34 33 0 1 7 17 48 NAN 
+35 34 0 1 22 18 49 NAN 
+37 34 0 1 7 22 50 NAN 
+36 35 0 1 2 19 51 NAN 
+35 38 0 1 2 22 52 NAN 
+37 38 0 1 22 23 53 NAN 
+44 39 0 1 7 23 54 NAN 
+40 57 0 1 2 23 55 NAN 
+45 41 0 1 2 20 56 NAN 
+42 46 0 1 2 20 57 NAN 
+43 44 0 1 7 24 58 NAN 
+55 43 0 1 6 24 59 NAN 
+44 56 0 1 23 24 60 NAN 
+47 45 0 1 2 20 61 NAN 
+46 48 0 1 2 20 62 NAN 
+50 47 0 1 2 20 63 NAN 
+48 51 0 1 2 20 64 NAN 
+54 49 0 1 2 6 65 NAN 
+52 50 0 1 2 20 66 NAN 
+51 53 0 1 2 20 67 NAN 
+58 52 0 1 2 20 68 NAN 
+53 59 0 1 2 20 69 NAN 
+55 54 0 1 2 6 70 NAN 
+60 55 0 1 2 24 71 NAN 
+57 56 0 1 2 23 72 NAN 
+56 61 0 1 2 24 73 NAN 
+62 58 0 1 2 20 74 NAN 
+59 63 0 1 2 20 75 NAN 
+61 60 0 1 2 24 76 NAN 
+64 62 0 1 2 20 77 NAN 
+63 65 0 1 2 20 78 NAN 
+66 64 0 1 2 20 79 NAN 
+65 67 0 1 2 20 80 NAN 
+67 66 0 1 2 20 81 NAN 
+69 68 0 1 21 25 82 NAN 
+73 72 0 1 0 2 83 NAN 
+72 75 0 1 0 2 84 NAN 
+74 73 0 1 0 25 85 NAN 
+76 74 0 1 0 4 86 NAN 
+75 77 0 1 0 1 87 NAN 
+78 76 0 1 0 5 88 NAN 
+77 1 0 1 0 1 89 NAN 
+2 75 0 1 2 1 90 NAN 
+22 3 0 1 2 3 91 NAN 
+4 23 0 1 4 3 92 NAN 
+76 5 0 1 4 5 93 NAN 
+6 78 0 1 0 5 94 NAN 
+13 11 0 1 7 6 95 NAN 
+12 14 0 1 2 6 96 NAN 
+39 37 0 1 7 23 97 NAN 
+38 40 0 1 2 23 98 NAN 
+68 71 0 1 4 25 99 NAN 
+70 69 0 1 2 25 100 NAN 
+73 70 0 1 2 25 101 NAN 
+71 74 0 1 4 25 102 NAN 
+
+102 # number of curves
+# Curves
+
+# Curve 1
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+-3.3065463576978534e-14 -179.99999999999997 1 
+-3.0310008278896987e-14 -164.99999999999997 1 
+
+# Curve 2
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+0 -165 
+0 -32.260000000000019 
+
+# Curve 3
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+0 -32.260000000000019 
+0 -31.249999999999979 
+
+# Curve 4
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+0 -31.249999999999964 
+0 165 
+
+# Curve 5
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+5.0516680464828324e-14 164.99999999999997 1 
+5.5109105961630892e-14 179.99999999999997 1 
+
+# Curve 6
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+6 -86.999999999999986 
+6 -51.999999999999993 
+
+# Curve 7
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+35.999999999999993 -86.999999999999986 
+6 -86.999999999999986 
+
+# Curve 8
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+6 -51.999999999999993 
+17.600000000000001 -51.999999999999993 
+
+# Curve 9
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+15.5 -60 
+15.5 -80 
+
+# Curve 10
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+15.5 -80 
+24.999999999999996 -80 
+
+# Curve 11
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+17.600000000000001 -60 
+15.5 -60 
+
+# Curve 12
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+17.799999999999997 -52.20000000000001 
+17.799999999999997 -59.799999999999997 
+
+# Curve 13
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.200000000000006 -59.799999999999997 
+17.799999999999997 -59.799999999999997 
+
+# Curve 14
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+17.799999999999997 -52.199999999999996 
+18.200000000000006 -52.199999999999996 
+
+# Curve 15
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -64 
+18.199999999999999 -60.699999999999996 
+
+# Curve 16
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -64 
+18.199999999999999 -64 
+
+# Curve 17
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -60.699999999999996 
+18.200000000000003 -59.799999999999997 
+
+# Curve 18
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.400000000000002 -60.699999999999996 
+18.199999999999999 -60.699999999999996 
+
+# Curve 19
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.200000000000003 -59.799999999999997 
+18.199999999999999 -52.199999999999996 
+
+# Curve 20
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.400000000000002 -59.799999999999997 
+18.200000000000006 -59.799999999999997 
+
+# Curve 21
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -52.199999999999996 
+18.199999999999999 -51.300000000000004 
+
+# Curve 22
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.200000000000006 -52.199999999999996 
+18.400000000000002 -52.199999999999996 
+
+# Curve 23
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -51.300000000000004 
+18.199999999999999 -44.5 
+
+# Curve 24
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -51.300000000000004 
+18.400000000000002 -51.300000000000004 
+
+# Curve 25
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -44.5 
+18.199999999999999 -44.100000000000001 
+
+# Curve 26
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+18.199999999999999 -44.5 1 
+18.399999999999995 -44.5 1 
+
+# Curve 27
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -44.100000000000009 
+18.199999999999999 -40.259999999999998 
+
+# Curve 28
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+18.199999999999999 -44.100000000000001 1 
+18.399999999999995 -44.100000000000001 1 
+
+# Curve 29
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -40.259999999999998 
+18.199999999999999 -39 
+
+# Curve 30
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+18.199999999999999 -40.259999999999998 1 
+18.399999999999995 -40.259999999999998 1 
+
+# Curve 31
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.199999999999999 -39 
+18.399999999999995 -39 
+
+# Curve 32
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -60.699999999999996 
+18.399999999999995 -64 
+
+# Curve 33
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -59.799999999999997 
+18.399999999999995 -60.699999999999996 
+
+# Curve 34
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.800000000000001 -60.699999999999996 
+18.400000000000002 -60.699999999999996 
+
+# Curve 35
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -52.199999999999996 
+18.399999999999995 -59.799999999999997 
+
+# Curve 36
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.800000000000015 -59.799999999999997 
+18.400000000000002 -59.799999999999997 
+
+# Curve 37
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -51.300000000000004 
+18.399999999999995 -52.199999999999996 
+
+# Curve 38
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.400000000000002 -52.199999999999996 
+18.800000000000015 -52.199999999999996 
+
+# Curve 39
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -44.5 
+18.399999999999995 -51.300000000000004 
+
+# Curve 40
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.400000000000002 -51.300000000000004 
+18.800000000000001 -51.300000000000004 
+
+# Curve 41
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -44.100000000000001 
+18.399999999999995 -44.5 
+
+# Curve 42
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+23.000000000000004 -44.500000000000007 1 
+18.399999999999995 -44.500000000000007 1 
+
+# Curve 43
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -40.259999999999998 
+18.399999999999995 -44.100000000000001 
+
+# Curve 44
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+18.399999999999995 -44.100000000000001 1 
+23.000000000000004 -44.100000000000001 1 
+
+# Curve 45
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.399999999999995 -39 
+18.399999999999995 -40.259999999999998 
+
+# Curve 46
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+67.5 0 1 
+18.400000000000002 -40.259999999999998 1 
+
+# Curve 47
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+18.400000000000002 -39.000000000000007 1 
+66 0 1 
+
+# Curve 48
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.800000000000001 -59.799999999999997 
+18.800000000000001 -60.699999999999996 
+
+# Curve 49
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.800000000000001 -52.199999999999996 
+18.800000000000001 -59.799999999999997 
+
+# Curve 50
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+19 -59.799999999999997 
+18.800000000000015 -59.799999999999997 
+
+# Curve 51
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.800000000000001 -51.300000000000004 
+18.800000000000001 -52.199999999999996 
+
+# Curve 52
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+18.800000000000015 -52.199999999999996 
+19 -52.199999999999996 
+
+# Curve 53
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+19 -59.799999999999997 
+19 -52.20000000000001 
+
+# Curve 54
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+24.999999999999996 -60 
+19.199999999999999 -60 
+
+# Curve 55
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+19.199999999999996 -51.999999999999993 
+48 -51.999999999999993 
+
+# Curve 56
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+26 -42.5 1 
+23.000000000000004 -44.500000000000007 1 
+
+# Curve 57
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+23.000000000000004 -44.100000000000001 1 
+26 -42.099999999999994 1 
+
+# Curve 58
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+24.999999999999996 -80 
+24.999999999999996 -60 
+
+# Curve 59
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+48 -80 
+24.999999999999996 -80 
+
+# Curve 60
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+24.999999999999996 -60 
+48 -60 
+
+# Curve 61
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+32 -46.5 1 
+26 -42.5 1 
+
+# Curve 62
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+26 -42.099999999999994 1 
+32 -46.099999999999994 1 
+
+# Curve 63
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+38 -42.5 1 
+32 -46.5 1 
+
+# Curve 64
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+32 -46.099999999999994 1 
+38 -42.099999999999994 1 
+
+# Curve 65
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+48 -81.999999999999986 1 
+36 -86.999999999999986 1 
+
+# Curve 66
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+44 -46.5 1 
+38 -42.5 1 
+
+# Curve 67
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+38 -42.099999999999994 1 
+44 -46.099999999999994 1 
+
+# Curve 68
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+49.999999999999993 -42.5 1 
+44 -46.5 1 
+
+# Curve 69
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+44 -46.099999999999994 1 
+49.999999999999993 -42.099999999999994 1 
+
+# Curve 70
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+48 -80 
+48 -81.999999999999986 
+
+# Curve 71
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+51 -80 
+48 -80 
+
+# Curve 72
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+48 -51.999999999999993 
+48 -60 
+
+# Curve 73
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+48 -60 
+51 -60 
+
+# Curve 74
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+56 -46.5 1 
+49.999999999999993 -42.5 1 
+
+# Curve 75
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+49.999999999999993 -42.099999999999994 1 
+56 -46.099999999999994 1 
+
+# Curve 76
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+51 -60 
+51 -80 
+
+# Curve 77
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+59 -44.500000000000007 1 
+56 -46.5 1 
+
+# Curve 78
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+56 -46.099999999999994 1 
+59 -44.100000000000001 1 
+
+# Curve 79
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+66 -44.500000000000007 1 
+59 -44.500000000000007 1 
+
+# Curve 80
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+59 -44.100000000000001 1 
+66 -44.100000000000001 1 
+
+# Curve 81
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+66 -44.100000000000001 1 
+66 -44.500000000000007 1 
+
+# Curve 82
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+67.5 7.9602041944577925e-16 
+66 9.7971743931788237e-16 
+
+# Curve 83
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+80.5 0 
+80.5 -1 
+
+# Curve 84
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+80.5 -1 
+164.99696966914269 -1 
+
+# Curve 85
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+81.999999999999986 0 
+80.5 0 
+
+# Curve 86
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+165 0 
+81.999999999999986 0 
+
+# Curve 87
+11 BezierCurve # class
+1 # version
+2 # sdim
+0 # rational?
+1 # degree
+# control points
+164.99696966914263 -0.99999999999999978 
+179.9972222007884 -1 
+
+# Curve 88
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+1 # degree
+# homogeneous control points
+179.99999999999997 -4.408728476930471e-14 1 
+164.99999999999997 -4.0413344371862656e-14 1 
+
+# Curve 89
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+179.58511132465793 -0.99771045979992556 0.99771045979992556 
+126.77979139979996 -127.48609096737094 0.70825606092983862 
+0 -179.99999999999997 1 
+
+# Curve 90
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+0 -164.99999999999997 1 
+116.17324112537241 -116.87946794103094 0.70836041176382381 
+164.58504983901358 -0.99750347033067599 0.99750347033066666 
+
+# Curve 91
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+18.199999999999999 -40.259999999999998 1 
+9.0999999999999996 -32.259999999999998 1 
+0 -32.259999999999998 1 
+
+# Curve 92
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+0 -31.25 1 
+9.0999999999999996 -31.25 1 
+18.199999999999999 -39 1 
+
+# Curve 93
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+164.99999999999997 0 1 
+116.67261889578032 116.67261889578032 0.70710678118654746 
+0 164.99999999999997 1 
+
+# Curve 94
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+0 179.99999999999997 1 
+127.27922061357853 127.27922061357853 0.70710678118654746 
+179.99999999999997 0 1 
+
+# Curve 95
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+17.799999999999997 -59.799999999999997 1 
+12.586500705120596 -42.426406871193009 0.70710678118655013 
+17.600000000000005 -60 1 
+
+# Curve 96
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+17.600000000000001 -51.999999999999993 1 
+12.586500705120155 -36.769552621699304 0.70710678118652504 
+17.799999999999997 -52.20000000000001 1 
+
+# Curve 97
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+19.199999999999999 -60 1 
+13.435028842544209 -42.426406871192256 0.70710678118653747 
+18.999999999999993 -59.799999999999997 1 
+
+# Curve 98
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+19 -52.20000000000001 1 
+13.435028842543721 -36.769552621698629 0.70710678118651249 
+19.199999999999996 -51.999999999999986 1 
+
+# Curve 99
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+66 9.7971743931788237e-16 1 
+46.669047558312144 5.6568542494923797 0.70710678118654757 
+74 8 1 
+
+# Curve 100
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+74 6.5 1 
+47.729707730091967 4.5961940777125587 0.70710678118654757 
+67.5 7.9602041944577955e-16 1 
+
+# Curve 101
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+80.5 0 1 
+56.922095885517088 4.5961940777125587 0.70710678118654757 
+74 6.5 1 
+
+# Curve 102
+11 BezierCurve # class
+1 # version
+2 # sdim
+1 # rational?
+2 # degree
+# homogeneous control points
+74 8 1 
+57.982756057296903 5.6568542494923797 0.70710678118654757 
+81.999999999999986 0 1 
+
+# Attributes
+0 # nof attributes
+
+# Object attributes
+0 # Number of object attributes

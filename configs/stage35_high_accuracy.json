@@ -1,0 +1,16 @@
+{
+  "extends": "stage35_structure_local2125.json",
+  "model_name": "Stage35 high-accuracy: local cone/surround refinement plus domains 2/4/7 P2",
+  "acoustics": {
+    "profile": "stage35_domains247_p2",
+    "physical_pressure_order": 1,
+    "selective_p2_domains": [2, 4, 7],
+    "preserve_p1_pml_interface_trace": true,
+    "hybrid_sweep": {"enabled": false}
+  },
+  "diagnostic_policy": {
+    "production_default": true,
+    "COMSOL_runtime_data_consumed": false,
+    "reason": "promoted after the complete 15-point 8-15 kHz regression: mean main-field RMSE -23.3%, shape NRMSE -25.3%, raw complex NRMSE -26.3%; COMSOL remains benchmark-only"
+  }
+}

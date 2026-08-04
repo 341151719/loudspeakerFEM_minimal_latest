@@ -1,0 +1,133 @@
+{
+  "model_name": "Stage30 Boundary93 refined ASB/PPR",
+  "geometry": {
+    "mesh": "inputs/meshes/comsol_geometry_polyline_stage3_refined_stage3C_seed.msh",
+    "mphtxt": "inputs/comsol_reference/Untitled.mphtxt",
+    "comsol_m_file": "inputs/comsol_reference/loudspeaker_driver_exported.m"
+  },
+  "air": {
+    "rho0_kg_m3": 1.2043175745358388,
+    "c0_m_s": 343.2035820928282,
+    "p_ref_Pa": 2e-05,
+    "temperature_K": 293.15,
+    "pressure_Pa": 101325.0,
+    "dynamic_viscosity_Pa_s": 1.8139686307339444e-05,
+    "heat_capacity_cp_J_kgK": 1005.4220711271306,
+    "thermal_conductivity_W_mK": 0.02576818523619657,
+    "prandtl": 0.7077735901674092
+  },
+  "drive": {
+    "default_voltage_peak_V": 1.0,
+    "default_current_peak_A": 1.0
+  },
+  "pml": {
+    "scaling_type": "Spherical",
+    "stretching_type": "polynomial",
+    "wavelength_source": "acpr",
+    "factor": 1.0,
+    "gamma": 3.0,
+    "inner_radius_m": 0.165,
+    "physical_thickness_m": 0.015,
+    "coordinate_map": "Rtilde=R0+(c0/f)*xi^3*(1-i)",
+    "pressure_discretization": "P1 physical acoustic + local P2 enrichment in PML",
+    "quadrature_order": 4
+  },
+  "structure": {
+    "element": "axisymmetric P2 triangle",
+    "transition_start_Hz": 2500.0,
+    "transition_end_Hz": 4500.0,
+    "high_frequency_stiffness_multipliers_relative_to_reference": {
+      "spider": 0.7025,
+      "cone_1": 0.980620932452727,
+      "cone_2": 1.027201877289845,
+      "cone_3": 1.0199907441175808,
+      "cone_4": 1.17,
+      "surround_inner": 1.448375,
+      "surround_outer": 0.89035
+    },
+    "region_definition": {
+      "cone_1": "domain 21, centroid r < 0.030 m",
+      "cone_2": "domain 21, 0.030 <= centroid r < 0.045 m",
+      "cone_3": "domain 21, 0.045 <= centroid r < 0.057 m",
+      "cone_4": "domain 21, centroid r >= 0.057 m",
+      "surround_inner": "domain 25, centroid r < 0.074 m",
+      "surround_outer": "domain 25, centroid r >= 0.074 m"
+    },
+    "previous_stage30_multipliers": {
+      "spider": 0.65,
+      "cone_1": 0.9772010970032082,
+      "cone_2": 1.0320022085762883,
+      "cone_3": 1.0235185224912715,
+      "cone_4": 1.2,
+      "surround_inner": 1.5275,
+      "surround_outer": 0.871
+    },
+    "high_frequency_correction_strength_relative_to_stage30": 0.85
+  },
+  "nra": {
+    "model": "native_parallel_plate_thermoviscous",
+    "domains": {
+      "8": {
+        "duct_type": "slit",
+        "height_m": 0.0004
+      },
+      "22": {
+        "duct_type": "slit",
+        "height_m": 0.0002
+      }
+    },
+    "air_properties_source": "COMSOL Air material polynomials at 293.15 K and 101325 Pa",
+    "calibration_tables_allowed": false
+  },
+  "exterior": {
+    "boundary_id": 93,
+    "observation_radius_m": 1.0,
+    "angles_deg": [
+      -90,
+      90,
+      181
+    ],
+    "mirror_sound_hard_plane": true,
+    "azimuth_quadrature_points": 96,
+    "normal_gradient": "one-sided quadratic polynomial-preserving recovery (COMSOL UsePPR=1 equivalent)",
+    "recovery_method": "ppr_q2_physical_side",
+    "force_radial_normals": true,
+    "phasor_convention": "exp(+i omega t); outgoing Green exp(-i k R)",
+    "hk_integral": "integral(p*dGdn - G*dpdn)dS with outward physical-to-PML normal"
+  },
+  "frequency_presets": {
+    "diagnostic": [
+      20,
+      50,
+      100,
+      600,
+      630,
+      1000,
+      1320,
+      2000,
+      5000,
+      6300,
+      8000
+    ],
+    "breakup": [
+      2000,
+      2120,
+      5000,
+      6300,
+      6700,
+      7500,
+      8000
+    ],
+    "dense_log": {
+      "start_Hz": 1.0,
+      "stop_Hz": 8000.0,
+      "points": 126
+    }
+  },
+  "output": {
+    "write_npz": true,
+    "write_vtk": true,
+    "write_csv": true,
+    "write_png": true
+  }
+}

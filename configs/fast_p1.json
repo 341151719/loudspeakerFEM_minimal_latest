@@ -1,0 +1,30 @@
+{
+  "extends": "best_model.json",
+  "model_name": "COMSOL loudspeaker reduced reproduction - fast P1 acoustic profile",
+  "geometry": {
+    "structure_mesh": "inputs/meshes/comsol_geometry_polyline_coarse_2p5mm.msh"
+  },
+  "acoustics": {
+    "profile": "fast_p1",
+    "physical_pressure_order": 1,
+    "selective_p2_domains": [],
+    "preserve_p1_pml_interface_trace": true
+  },
+  "pml": {
+    "pressure_discretization": "P1 physical acoustic + local P2 enrichment in PML"
+  },
+  "structure": {
+    "high_frequency_stiffness_multipliers_relative_to_reference": {
+      "spider": 0.7025,
+      "cone_1": 0.980620932452727,
+      "cone_2": 1.027201877289845,
+      "cone_3": 1.0199907441175808,
+      "cone_4": 1.17,
+      "surround_inner": 1.448375,
+      "surround_outer": 0.89035
+    },
+    "high_frequency_loss_multipliers_relative_to_reference": {
+      "cone_4": 2.0
+    }
+  }
+}

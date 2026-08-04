@@ -1,0 +1,14 @@
+{
+  "extends": "stage35_high_accuracy.json",
+  "model_name": "Stage35 acoustic mesh convergence level 1",
+  "geometry": {
+    "mesh": "inputs/meshes/comsol_geometry_polyline_acoustic_refined1.msh",
+    "structure_mesh": "inputs/meshes/comsol_official_mapped_center_split_refined2_local2125.msh",
+    "acoustic_mesh_provenance": "one conforming native red-green refinement of domains 1/2/4/5/7/8/22; no COMSOL field values"
+  },
+  "diagnostic_policy": {
+    "production_default": false,
+    "COMSOL_runtime_data_consumed": false,
+    "reason": "single-variable acoustic mesh convergence at 12 kHz"
+  }
+}

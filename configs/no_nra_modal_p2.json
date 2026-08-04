@@ -1,0 +1,12 @@
+{
+  "extends": "best_model.json",
+  "model_name": "COMSOL loudspeaker reduced reproduction - no-NRA cavity modal P2 profile",
+  "acoustics": {
+    "profile": "no_nra_modal_p2",
+    "physical_pressure_order": 1,
+    "selective_p2_domains": [2, 4, 7, 8, 22],
+    "hybrid_sweep": {
+      "enabled": false
+    }
+  }
+}

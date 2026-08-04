@@ -1,0 +1,13 @@
+{
+  "extends": "best_model.json",
+  "model_name": "Stage34 native high-frequency structure mesh convergence",
+  "geometry": {
+    "structure_mesh": "inputs/meshes/comsol_official_mapped_center_split_refined1.msh",
+    "structure_mesh_provenance": "one topology-preserving native 1-to-4 refinement of the bundled mapped center-split mesh; no COMSOL field values"
+  },
+  "acoustics": {
+    "hybrid_sweep": {
+      "enabled": false
+    }
+  }
+}

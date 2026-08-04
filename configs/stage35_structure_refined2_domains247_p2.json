@@ -1,0 +1,18 @@
+{
+  "extends": "stage34_structure_refined2.json",
+  "model_name": "Stage35 refined structure plus physical acoustic domains 2/4/7 P2 A-B",
+  "acoustics": {
+    "profile": "stage35_domains247_p2_diagnostic",
+    "physical_pressure_order": 1,
+    "selective_p2_domains": [2, 4, 7],
+    "preserve_p1_pml_interface_trace": true,
+    "hybrid_sweep": {
+      "enabled": false
+    }
+  },
+  "diagnostic_policy": {
+    "production_default": false,
+    "reason": "single-variable A-B for rear/front/coil-cavity acoustic loading; NRA domains 8/22 remain P1 so native thermoviscous coefficients stay active",
+    "COMSOL_runtime_data_consumed": false
+  }
+}
