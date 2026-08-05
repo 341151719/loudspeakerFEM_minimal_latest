@@ -1,0 +1,38 @@
+{
+  "full": {
+    "complex_nrmse_pct": 1.2191715435380541,
+    "amp_rmse_dB": 0.11419733949032268,
+    "phase_rmse_deg": 0.7689262065487132,
+    "max_abs_amp_dB": 0.45081616940828506,
+    "max_abs_phase_deg": 2.546255786584
+  },
+  "100_1500": {
+    "complex_nrmse_pct": 0.3405037563287841,
+    "amp_rmse_dB": 0.023498922850298403,
+    "phase_rmse_deg": 0.13208828980764797,
+    "max_abs_amp_dB": 0.04216255738603867,
+    "max_abs_phase_deg": 0.2959604704882017
+  },
+  "3150_8000": {
+    "complex_nrmse_pct": 2.6790130058303148,
+    "amp_rmse_dB": 0.21495463121330244,
+    "phase_rmse_deg": 1.035775703863981,
+    "max_abs_amp_dB": 0.45081616940828506,
+    "max_abs_phase_deg": 2.546255786584
+  },
+  "4000_8000": {
+    "complex_nrmse_pct": 3.4760764977329934,
+    "amp_rmse_dB": 0.22835499584696506,
+    "phase_rmse_deg": 1.1391911300318986,
+    "max_abs_amp_dB": 0.45081616940828506,
+    "max_abs_phase_deg": 2.546255786584
+  },
+  "6300_8000": {
+    "complex_nrmse_pct": 2.6438574977178493,
+    "amp_rmse_dB": 0.10996813072372034,
+    "phase_rmse_deg": 1.474003172864995,
+    "max_abs_amp_dB": 0.18013711305237334,
+    "max_abs_phase_deg": 2.546255786584
+  },
+  "Ztotal_complex_nrmse_pct": 1.1824727208333026
+}

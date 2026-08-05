@@ -1,0 +1,37 @@
+{
+  "date": "2026-07-19",
+  "production_config": "configs/stage35_high_accuracy.json",
+  "comsol_runtime_data_consumed": false,
+  "benchmark_only": true,
+  "high_frequency_15_points": {
+    "relative_RMSE_dB_mean": 0.6753926614,
+    "main_ge_minus20dB_RMSE_dB_mean": 0.4474899516,
+    "field_energy_weighted_relative_RMSE_dB_mean": 0.4220253032,
+    "shape_NRMSE_pct_mean": 3.2045401618,
+    "raw_complex_NRMSE_pct_mean": 4.2553369786
+  },
+  "combined_1_to_15kHz_140_points": {
+    "relative_RMSE_dB_mean": 0.113618,
+    "main_ge_minus20dB_RMSE_dB_mean": 0.073036,
+    "shape_NRMSE_pct_mean": 0.534844,
+    "raw_complex_NRMSE_pct_mean": 1.933680,
+    "axis_amplitude_RMSE_dB": 0.193542,
+    "axis_phase_RMSE_deg": 1.033058
+  },
+  "final_acoustic_refinement_12000Hz_vs_COMSOL_0p25mm": {
+    "main_ge_minus20dB_RMSE_dB": 0.9612349438,
+    "field_energy_weighted_relative_RMSE_dB": 0.9269874282,
+    "shape_NRMSE_pct": 6.4737440603,
+    "raw_complex_NRMSE_pct": 6.6350835031,
+    "wall_seconds": 60.65,
+    "max_RSS_KB": 2431624,
+    "production_default": false,
+    "reason": "single-frequency validation and high cost"
+  },
+  "attribution": {
+    "primary_fixed": "local structural under-resolution in cone domain 21 and surround domain 25",
+    "secondary_fixed": "acoustic discretization in domains 2, 4 and 7",
+    "remaining_12000Hz": "structural motion formulation/geometry/material/loading plus acoustic full-domain mesh and Boundary93 gradient sensitivity",
+    "remaining_15000Hz": "native and COMSOL benchmark are both not strictly mesh independent"
+  }
+}

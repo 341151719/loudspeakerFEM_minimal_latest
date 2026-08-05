@@ -2,7 +2,7 @@
 
 版本冻结日期：2026-08-01  
 主线来源：`00_MAINLINE/loudspeakerFEM_current_20260717` 的 Stage29–Stage35 合并状态。  
-交付性质：解压后可独立安装和运行 Python FEM；不包含历史结果、图片或 COMSOL 已解模型。
+交付性质：解压后可独立安装和运行 Python FEM；不包含完整历史结果、图片或 COMSOL 已解模型，精选 benchmark 快照见 [`benchmarks/`](benchmarks/)。
 
 ## 1. 新 AI 的执行基准
 
@@ -30,7 +30,7 @@ configs/best_model.json
 
 排除：
 
-- 既有 `runs/`、扫频 CSV/NPZ、checkpoint、benchmark 表；
+- 既有 `runs/`、完整历史扫频 CSV/NPZ、checkpoint 和大体积 benchmark 原始归档；
 - PNG/JPG/GIF、普通 VTK/VTU 结果；
 - solved MPH、COMSOL 导出结果目录和日志；
 - 虚拟环境、pip 包、缓存、编译产物、历史补丁、备份和旧报告。
@@ -124,6 +124,9 @@ Stage35 高频 15 点相对 Stage34：全角 RMSE 1.0061→0.6754 dB，主场 0.
 原生 blocked MQS 的 126 点复阻抗 NRMSE 在当前报告口径为约 0.604%。配置内还记录了不同阶段/字段口径的 0.4224% 或约 1.096% 等数值；引用时必须同时说明所用网格、是否 raw field、是否残差闭合及比较定义，禁止挑选最小数字当作统一结论。
 
 本最小包没有携带原始 COMSOL 对照数据，因此上述是历史结论，不是解压后重新复算得到的证据。新结果必须输出自己的机器可读数据，不能引用本段替代验收。
+
+`benchmarks/` 补充了经过筛选的紧凑 CSV/JSON 快照，并单独记录来源、用途和比较口径；
+它不是运行时依赖，也不替代完整 COMSOL 参考矩阵。详见 [`benchmarks/README_CN.md`](benchmarks/README_CN.md)。
 
 ## 7. 已知未闭环项
 

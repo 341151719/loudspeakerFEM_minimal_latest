@@ -1,0 +1,247 @@
+{
+  "n_modes": 40,
+  "python_frequencies_Hz": [
+    54.98371159997187,
+    332.41167521971323,
+    746.7459954222508,
+    1311.306372066666,
+    1675.5295210448026,
+    2019.7897770149864,
+    2123.063470728491,
+    2638.724544117655,
+    2745.778352579054,
+    3230.370831708738,
+    3270.148410572298,
+    3322.1137997765863,
+    3925.149993177878,
+    3987.053620812145,
+    4264.946330950467,
+    4772.286113651829,
+    5408.125030533698,
+    5798.388657732603,
+    5907.145121405526,
+    6361.5696848246935,
+    6889.138527505185,
+    6930.29561143356,
+    7571.157817632137,
+    8577.304354807231,
+    8999.262974414982,
+    9402.88832214243,
+    9673.200711888701,
+    9778.511455683112,
+    9993.338077705781,
+    11612.858361219647,
+    11723.584285326258,
+    11898.888647315112,
+    13049.565635489136,
+    14149.565153580996,
+    14696.827523041404,
+    14815.93442340204,
+    15962.907011734913,
+    16629.092741130182,
+    17380.5127885047,
+    17688.090079695823
+  ],
+  "COMSOL_frequencies_Hz": [
+    53.2365209020533,
+    269.275064997049,
+    2347.42970339096,
+    2914.95591077578,
+    3535.97039826233,
+    4289.87797770352,
+    5225.14611855419,
+    6712.34436739019,
+    6824.39115735929,
+    8700.82330571522
+  ],
+  "frequency_only_pairs": [
+    {
+      "COMSOL_mode": 1,
+      "Python_mode": 1,
+      "COMSOL_Hz": 53.2365209020533,
+      "Python_Hz": 54.98371159997187,
+      "frequency_error_percent": 3.281940044754461,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 2,
+      "Python_mode": 2,
+      "COMSOL_Hz": 269.275064997049,
+      "Python_Hz": 332.41167521971323,
+      "frequency_error_percent": 23.446883291386868,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 3,
+      "Python_mode": 7,
+      "COMSOL_Hz": 2347.42970339096,
+      "Python_Hz": 2123.063470728491,
+      "frequency_error_percent": -9.557953208923042,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 4,
+      "Python_mode": 9,
+      "COMSOL_Hz": 2914.95591077578,
+      "Python_Hz": 2745.778352579054,
+      "frequency_error_percent": -5.803777599905491,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 5,
+      "Python_mode": 12,
+      "COMSOL_Hz": 3535.97039826233,
+      "Python_Hz": 3322.1137997765863,
+      "frequency_error_percent": -6.048031357695716,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 6,
+      "Python_mode": 15,
+      "COMSOL_Hz": 4289.87797770352,
+      "Python_Hz": 4264.946330950467,
+      "frequency_error_percent": -0.5811737975446762,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 7,
+      "Python_mode": 17,
+      "COMSOL_Hz": 5225.14611855419,
+      "Python_Hz": 5408.125030533698,
+      "frequency_error_percent": 3.501890814684794,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 8,
+      "Python_mode": 21,
+      "COMSOL_Hz": 6712.34436739019,
+      "Python_Hz": 6889.138527505185,
+      "frequency_error_percent": 2.633866059880563,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 9,
+      "Python_mode": 22,
+      "COMSOL_Hz": 6824.39115735929,
+      "Python_Hz": 6930.29561143356,
+      "frequency_error_percent": 1.5518520499819832,
+      "pairing_basis": "frequency_only_NO_MAC"
+    },
+    {
+      "COMSOL_mode": 10,
+      "Python_mode": 24,
+      "COMSOL_Hz": 8700.82330571522,
+      "Python_Hz": 8577.304354807231,
+      "frequency_error_percent": -1.4196237133887513,
+      "pairing_basis": "frequency_only_NO_MAC"
+    }
+  ],
+  "COMSOL_shape_frequencies_Hz": [
+    53.2365209020533,
+    269.275064997049,
+    2347.42970339096,
+    2914.95591077578,
+    3535.97039826233,
+    4289.87797770352,
+    5225.14611855419,
+    6712.34436739019,
+    6824.39115735929,
+    8700.82330571522
+  ],
+  "n_COMSOL_shapes": 10,
+  "mode_shape_pairs": [
+    {
+      "COMSOL_mode": 1,
+      "Python_mode": 1,
+      "COMSOL_Hz": 53.2365209020533,
+      "Python_Hz": 54.98371159997187,
+      "frequency_error_percent": 3.281940044754461,
+      "mass_MAC": 0.9999961843343617,
+      "assignment_cost": 0.0025872032412913347
+    },
+    {
+      "COMSOL_mode": 2,
+      "Python_mode": 2,
+      "COMSOL_Hz": 269.275064997049,
+      "Python_Hz": 332.41167521971323,
+      "frequency_error_percent": 23.446883291386868,
+      "mass_MAC": 0.99990327842242,
+      "assignment_cost": 0.01694798419806454
+    },
+    {
+      "COMSOL_mode": 3,
+      "Python_mode": 7,
+      "COMSOL_Hz": 2347.42970339096,
+      "Python_Hz": 2123.063470728491,
+      "frequency_error_percent": -9.557953208923042,
+      "mass_MAC": 0.612154093618081,
+      "assignment_cost": 0.395882778970249
+    },
+    {
+      "COMSOL_mode": 4,
+      "Python_mode": 8,
+      "COMSOL_Hz": 2914.95591077578,
+      "Python_Hz": 2638.724544117655,
+      "frequency_error_percent": -9.476348017373937,
+      "mass_MAC": 0.5041780015926606,
+      "assignment_cost": 0.5037867201316031
+    },
+    {
+      "COMSOL_mode": 5,
+      "Python_mode": 10,
+      "COMSOL_Hz": 3535.97039826233,
+      "Python_Hz": 3230.370831708738,
+      "frequency_error_percent": -8.642594030305562,
+      "mass_MAC": 0.25704262638719383,
+      "assignment_cost": 0.7501886403316131
+    },
+    {
+      "COMSOL_mode": 6,
+      "Python_mode": 13,
+      "COMSOL_Hz": 4289.87797770352,
+      "Python_Hz": 3925.149993177878,
+      "frequency_error_percent": -8.5020596488129,
+      "mass_MAC": 0.3182578557751722,
+      "assignment_cost": 0.6888504421274724
+    },
+    {
+      "COMSOL_mode": 7,
+      "Python_mode": 16,
+      "COMSOL_Hz": 5225.14611855419,
+      "Python_Hz": 4772.286113651829,
+      "frequency_error_percent": -8.666934754116873,
+      "mass_MAC": 0.4990798153050279,
+      "assignment_cost": 0.5081727689778915
+    },
+    {
+      "COMSOL_mode": 8,
+      "Python_mode": 19,
+      "COMSOL_Hz": 6712.34436739019,
+      "Python_Hz": 5907.145121405526,
+      "frequency_error_percent": -11.995797621714265,
+      "mass_MAC": 0.21647021933490332,
+      "assignment_cost": 0.7937526301332074
+    },
+    {
+      "COMSOL_mode": 9,
+      "Python_mode": 21,
+      "COMSOL_Hz": 6824.39115735929,
+      "Python_Hz": 6889.138527505185,
+      "frequency_error_percent": 0.9487640531283592,
+      "mass_MAC": 0.6897861127329546,
+      "assignment_cost": 0.31096932051001325
+    },
+    {
+      "COMSOL_mode": 10,
+      "Python_mode": 23,
+      "COMSOL_Hz": 8700.82330571522,
+      "Python_Hz": 7571.157817632137,
+      "frequency_error_percent": -12.983432123498595,
+      "mass_MAC": 0.44358242679740245,
+      "assignment_cost": 0.5675433052107522
+    }
+  ],
+  "mean_paired_MAC": 0.5540450614300176,
+  "MAC_pairing_status": "COMPLETE",
+  "missing_COMSOL_mode_shape_count": 0
+}

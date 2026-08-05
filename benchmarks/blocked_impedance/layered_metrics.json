@@ -1,0 +1,90 @@
+{
+  "blocked": {
+    "complex_NRMSE_percent": 0.02717678106635574,
+    "amplitude_RMSE_dB": 0.001138134651350847,
+    "max_amplitude_error_dB": 0.004430872249492754,
+    "phase_RMSE_deg": 0.00633444252301306,
+    "max_phase_error_deg": 0.015083496410333174
+  },
+  "motional": {
+    "complex_NRMSE_percent": 2.611513966131322,
+    "amplitude_RMSE_dB": 0.1452754193885918,
+    "max_amplitude_error_dB": 0.6277477516294306,
+    "phase_RMSE_deg": 0.7716126380028958,
+    "max_phase_error_deg": 3.9339483998872637
+  },
+  "total_impedance": {
+    "complex_NRMSE_percent": 1.1810036196384421,
+    "amplitude_RMSE_dB": 0.0577586572256886,
+    "max_amplitude_error_dB": 0.19350728292960837,
+    "phase_RMSE_deg": 0.34649689171878945,
+    "max_phase_error_deg": 1.6820854838642403
+  },
+  "current": {
+    "complex_NRMSE_percent": 0.5732883024997858,
+    "amplitude_RMSE_dB": 0.057758657225686856,
+    "max_amplitude_error_dB": 0.19350728292960337,
+    "phase_RMSE_deg": 0.34649689171878295,
+    "max_phase_error_deg": 1.6820854838642367
+  },
+  "pext": {
+    "all": {
+      "complex_NRMSE_percent": 2.5504633140229425,
+      "amplitude_RMSE_dB": 0.1930332258236406,
+      "max_amplitude_error_dB": 1.3571193468597265,
+      "phase_RMSE_deg": 1.6059857676663984,
+      "max_phase_error_deg": 7.5375365001157295
+    },
+    "100_1500": {
+      "complex_NRMSE_percent": 0.3405037563287841,
+      "amplitude_RMSE_dB": 0.023498922850298403,
+      "max_amplitude_error_dB": 0.04216255738603867,
+      "phase_RMSE_deg": 0.13208828980764797,
+      "max_phase_error_deg": 0.2959604704882017
+    },
+    "4000_8000": {
+      "complex_NRMSE_percent": 8.725756217053986,
+      "amplitude_RMSE_dB": 0.5346873559482138,
+      "max_amplitude_error_dB": 1.3571193468597265,
+      "phase_RMSE_deg": 4.297343079219024,
+      "max_phase_error_deg": 7.5375365001157295
+    },
+    "6300_8000": {
+      "complex_NRMSE_percent": 11.528037591496066,
+      "amplitude_RMSE_dB": 0.631275601608348,
+      "max_amplitude_error_dB": 1.3571193468597265,
+      "phase_RMSE_deg": 6.148044390154484,
+      "max_phase_error_deg": 7.5375365001157295
+    }
+  },
+  "p_per_I": {
+    "all": {
+      "complex_NRMSE_percent": 5.067718129658312,
+      "amplitude_RMSE_dB": 0.2119714475186635,
+      "max_amplitude_error_dB": 1.3622778962496727,
+      "phase_RMSE_deg": 1.669510830632239,
+      "max_phase_error_deg": 7.587134286786009
+    },
+    "100_1500": {
+      "complex_NRMSE_percent": 0.3402596345946092,
+      "amplitude_RMSE_dB": 0.02159837348545796,
+      "max_amplitude_error_dB": 0.03544072000900668,
+      "phase_RMSE_deg": 0.1272943475292857,
+      "max_phase_error_deg": 0.3071798648514141
+    },
+    "4000_8000": {
+      "complex_NRMSE_percent": 8.747236346989407,
+      "amplitude_RMSE_dB": 0.5357568047067578,
+      "max_amplitude_error_dB": 1.3622778962496727,
+      "phase_RMSE_deg": 4.298544399986624,
+      "max_phase_error_deg": 7.587134286786009
+    },
+    "6300_8000": {
+      "complex_NRMSE_percent": 12.21944646527324,
+      "amplitude_RMSE_dB": 0.6339096240709778,
+      "max_amplitude_error_dB": 1.3622778962496727,
+      "phase_RMSE_deg": 6.158339383090984,
+      "max_phase_error_deg": 7.587134286786009
+    }
+  }
+}

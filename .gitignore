@@ -5,3 +5,8 @@ __pycache__/
 runs/
 outputs/
 *.log
+
+# Keep benchmark snapshots curated; do not accidentally add regenerated raw runs.
+benchmarks/raw/
+benchmarks/runs/
+benchmarks/field_snapshots/

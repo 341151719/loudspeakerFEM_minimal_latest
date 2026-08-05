@@ -1,0 +1,105 @@
+{
+  "schema": "loudspeakerFEM-curated-benchmark-manifest-v1",
+  "snapshot_date": "2026-07-19",
+  "source_snapshot": "loudspeakerFEM_current_20260717",
+  "source_evidence_roots": [
+    "30_EVIDENCE/loudspeaker_consistency_v3_evidence_20260716",
+    "30_EVIDENCE/loudspeaker_merged_final_validation_20260716",
+    "00_MAINLINE/loudspeakerFEM_current_20260717/docs",
+    "20_ANALYSIS/exports/COMSOL_loudspeaker_req7_export_package"
+  ],
+  "runtime_policy": {
+    "comsol_role": "independent_benchmark_and_offline_probe_only",
+    "native_runtime_reads_published_benchmark_files": false,
+    "raw_comsol_reference_matrix_included": false,
+    "solved_mph_included": false,
+    "large_point_clouds_included": false
+  },
+  "suites": [
+    {
+      "id": "frequency_response_v3_126pt",
+      "description": "V3 native 1-8 kHz sweep and mapped-quad triangle-split A/B outputs",
+      "reference": "COMSOL Study 2 full complex pext matrix, used offline",
+      "headline_metrics": {
+        "full_complex_nrmse_percent": 1.2191715435,
+        "full_amplitude_rmse_dB": 0.1141973395,
+        "full_phase_rmse_deg": 0.7689262065,
+        "complex_nrmse_4_8kHz_percent": 3.4760764977,
+        "complex_nrmse_6p3_8kHz_percent": 2.6438574977,
+        "total_impedance_complex_nrmse_percent": 1.1824727208
+      },
+      "artifacts": [
+        "frequency_response/v3_126pt/native_sweep_metrics.csv",
+        "frequency_response/v3_126pt/comparison_metrics.json",
+        "frequency_response/v3_126pt/high_frequency_center_split.csv",
+        "frequency_response/v3_126pt/high_frequency_anti_diagonal.csv",
+        "frequency_response/v3_126pt/high_frequency_alternating.csv",
+        "frequency_response/v3_126pt/topology_ablation_summary.csv",
+        "frequency_response/v3_126pt/no_nra_580_640_1Hz.csv"
+      ]
+    },
+    {
+      "id": "frequency_response_stage35_1_to_15kHz",
+      "description": "Aggregate Stage34 and Stage35 high-frequency validation snapshots",
+      "artifacts": [
+        "frequency_response/stage34_1_to_15khz_summary.json",
+        "frequency_response/stage35_1_to_15khz_summary.json"
+      ]
+    },
+    {
+      "id": "blocked_impedance_native_and_layered",
+      "description": "Native MQS boundary-layer convergence, key points, and layered comparison",
+      "native_field_headline": {
+        "final_complex_nrmse_percent": 0.4224156654,
+        "previous_mapped_mesh_complex_nrmse_percent": 0.6036781806,
+        "old_native_baseline_complex_nrmse_percent": 65.4150901988
+      },
+      "embedded_surrogate_headline": {
+        "complex_nrmse_percent": 0.0271767811,
+        "warning": "offline COMSOL-identified surrogate; not independent raw-field validation"
+      },
+      "artifacts": [
+        "blocked_impedance/native_mesh_convergence_summary.json",
+        "blocked_impedance/native_key_points.csv",
+        "blocked_impedance/layered_metrics.json"
+      ]
+    },
+    {
+      "id": "acoustic_structure_asb",
+      "description": "Python ASB integral versus COMSOL boundary-work reference",
+      "artifacts": ["acoustic_structure/asb_integral_comparison.csv"]
+    },
+    {
+      "id": "eddy_current_req10",
+      "description": "Compact COMSOL Req10 blocked global and domain Joule-loss probes",
+      "artifacts": [
+        "eddy_current/comsol_blocked_global.csv",
+        "eddy_current/comsol_domain_joule_loss.csv"
+      ]
+    },
+    {
+      "id": "modal_mac_req11",
+      "description": "Ten COMSOL eigenfrequencies and Python mass-MAC pairing snapshot",
+      "headline_metrics": {
+        "comsol_shapes": 10,
+        "python_modes": 40,
+        "mean_paired_mass_mac": 0.5540450614,
+        "interpretation": "diagnostic; higher breakup modes are not a production acceptance gate"
+      },
+      "artifacts": [
+        "modal/comsol_eigenfrequencies.csv",
+        "modal/python_comsol_mode_pairing.csv",
+        "modal/eigen_summary.json"
+      ]
+    },
+    {
+      "id": "pml_req7",
+      "description": "Compact PML Jacobian, pressure-depth, and wavelength summaries",
+      "artifacts": [
+        "pml/pml_jacobian_summary.csv",
+        "pml/pml_pressure_depth_summary.csv",
+        "pml/pml_typical_wavelength_vs_frequency.csv"
+      ]
+    }
+  ]
+}
