@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Run the deterministic L0 enclosure mesh topology audit."""
+"""Run the deterministic enclosure mesh topology audit at one or all levels."""
 
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
+import resource
 import sys
+from time import perf_counter
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +25,9 @@ from loudspeaker_axisym_fem.enclosure_topology import (  # noqa: E402
 )
 
 
+LEVELS = ("L0", "L1", "L2")
+
+
 def _config_paths(config_dir: Path) -> dict[str, Path]:
     return {
         case: config_dir / filename
@@ -30,31 +35,78 @@ def _config_paths(config_dir: Path) -> dict[str, Path]:
     }
 
 
-def _audit_one(
+def _rss_mb() -> float | None:
+    """Return process peak RSS when the host exposes a reliable ru_maxrss."""
+
+    try:
+        value = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    except (AttributeError, OSError):
+        return None
+    # Linux reports KiB; macOS reports bytes.  The runner is Linux, but keep the
+    # conversion explicit so a non-Linux invocation reports a sensible value.
+    if sys.platform == "darwin":
+        return value / (1024.0 * 1024.0)
+    return value / 1024.0
+
+
+def _mesh_path(mesh_dir: Path, case: str, level: str) -> Path:
+    return mesh_dir / f"{case}_{level}.msh"
+
+
+def _run_one(
     case: str,
+    level: str,
     mesh_path: Path,
     config_path: Path,
+    *,
+    generate: bool,
 ) -> dict[str, Any]:
-    return audit_mesh(mesh_path, case_id=case, config_path=config_path)
+    started = perf_counter()
+    if generate:
+        mesh_path.parent.mkdir(parents=True, exist_ok=True)
+        generate_reference_mesh(config_path, level, mesh_path)
+    report = audit_mesh(mesh_path, case_id=case, config_path=config_path)
+    elapsed = perf_counter() - started
+    summary = {
+        "case_id": case,
+        "level": level,
+        "elapsed_s": round(float(elapsed), 6),
+        "mesh_path": str(mesh_path),
+        "points": int(report["mesh_counts"]["points"]),
+        "triangle_elements": int(report["mesh_counts"]["triangle_elements"]),
+        "air_cavity_volume_m3": float(report["volume_contract"]["air_cavity_volume_m3"]),
+        "volume_relative_error": float(report["volume_contract"]["air_cavity_relative_error"]),
+        "minimum_triangle_quality": float(report["quality"]["minimum_triangle_quality"]),
+        "geometry_signature_sha256": report["source"]["geometry_signature_sha256"],
+        "status": report["status"],
+        "failures": list(report["failures"]),
+    }
+    return summary
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--mesh", type=Path, help="one existing L0 .msh file")
+    mode.add_argument("--mesh", type=Path, help="one existing .msh file")
     mode.add_argument("--all", action="store_true", help="audit A-E meshes")
     parser.add_argument("--case", choices=tuple("ABCDE"), help="case ID for --mesh")
     parser.add_argument("--config", type=Path, help="validated config for --mesh")
+    parser.add_argument("--level", choices=LEVELS, default="L0", help="mesh level (default: L0)")
+    parser.add_argument(
+        "--all-levels",
+        action="store_true",
+        help="with --all, audit A-E at L0, L1, and L2",
+    )
     parser.add_argument(
         "--generate",
         action="store_true",
-        help="generate missing/reference L0 meshes into --mesh-dir before auditing",
+        help="generate reference meshes into --mesh-dir before auditing",
     )
     parser.add_argument(
         "--mesh-dir",
         type=Path,
-        default=Path("/tmp/luna_enclosure_l0"),
-        help="existing/generated mesh directory for --all (default: /tmp/luna_enclosure_l0)",
+        default=Path("/tmp/luna_enclosure_meshes"),
+        help="existing/generated mesh directory (default: /tmp/luna_enclosure_meshes)",
     )
     parser.add_argument(
         "--config-dir",
@@ -69,35 +121,55 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     configs = _config_paths(args.config_dir)
+    if args.all_levels and args.mesh is not None:
+        raise SystemExit("--all-levels requires --all")
+    selected_levels = LEVELS if args.all_levels else (args.level,)
+    batch_started = perf_counter()
 
     if args.mesh is not None:
         if args.case is None:
             raise SystemExit("--case is required with --mesh")
+        if args.all_levels:
+            raise SystemExit("--all-levels requires --all")
         case = args.case.upper()
         config_path = args.config or configs[case]
         mesh_path = args.mesh
-        if args.generate:
-            mesh_path.parent.mkdir(parents=True, exist_ok=True)
-            generate_reference_mesh(config_path, "L0", mesh_path)
-        report: Any = _audit_one(case, mesh_path, config_path)
+        summary = _run_one(case, args.level, mesh_path, config_path, generate=args.generate)
+        report: Any = {
+            "schema": "luna.enclosure_mesh_topology_audit.summary.v2",
+            "status": summary["status"],
+            "meshes": [summary],
+        }
     else:
         if args.case is not None or args.config is not None:
             raise SystemExit("--case/--config apply only to --mesh")
-        reports: dict[str, Any] = {}
-        args.mesh_dir.mkdir(parents=True, exist_ok=True) if args.generate else None
+        if args.generate:
+            args.mesh_dir.mkdir(parents=True, exist_ok=True)
+        summaries: list[dict[str, Any]] = []
         for case in sorted(configs):
-            mesh_path = args.mesh_dir / f"{case}.msh"
-            if args.generate:
-                generate_reference_mesh(configs[case], "L0", mesh_path)
-            if not mesh_path.exists():
-                raise SystemExit(f"missing mesh for case {case}: {mesh_path}")
-            reports[case] = _audit_one(case, mesh_path, configs[case])
+            for level in selected_levels:
+                mesh_path = _mesh_path(args.mesh_dir, case, level)
+                if not args.generate and not mesh_path.exists():
+                    raise SystemExit(f"missing mesh for {case} {level}: {mesh_path}")
+                summaries.append(
+                    _run_one(
+                        case,
+                        level,
+                        mesh_path,
+                        configs[case],
+                        generate=args.generate,
+                    )
+                )
         report = {
-            "schema": "luna.enclosure_mesh_topology_audit.batch.v1",
-            "status": "pass" if all(item["status"] == "pass" for item in reports.values()) else "fail",
-            "cases": reports,
+            "schema": "luna.enclosure_mesh_topology_audit.batch.v2",
+            "status": "pass" if all(item["status"] == "pass" for item in summaries) else "fail",
+            "mesh_count": len(summaries),
+            "levels": list(selected_levels),
+            "meshes": summaries,
         }
 
+    report["wall_time_s"] = round(float(perf_counter() - batch_started), 6)
+    report["peak_rss_mb"] = _rss_mb()
     serialized = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output is not None:
         write_audit_json(report, args.output)
