@@ -4,11 +4,11 @@
   "phase": "2D production wet trace plus audited reference geometry closeout",
   "commit_baseline": "c8f951854c5a8fc6d922923ae481afafefacaef8",
   "phase2_previous_commit": "8c01b60dc5a196cd785570a760ac704b3bd96ee6",
-  "final_commit": "pending phase2E commit; see phase2e parent_commit and commit_message",
+  "final_commit": "d4f4186c234fedfc8a62970fc28cd89b264f1ba2",
   "phase2e": {
     "parent_commit": "8c01b60dc5a196cd785570a760ac704b3bd96ee6",
     "commit_message": "test: harden enclosure geometry audits",
-    "final_commit": "pending; resolve after commit without self-reference"
+    "final_commit": "d4f4186c234fedfc8a62970fc28cd89b264f1ba2"
   },
   "final_production_interface_ready": false,
   "reference_identity": "reference planar piston",

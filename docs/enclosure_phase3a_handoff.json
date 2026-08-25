@@ -1,0 +1,175 @@
+{
+  "schema": "luna.enclosure_phase3a_handoff.v1",
+  "title": "Stage 3A-B sealed reference-only core",
+  "status": "pass",
+  "scope_status": "sealed B core only; not a complete Stage 3A implementation",
+  "parent_commit": "d4f4186c234fedfc8a62970fc28cd89b264f1ba2",
+  "expected_commit": {
+    "message": "feat: add sealed enclosure acoustic reference solver",
+    "final_commit": "pending; record in a later closeout without self-reference"
+  },
+  "identity": {
+    "reference_source": "reference planar piston",
+    "drive": "global prescribed v_z = +1 m/s",
+    "time_convention": "exp(+i omega t)",
+    "final_production_interface_ready": false
+  },
+  "implemented": {
+    "module": "src/loudspeaker_axisym_fem/enclosure_acoustics.py",
+    "element": "scikit-fem P1",
+    "pressure_space": "only audited physical air_* triangles; rigid_* triangles are excluded",
+    "sealed_components": "B cavity and exterior retain separate pressure DOF components",
+    "outer_boundary": "p=0 on outer_pml_boundary",
+    "internal_interfaces": "shared conforming pressure mesh DOFs; no pressure-release shortcut",
+    "front_back_trace_normals": "computed from each pressure triangle outward toward rigid, not guessed by side sign",
+    "low_level_operators": "public ordinary axisymmetric P1 K and compressibility C assembly for independent eigenmode checks"
+  },
+  "formulas": {
+    "weak_form": "integral 2*pi*r*((1/rho)*grad(p).grad(q) - (omega^2/K)*p*q)dA = integral 2*pi*r*q*(1/rho*dp/dn)dGamma",
+    "prescribed_velocity_flux": "dp/dn = -i*omega*rho*(v dot n); Q_out = integral v dot n dS; Q_into = -Q_out",
+    "sealed_B_compliance": "C_ab = V/(rho*c^2)",
+    "sealed_B_impedance": "Z_box = 1/(i*omega*C_ab)",
+    "pml": "R=sqrt(r^2+z^2), s_R=1-i*alpha*eta^m, tilde_R from the same stretch integral, s_t=tilde_R/R; gradient radial=s_t^2/s_R, tangential=s_R, mass=s_R*s_t^2",
+    "pml_geometry": "R0=0.35 m, R1=0.45 m from sealed B config; PML applies only to air_pml_front/rear"
+  },
+  "verification": {
+    "target_test": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_enclosure_acoustics_core.py",
+      "result": "9 passed",
+      "covers": [
+        "2*pi*r constant volume integral",
+        "ordinary K/C independent Neumann eigenmode gradient check",
+        "PML coefficient interface and exp(+i omega t) absorption sign",
+        "PML geometry location and mislabelled-triangle rejection",
+        "sealed B L1/L2 low-frequency analytic limit",
+        "0.5 percent cavity volume loader gate",
+        "front/back trace separation and wrong case/tag rejection"
+      ]
+    },
+    "existing_enclosure_targeted": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_enclosure_acoustics_core.py tests/test_enclosure_geometry.py tests/test_enclosure_topology.py tests/test_enclosure_schema.py tests/test_enclosure_lumped_limits.py",
+      "result": "37 passed"
+    },
+    "full_pytest": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q",
+      "result": "61 passed in 70.26s",
+      "external_wall_time_s": 72.16,
+      "peak_rss_kb": 278660
+    },
+    "self_test": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python cli.py self-test",
+      "result": "SELF_TEST: PASS",
+      "nodes": 11299,
+      "triangles": 22141
+    },
+    "b_low_frequency": [
+      {
+        "level": "L1",
+        "frequency_Hz": 10.0,
+        "pressure_dofs": 4696,
+        "pressure_triangles": 9009,
+        "cavity_volume_m3": 0.0060999999999999995,
+        "q_into_cavity_m3_s": {"real": -0.0063617251235193305, "imag": 0.0},
+        "cavity_mean_pressure_Pa": {"real": 0.0, "imag": 2354.560450593817},
+        "z_fem_Pa_s_m3": {"real": 0.0, "imag": -370113.51557598665},
+        "z_analytic_Pa_s_m3": {"real": 0.0, "imag": -370113.5156114888},
+        "relative_impedance_error": 9.592228184644505e-11,
+        "residual_relative": 5.6508591008785525e-11,
+        "solve_wall_s": 0.055026008,
+        "peak_rss_kb": 87804
+      },
+      {
+        "level": "L1",
+        "frequency_Hz": 40.0,
+        "pressure_dofs": 4696,
+        "pressure_triangles": 9009,
+        "cavity_volume_m3": 0.0060999999999999995,
+        "q_into_cavity_m3_s": {"real": -0.0063617251235193305, "imag": 0.0},
+        "cavity_mean_pressure_Pa": {"real": 0.0, "imag": 588.6401127040009},
+        "z_fem_Pa_s_m3": {"real": 0.0, "imag": -92528.37890272803},
+        "z_analytic_Pa_s_m3": {"real": 0.0, "imag": -92528.3789028722},
+        "relative_impedance_error": 1.5580714357782325e-12,
+        "residual_relative": 3.741491494069384e-12,
+        "solve_wall_s": 0.033368504,
+        "peak_rss_kb": 91912
+      },
+      {
+        "level": "L2",
+        "frequency_Hz": 10.0,
+        "pressure_dofs": 17864,
+        "pressure_triangles": 34971,
+        "cavity_volume_m3": 0.0061,
+        "q_into_cavity_m3_s": {"real": -0.00636172512351933, "imag": 0.0},
+        "cavity_mean_pressure_Pa": {"real": 0.0, "imag": 2354.5604538118855},
+        "z_fem_Pa_s_m3": {"real": 0.0, "imag": -370113.516081835},
+        "z_analytic_Pa_s_m3": {"real": 0.0, "imag": -370113.5156114887},
+        "relative_impedance_error": 1.2708163460127972e-09,
+        "residual_relative": 1.549440458805907e-10,
+        "solve_wall_s": 0.233559043,
+        "peak_rss_kb": 168412
+      },
+      {
+        "level": "L2",
+        "frequency_Hz": 40.0,
+        "pressure_dofs": 17864,
+        "pressure_triangles": 34971,
+        "cavity_volume_m3": 0.0061,
+        "q_into_cavity_m3_s": {"real": -0.00636172512351933, "imag": 0.0},
+        "cavity_mean_pressure_Pa": {"real": 0.0, "imag": 588.6401127286701},
+        "z_fem_Pa_s_m3": {"real": 0.0, "imag": -92528.37890660581},
+        "z_analytic_Pa_s_m3": {"real": 0.0, "imag": -92528.37890287218},
+        "relative_impedance_error": 4.035117215018961e-11,
+        "residual_relative": 9.98516491980205e-12,
+        "solve_wall_s": 0.204823124,
+        "peak_rss_kb": 173952
+      }
+    ],
+    "b_low_frequency_interpretation": "These sealed-B low-frequency values verify the 2*pi*r flux integration, front/back sign convention, and sealed analytic limit; they do not validate the gradient operator. The independent cylinder eigenmode below is the separate gradient-assembly and mesh-convergence validation.",
+    "gradient_eigenmode": {
+      "independent_cylinder": {
+        "radius_m": 0.01,
+        "length_m": 0.2,
+        "rho0_kg_m3": 1.2,
+        "c0_m_s": 343.0,
+        "expected_first_nonzero_axial_frequency_Hz": 857.5,
+        "radial_mode_separation": "small radius chosen so the first radial Neumann mode is higher"
+      },
+      "levels": [
+        {"nr": 4, "nz": 8, "dofs": 45, "first_frequency_Hz": 863.0148876091858, "relative_error": 0.006431355812461631},
+        {"nr": 8, "nz": 16, "dofs": 153, "first_frequency_Hz": 858.8775507008381, "relative_error": 0.0016064731205109367}
+      ],
+      "result": "error decreases and fine mesh is below 1 percent",
+      "zero_mode": "small numerical zero/negative eigenvalue is filtered by a scale-aware positive-eigenvalue threshold"
+    },
+    "pml_geometry": {
+      "all_loaded_B_levels": ["L0", "L1", "L2"],
+      "R0_m": 0.35,
+      "R1_m": 0.45,
+      "boundary_tolerance_m": 2.0e-8,
+      "interface_coefficient_max_error": 1.232595164407831e-30,
+      "mid_pml_s_R_imag": -0.9999999999999996,
+      "mislabelled_pml_triangle": "rejected with non_pml_domain_crosses_inner"
+    },
+    "static_checks": {
+      "py_compile": "pass",
+      "json_parse": "pass",
+      "git_diff_check": "pass after final staged diff",
+      "git_show_check": "run on the final commit before handoff; final SHA intentionally not self-referenced"
+    }
+  },
+  "pending_before_full_stage3": {
+    "open_A": "not implemented and no A scan performed",
+    "pml_power_balance": "pending",
+    "hk_power_or_radiation_validation": "pending; only conforming shared interface and coefficient continuity are checked here",
+    "production_interface": "pending real moving partition, normal, velocity and nonconformal mapping; final_production_interface_ready remains false",
+    "phase2_production_wet_trace_P1": "not modified; remaining P1 is production moving-interface identity/partition validation",
+    "3B_geometry_risk": "no general PML/entity intersection detector implemented; current hard check is local mesh radius/name validation"
+  },
+  "prohibitions_observed": [
+    "no production wet trace source modification",
+    "no CLI or old fem_solver modification",
+    "no A open-case scan",
+    "no production solve or sweep",
+    "no push"
+  ]
+}
