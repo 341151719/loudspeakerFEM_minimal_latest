@@ -482,11 +482,11 @@ def _build_driver_and_cavity(
     p_c_front_outer = _point(builder, "cavity_front_outer_radius", ri, 0.0, lc_feature)
     p_c_side_split = _point(builder, "cavity_side_rear_inner_wall", ri, z_inner_rear, lc_feature)
     builder.line("cavity_baffle", p_c_dside, p_c_front_outer, "cabinet_front_wall")
-    builder.line("cavity_side_inner", p_c_front_outer, p_c_side_split, "cabinet_side_wall")
 
     if case_id in {"B", "C"}:
         p_eq_top_axis = _point(builder, "equalizer_top_axis", 0.0, z_eq_top, lc_feature)
         p_eq_top_outer = _point(builder, "equalizer_top_outer", ri, z_eq_top, lc_feature)
+        builder.line("cavity_side_front", p_c_front_outer, p_eq_top_outer, "cabinet_side_wall")
         builder.line("equalizer_outer_wall", p_c_side_split, p_eq_top_outer, "comparison_equalizer_wall")
         builder.line("equalizer_top", p_eq_top_outer, p_eq_top_axis, "comparison_equalizer_face")
         p_axis_cavity = p_eq_top_axis
@@ -494,8 +494,7 @@ def _build_driver_and_cavity(
             builder.curves["reference_planar_piston_back"][0],
             builder.curves["driver_side"][0],
             builder.curves["cavity_baffle"][0],
-            builder.curves["cavity_side_inner"][0],
-            builder.curves["equalizer_outer_wall"][0],
+            builder.curves["cavity_side_front"][0],
             builder.curves["equalizer_top"][0],
             builder.line("cavity_axis", p_axis_cavity, p_db_axis, "axis"),
         ]
@@ -541,12 +540,13 @@ def _build_driver_and_cavity(
             # The port opening is above its explicitly occupied penetration.
             builder.line("port_cavity_top", p_open_axis, p_port_inner, "port_cavity_opening")
 
+        builder.line("cavity_side_front", p_c_front_outer, p_eq_top_outer, "cabinet_side_wall")
+
         cavity_loop = [
             builder.curves["reference_planar_piston_back"][0],
             builder.curves["driver_side"][0],
             builder.curves["cavity_baffle"][0],
-            builder.curves["cavity_side_inner"][0],
-            builder.curves["equalizer_outer_wall"][0],
+            builder.curves["cavity_side_front"][0],
             builder.curves["equalizer_top"][0],
             -inner_feature_curve,
             -builder.curves["rear_opening_inner"][0] if case_id == "A" else -builder.curves["port_cavity_top"][0],
@@ -574,6 +574,7 @@ def _build_driver_and_cavity(
         p_pr_wall_inner = _point(builder, "pr_cavity_wall_start", pr_radius, z_inner_rear, lc_feature)
         p_pr_wall_top = _point(builder, "pr_cavity_wall_top", pr_radius, z_pr_face, lc_feature)
         p_pr_face_axis = _point(builder, "pr_cavity_face_axis", 0.0, z_pr_face, lc_feature)
+        builder.line("cavity_side_inner", p_c_front_outer, p_c_side_split, "cabinet_side_wall")
         builder.line("cavity_rear_wall", p_c_side_split, p_pr_wall_inner, "cabinet_rear_wall")
         builder.line("pr_side", p_pr_wall_inner, p_pr_wall_top, "pr_side_wall")
         builder.line("pr_face_cavity", p_pr_wall_top, p_pr_face_axis, "pr_cavity_face")
@@ -593,16 +594,16 @@ def _build_driver_and_cavity(
         p_pr_outer_axis = _point(builder, "pr_exterior_face_axis", 0.0, z_outer_rear, lc_feature)
         p_pr_outer = _point(builder, "pr_exterior_face_radius", pr_radius, z_outer_rear, lc_feature)
         builder.line("pr_body_lower_side", p_pr_outer, p_pr_wall_inner, "cabinet_rear_wall")
-        builder.line("pr_body_upper_side", p_pr_wall_inner, p_pr_wall_top, "pr_side_wall")
-        builder.line("pr_body_top", p_pr_wall_top, p_pr_face_axis, "pr_cavity_face")
+        builder.line("pr_side", p_pr_wall_inner, p_pr_wall_top, "pr_side_wall")
+        builder.line("pr_face_cavity", p_pr_wall_top, p_pr_face_axis, "pr_cavity_face")
         builder.line("pr_body_axis", p_pr_outer_axis, p_pr_face_axis, "axis")
         builder.line("pr_face_exterior", p_pr_outer_axis, p_pr_outer, "pr_exterior_face")
         builder.surface(
             "rigid_pr_surface",
             [
                 builder.curves["pr_body_axis"][0],
-                -builder.curves["pr_body_top"][0],
-                -builder.curves["pr_body_upper_side"][0],
+                -builder.curves["pr_face_cavity"][0],
+                -builder.curves["pr_side"][0],
                 -builder.curves["pr_body_lower_side"][0],
                 -builder.curves["pr_face_exterior"][0],
             ],
@@ -663,14 +664,14 @@ def _build_rear_connector(
         )
         builder.line("rear_exterior_axis", p_axis_bottom, p_axis_rear, "axis")
         builder.line("rear_exterior_wall", p_o1, p_rear_side, "cabinet_rear_wall")
-        builder.line("rear_exterior_side", p_rear_side, p_rc, "freefield_rear_side_interface")
+        builder.line("free_rear_side", p_rear_side, p_rc, "freefield_rear_side_interface")
         builder.surface(
             "rear_free_surface",
             [
                 builder.curves["rear_exterior_axis"][0],
                 builder.curves["rear_opening_exterior_line"][0],
                 builder.curves["rear_exterior_wall"][0],
-                builder.curves["rear_exterior_side"][0],
+                builder.curves["free_rear_side"][0],
                 builder.curves["hk_rear_cap"][0],
             ],
             "air_rear_free",
@@ -713,13 +714,13 @@ def _build_rear_connector(
         p_tip_axis = p_o0
         p_tip_radius = int(outer["p_port_circle"])
         builder.line("rear_shell_wall_top", p_wall_outer, p_rear_side, "cabinet_rear_wall")
-        builder.line("rear_shell_side", p_rear_side, p_rc, "freefield_rear_side_interface")
+        builder.line("free_rear_side", p_rear_side, p_rc, "freefield_rear_side_interface")
         builder.line("rear_shell_tip_interface", p_tip_radius, p_o1, "rear_tip_shell_interface")
         builder.surface(
             "rear_port_shell_surface",
             [
                 builder.curves["rear_shell_wall_top"][0],
-                builder.curves["rear_shell_side"][0],
+                builder.curves["free_rear_side"][0],
                 builder.curves["hk_rear_shell"][0],
                 builder.curves["rear_shell_tip_interface"][0],
                 builder.curves["port_wall_external"][0],
@@ -746,17 +747,17 @@ def _build_rear_connector(
         p_pr_outer_axis = _point(builder, "pr_exterior_face_axis", 0.0, z_outer, lc_feature)
         p_pr_outer = _point(builder, "pr_exterior_face_radius", pr_radius, z_outer, lc_feature)
         p_wall = p_rear_side
-        builder.line("rear_pr_face", p_pr_outer_axis, p_pr_outer, "pr_exterior_face")
+        builder.line("pr_face_exterior", p_pr_outer_axis, p_pr_outer, "pr_exterior_face")
         builder.line("rear_pr_wall", p_pr_outer, p_wall, "cabinet_rear_wall")
-        builder.line("rear_pr_side", p_wall, p_rc, "freefield_rear_side_interface")
+        builder.line("free_rear_side", p_wall, p_rc, "freefield_rear_side_interface")
         builder.line("rear_pr_axis", p_axis_bottom, p_pr_outer_axis, "axis")
         builder.surface(
             "rear_pr_free_surface",
             [
                 builder.curves["rear_pr_axis"][0],
-                builder.curves["rear_pr_face"][0],
+                builder.curves["pr_face_exterior"][0],
                 builder.curves["rear_pr_wall"][0],
-                builder.curves["rear_pr_side"][0],
+                builder.curves["free_rear_side"][0],
                 builder.curves["hk_rear_cap"][0],
             ],
             "air_rear_free",
@@ -766,13 +767,13 @@ def _build_rear_connector(
     p_wall = p_rear_side
     builder.line("rear_closed_axis", p_axis_bottom, p_axis_rear, "axis")
     builder.line("rear_closed_wall", p_axis_rear, p_wall, "cabinet_rear_wall")
-    builder.line("rear_closed_side", p_wall, p_rc, "freefield_rear_side_interface")
+    builder.line("free_rear_side", p_wall, p_rc, "freefield_rear_side_interface")
     builder.surface(
         "rear_closed_free_surface",
         [
             builder.curves["rear_closed_axis"][0],
             builder.curves["rear_closed_wall"][0],
-            builder.curves["rear_closed_side"][0],
+            builder.curves["free_rear_side"][0],
             builder.curves["hk_rear_cap"][0],
         ],
         "air_rear_free",
