@@ -46,7 +46,7 @@
     "port_penetration_into_box_m": 0.002,
     "rear_mount_radius_m": 0.1,
     "rear_opening_enabled": true,
-    "rear_opening_radius_m": 0.031,
+    "rear_opening_radius_m": 0.030901936161855166,
     "rear_feature_coaxial": true,
     "pml_inner_radius_m": 0.35,
     "pml_thickness_m": 0.1
