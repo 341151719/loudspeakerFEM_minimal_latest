@@ -15,7 +15,7 @@
     "branch": "feature/enclosure-axisym-fem",
     "upstream_commit": "99deff739cb977d85af1a202fcd9d37376ced803",
     "phase1_implementation_commit": "f18c06167d79686258511f4dd211a8f6cae9d8d5",
-    "phase1_fix_commit": "HEAD",
+    "phase1_fix_commit": "225eea35660431c23d8eb38d227881925ff72e02",
     "commit_message": "fix: close enclosure reference contracts",
     "push_performed": false,
     "initial_worktree_clean": true

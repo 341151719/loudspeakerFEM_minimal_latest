@@ -74,4 +74,3 @@ def test_production_wet_trace_hash_is_repeatable():
     assert [row["stable_hash_sha256"] for row in first["rear"]["entities"]] == [
         row["stable_hash_sha256"] for row in second["rear"]["entities"]
     ]
-

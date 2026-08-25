@@ -44,6 +44,196 @@ PR_CAVITY_FACE = "pr_cavity_face"
 PR_EXTERIOR_FACE = "pr_exterior_face"
 
 
+def _domain_set(*names: str) -> tuple[str, ...]:
+    return tuple(sorted(str(name) for name in names))
+
+
+def _adjacency_set(*sets: tuple[str, ...]) -> frozenset[tuple[str, ...]]:
+    return frozenset(tuple(sorted(values)) for values in sets)
+
+
+_FREEFIELD_PRESSURE_PAIRS = frozenset(
+    {
+        _pair
+        for _pair in (
+            _domain_set("air_front_free", "air_pml_front"),
+            _domain_set("air_front_free", "air_side_free"),
+            _domain_set("air_pml_front", "air_pml_rear"),
+            _domain_set("air_pml_front", "air_side_free"),
+            _domain_set("air_pml_rear", "air_rear_free"),
+            _domain_set("air_pml_rear", "air_side_free"),
+            _domain_set("air_rear_free", "air_side_free"),
+        )
+    }
+)
+
+
+PRESSURE_PRESSURE_ADJACENCY_CONTRACT: dict[str, frozenset[tuple[str, ...]]] = {
+    "A": _FREEFIELD_PRESSURE_PAIRS
+    | frozenset(
+        {
+            _domain_set("air_cavity", "air_rear_opening"),
+            _domain_set("air_rear_free", "air_rear_opening"),
+        }
+    ),
+    "B": _FREEFIELD_PRESSURE_PAIRS,
+    "C": _FREEFIELD_PRESSURE_PAIRS,
+    "D": _FREEFIELD_PRESSURE_PAIRS
+    | frozenset(
+        {
+            _domain_set("air_cavity", "air_port"),
+            _domain_set("air_port", "air_rear_free"),
+        }
+    ),
+    "E": _FREEFIELD_PRESSURE_PAIRS,
+}
+
+
+def _boundary_adjacency_contract(case_id: str) -> dict[str, frozenset[tuple[str, ...]]]:
+    """Return exact allowed adjacent-domain sets for each named line group."""
+
+    boundary: dict[str, frozenset[tuple[str, ...]]] = {
+        "axis": _adjacency_set(
+            _domain_set("air_cavity"),
+            _domain_set("air_front_free"),
+            _domain_set("air_pml_front"),
+            _domain_set("air_pml_rear"),
+            _domain_set("air_rear_free"),
+            _domain_set("rigid_driver_displacement"),
+        ),
+        "cabinet_front_wall": _adjacency_set(
+            _domain_set("air_cavity"), _domain_set("air_front_free")
+        ),
+        "cabinet_side_wall": _adjacency_set(
+            _domain_set("air_cavity"), _domain_set("air_side_free")
+        ),
+        "driver_side_wall": _adjacency_set(
+            _domain_set("air_cavity", "rigid_driver_displacement")
+        ),
+        "freefield_front_side_interface": _adjacency_set(
+            _domain_set("air_front_free", "air_side_free")
+        ),
+        "freefield_rear_side_interface": _adjacency_set(
+            _domain_set("air_rear_free", "air_side_free")
+        ),
+        "hk_front": _adjacency_set(
+            _domain_set("air_front_free", "air_pml_front"),
+            _domain_set("air_pml_front", "air_side_free"),
+        ),
+        "hk_rear": _adjacency_set(
+            _domain_set("air_pml_rear", "air_rear_free"),
+            _domain_set("air_pml_rear", "air_side_free"),
+        ),
+        "outer_pml_boundary": _adjacency_set(
+            _domain_set("air_pml_front"), _domain_set("air_pml_rear")
+        ),
+        "pml_mid_interface": _adjacency_set(
+            _domain_set("air_pml_front", "air_pml_rear")
+        ),
+        "reference_planar_piston_front": _adjacency_set(
+            _domain_set("air_front_free")
+        ),
+        "reference_planar_piston_back": _adjacency_set(
+            _domain_set("air_cavity", "rigid_driver_displacement")
+        ),
+        "rigid_driver_cap": _adjacency_set(
+            _domain_set("rigid_driver_displacement")
+        ),
+    }
+    if case_id in {"A", "B", "C", "D"}:
+        boundary.update(
+            {
+                "cabinet_rear_wall": _adjacency_set(
+                    _domain_set("air_rear_free"),
+                    _domain_set("rigid_comparison_equalizer"),
+                ),
+                "comparison_equalizer_face": _adjacency_set(
+                    _domain_set("air_cavity", "rigid_comparison_equalizer")
+                ),
+                "comparison_equalizer_wall": _adjacency_set(
+                    _domain_set("rigid_comparison_equalizer"),
+                ),
+            }
+        )
+        if case_id in {"B", "C"}:
+            boundary["axis"] = boundary["axis"] | _adjacency_set(
+                _domain_set("rigid_comparison_equalizer")
+            )
+        else:
+            boundary["comparison_equalizer_wall"] = boundary[
+                "comparison_equalizer_wall"
+            ] | _adjacency_set(
+                _domain_set("air_cavity", "rigid_comparison_equalizer")
+            )
+    if case_id == "A":
+        boundary.update(
+            {
+                "rear_opening_cavity": _adjacency_set(
+                    _domain_set("air_cavity", "air_rear_opening")
+                ),
+                "rear_opening_exterior": _adjacency_set(
+                    _domain_set("air_rear_free", "air_rear_opening")
+                ),
+                "rear_opening_wall": _adjacency_set(
+                    _domain_set("air_rear_opening")
+                ),
+            }
+        )
+        boundary["axis"] = boundary["axis"] | _adjacency_set(
+            _domain_set("air_rear_opening")
+        )
+    elif case_id == "D":
+        boundary.update(
+            {
+                "port_cavity_opening": _adjacency_set(
+                    _domain_set("air_cavity", "air_port")
+                ),
+                "port_exterior_opening": _adjacency_set(
+                    _domain_set("air_port", "air_rear_free")
+                ),
+                "port_wall": _adjacency_set(
+                    _domain_set("air_port"),
+                    _domain_set("air_port", "air_rear_free"),
+                    _domain_set("air_port", "rigid_comparison_equalizer"),
+                ),
+                "rear_tip_shell_interface": _adjacency_set(
+                    _domain_set("air_rear_free")
+                ),
+            }
+        )
+        boundary["axis"] = boundary["axis"] | _adjacency_set(
+            _domain_set("air_port")
+        )
+    elif case_id == "E":
+        boundary.update(
+            {
+                "cabinet_rear_wall": _adjacency_set(
+                    _domain_set("air_cavity"),
+                    _domain_set("air_rear_free"),
+                    _domain_set("rigid_pr_back_mechanism"),
+                ),
+                "pr_cavity_face": _adjacency_set(
+                    _domain_set("air_cavity", "rigid_pr_back_mechanism")
+                ),
+                "pr_exterior_face": _adjacency_set(
+                    _domain_set("air_rear_free", "rigid_pr_back_mechanism")
+                ),
+                "pr_side_wall": _adjacency_set(
+                    _domain_set("air_cavity", "rigid_pr_back_mechanism")
+                ),
+            }
+        )
+        boundary["axis"] = boundary["axis"] | _adjacency_set(
+            _domain_set("rigid_pr_back_mechanism")
+        )
+    return boundary
+
+
+BOUNDARY_ADJACENCY_CONTRACT = {
+    case: _boundary_adjacency_contract(case) for case in REFERENCE_CONFIGS
+}
+
+
 class MeshTopologyAuditError(ValueError):
     """Raised when a mesh cannot be read as a tagged triangular mesh."""
 
@@ -117,6 +307,119 @@ def _field_maps(mesh: meshio.Mesh) -> tuple[dict[int, str], dict[int, str], dict
             duplicate_tags[str(dimension)].extend([tag])
         by_dimension[dimension][tag] = name
     return by_dimension[1], by_dimension[2], duplicate_tags
+
+
+def _physical_group_contract(
+    mesh: meshio.Mesh,
+    case_id: str,
+    line_names: Mapping[int, str],
+    domain_names_by_tag: Mapping[int, str],
+    duplicate_tags: Mapping[str, list[int]],
+) -> dict[str, Any]:
+    """Check exact phase-2 physical name/tag/dimension ownership."""
+
+    expected_names = {
+        **{
+            name: {"physical_tag": int(DOMAIN_PHYSICAL_TAGS[name]), "dimension": 2}
+            for name in expected_domain_names(case_id)
+        },
+        **{
+            name: {"physical_tag": int(BOUNDARY_PHYSICAL_TAGS[name]), "dimension": 1}
+            for name in expected_boundary_names(case_id)
+        },
+    }
+    actual: dict[str, dict[str, int]] = {}
+    for name in sorted(mesh.field_data):
+        value = np.asarray(mesh.field_data[name]).reshape(-1)
+        if len(value) >= 2:
+            actual[name] = {"physical_tag": int(value[0]), "dimension": int(value[1])}
+
+    missing: list[str] = []
+    unexpected: list[str] = []
+    mismatches: list[dict[str, Any]] = []
+    for name, expected in sorted(expected_names.items()):
+        observed = actual.get(name)
+        if observed is None:
+            missing.append(name)
+            continue
+        if observed != expected:
+            mismatches.append(
+                {
+                    "name": name,
+                    "expected": expected,
+                    "actual": observed,
+                    "reason": "physical tag or dimension mismatch",
+                }
+            )
+    expected_set = set(expected_names)
+    for name, observed in sorted(actual.items()):
+        if name not in expected_set:
+            # Only phase-2 physical groups are allowed in a reference mesh.
+            unexpected.append(name)
+
+    by_tag: dict[int, list[dict[str, int | str]]] = defaultdict(list)
+    for name, observed in sorted(actual.items()):
+        by_tag[int(observed["physical_tag"])].append(
+            {
+                "name": name,
+                "dimension": int(observed["dimension"]),
+            }
+        )
+    duplicate_tag_rows = {
+        str(tag): rows for tag, rows in sorted(by_tag.items()) if len(rows) > 1
+    }
+    duplicate_tag_rows.update(
+        {
+            f"field_map_dimension_{dimension}": sorted(set(tags))
+            for dimension, tags in sorted(duplicate_tags.items())
+            if tags
+        }
+    )
+    domain_tag_name_mismatches = [
+        {
+            "physical_tag": int(tag),
+            "name": name,
+            "expected_name_for_tag": DOMAIN_PHYSICAL_TAGS and next(
+                (candidate for candidate, expected_tag in DOMAIN_PHYSICAL_TAGS.items() if expected_tag == tag),
+                None,
+            ),
+        }
+        for tag, name in sorted(domain_names_by_tag.items())
+        if tag in DOMAIN_PHYSICAL_TAGS.values()
+        and DOMAIN_PHYSICAL_TAGS.get(name) != tag
+    ]
+    boundary_tag_name_mismatches = [
+        {
+            "physical_tag": int(tag),
+            "name": name,
+            "expected_name_for_tag": next(
+                (candidate for candidate, expected_tag in BOUNDARY_PHYSICAL_TAGS.items() if expected_tag == tag),
+                None,
+            ),
+        }
+        for tag, name in sorted(line_names.items())
+        if tag in BOUNDARY_PHYSICAL_TAGS.values()
+        and BOUNDARY_PHYSICAL_TAGS.get(name) != tag
+    ]
+    passed = not (
+        missing
+        or unexpected
+        or mismatches
+        or duplicate_tag_rows
+        or domain_tag_name_mismatches
+        or boundary_tag_name_mismatches
+    )
+    return {
+        "expected": expected_names,
+        "actual": actual,
+        "missing": missing,
+        "unexpected": unexpected,
+        "mismatches": mismatches,
+        "duplicate_tags": duplicate_tag_rows,
+        "domain_tag_name_mismatches": domain_tag_name_mismatches,
+        "boundary_tag_name_mismatches": boundary_tag_name_mismatches,
+        "passed": bool(passed),
+    }
 
 
 def _edge_key(edge: Iterable[int]) -> tuple[int, int]:
@@ -326,6 +629,13 @@ def audit_mesh(
     line_names, domain_names_by_tag, duplicate_tags = _field_maps(mesh)
     case = _case_from_mesh(mesh, case_id)
     config = _config_details(config_path, case)
+    physical_group_contract = _physical_group_contract(
+        mesh,
+        case,
+        line_names,
+        domain_names_by_tag,
+        duplicate_tags,
+    )
 
     points = np.asarray(mesh.points[:, :2], dtype=float)
     triangles_rz = points[triangles]
@@ -513,6 +823,66 @@ def audit_mesh(
             pairs.append({"domains": list(json.loads(encoded)), "line_count": int(count)})
         row["adjacent_domain_pairs"] = pairs
 
+    expected_pressure_pairs = PRESSURE_PRESSURE_ADJACENCY_CONTRACT[case]
+    actual_pressure_pairs = {
+        tuple(row["domains"])
+        for row in _pair_rows(pressure_pair_counts)
+    }
+    missing_pressure_pairs = sorted(expected_pressure_pairs - actual_pressure_pairs)
+    unexpected_pressure_pairs = sorted(actual_pressure_pairs - expected_pressure_pairs)
+
+    expected_boundary_adjacency = BOUNDARY_ADJACENCY_CONTRACT[case]
+    actual_boundary_adjacency: dict[str, set[tuple[str, ...]]] = {}
+    for name, expected in expected_boundary_adjacency.items():
+        rows = line_group_stats.get(name, {}).get("adjacent_domain_pairs", [])
+        actual_boundary_adjacency[name] = {
+            tuple(row["domains"]) for row in rows
+        }
+    missing_boundary_adjacency = {
+        name: sorted(expected_boundary_adjacency[name] - actual_boundary_adjacency.get(name, set()))
+        for name in expected_boundary_adjacency
+        if expected_boundary_adjacency[name] - actual_boundary_adjacency.get(name, set())
+    }
+    unexpected_boundary_adjacency = {
+        name: sorted(actual_boundary_adjacency.get(name, set()) - expected_boundary_adjacency[name])
+        for name in expected_boundary_adjacency
+        if actual_boundary_adjacency.get(name, set()) - expected_boundary_adjacency[name]
+    }
+    unexpected_boundary_groups = sorted(
+        set(line_group_stats) - set(expected_boundary_adjacency)
+    )
+    adjacency_contract = {
+        "pressure_pressure": {
+            "expected_pairs": [list(pair) for pair in sorted(expected_pressure_pairs)],
+            "actual_pairs": [list(pair) for pair in sorted(actual_pressure_pairs)],
+            "missing": [list(pair) for pair in missing_pressure_pairs],
+            "unexpected": [list(pair) for pair in unexpected_pressure_pairs],
+            "passed": not missing_pressure_pairs and not unexpected_pressure_pairs,
+        },
+        "physical_boundaries": {
+            "expected": {
+                name: [list(values) for values in sorted(expected)]
+                for name, expected in sorted(expected_boundary_adjacency.items())
+            },
+            "actual": {
+                name: [list(values) for values in sorted(actual_boundary_adjacency.get(name, set()))]
+                for name in sorted(expected_boundary_adjacency)
+            },
+            "missing": {
+                name: [list(values) for values in sorted(values)]
+                for name, values in sorted(missing_boundary_adjacency.items())
+            },
+            "unexpected": {
+                name: [list(values) for values in sorted(values)]
+                for name, values in sorted(unexpected_boundary_adjacency.items())
+            },
+            "unexpected_groups": unexpected_boundary_groups,
+            "passed": not missing_boundary_adjacency
+            and not unexpected_boundary_adjacency
+            and not unexpected_boundary_groups,
+        },
+    }
+
     pressure_rigid_rows = _pair_rows(pressure_rigid_pair_counts)
     required_pressure_rigid = [[cavity, "rigid_driver_displacement"]]
     if case in {"A", "B", "C", "D"}:
@@ -627,6 +997,7 @@ def audit_mesh(
 
     checks = {
         "named_groups_complete": bool(named_groups_complete),
+        "physical_group_contract_exact": bool(physical_group_contract["passed"]),
         "nonnegative_r": bool(len(negative_r_points) == 0 and len(negative_r_triangles) == 0),
         "positive_non_degenerate_triangles": bool(len(triangles) > 0 and len(degenerate_triangles) == 0),
         "minimum_triangle_quality": bool(len(qualities) > 0 and float(np.min(qualities)) >= minimum_triangle_quality),
@@ -641,6 +1012,12 @@ def audit_mesh(
         "reference_planar_piston_traces_separate": bool(piston_trace["separated"]),
         "passive_radiator_traces_separate": bool(pr_trace["separated"]),
         "pressure_connectivity_expected": bool(pressure_connectivity["required_case_connectivity"]),
+        "exact_pressure_pressure_adjacency_contract": bool(
+            adjacency_contract["pressure_pressure"]["passed"]
+        ),
+        "exact_physical_boundary_adjacency_contract": bool(
+            adjacency_contract["physical_boundaries"]["passed"]
+        ),
         "net_cavity_volume_target": bool(volume_contract["within_tolerance"]),
     }
     failures = sorted(name for name, passed in checks.items() if not passed)
@@ -699,6 +1076,7 @@ def audit_mesh(
             "uncovered_pressure_boundary_edge_count": int(len(uncovered_boundary_edges)),
             "duplicate_line_edge_count": int(len(duplicate_line_edges)),
             "pressure_pressure_interfaces": _pair_rows(pressure_pair_counts),
+            "adjacency_contract": adjacency_contract,
             "pressure_rigid_interfaces": pressure_rigid_rows,
             "required_pressure_rigid_interfaces": [
                 {"domains": sorted(pair), "edge_count": pressure_rigid_lookup.get(tuple(sorted(pair)), 0)}
@@ -728,7 +1106,9 @@ def audit_mesh(
             "unknown_triangle_physical_tags": unknown_triangle_tags,
             "unknown_line_physical_tags": unknown_line_tags,
             "duplicate_field_data_tags": {key: sorted(set(value)) for key, value in sorted(duplicate_tags.items())},
+            "physical_group_contract": physical_group_contract,
         },
+        "adjacency_contract": adjacency_contract,
         "checks": checks,
     }
     return report
