@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import json
 import math
 from pathlib import Path
+import re
 from typing import Any, Mapping
 
 
@@ -20,6 +21,8 @@ class EnclosureSchemaError(ValueError):
 
 # Short alias for callers that use the conventional schema terminology.
 SchemaError = EnclosureSchemaError
+
+EXPECTED_UPSTREAM_COMMIT = "99deff739cb977d85af1a202fcd9d37376ced803"
 
 
 ALLOWED_CASES = frozenset(
@@ -87,6 +90,7 @@ class VolumeContract:
     port_displacement_m3: float
     passive_radiator_back_displacement_m3: float
     reserved_rear_feature_m3: float
+    fair_comparison_equalization_m3: float
     computed_net_volume_m3: float
 
 
@@ -209,7 +213,17 @@ def _choice(mapping: Mapping[str, Any], key: str, choices: set[str], path: str) 
 
 def _validate_provenance(value: Any) -> None:
     data = _mapping(value, "provenance")
-    _string(data, "upstream_commit", "provenance")
+    upstream_commit = _string(data, "upstream_commit", "provenance")
+    if not re.fullmatch(r"[0-9a-f]{40}", upstream_commit):
+        _fail("provenance.upstream_commit", "must be a 40-character lowercase hexadecimal commit")
+    if upstream_commit != EXPECTED_UPSTREAM_COMMIT:
+        _fail("provenance.upstream_commit", f"must equal {EXPECTED_UPSTREAM_COMMIT}")
+    implementation_baseline = _string(data, "implementation_baseline_commit", "provenance")
+    if not re.fullmatch(r"[0-9a-f]{40}", implementation_baseline):
+        _fail(
+            "provenance.implementation_baseline_commit",
+            "must be a 40-character lowercase hexadecimal commit",
+        )
     _string(data, "config_version", "provenance")
     _string(data, "generated_by", "provenance")
     _string(data, "parameter_source", "provenance")
@@ -321,7 +335,10 @@ def _validate_volume(value: Any, target: float, geometry: Mapping[str, Any]) -> 
         data, "passive_radiator_back_displacement_m3", "volume_contract"
     )
     reserved = _nonnegative(data, "reserved_rear_feature_m3", "volume_contract")
-    computed = gross - driver - port - pr - reserved
+    equalization = _nonnegative(
+        data, "fair_comparison_equalization_m3", "volume_contract"
+    )
+    computed = gross - driver - port - pr - reserved - equalization
     if computed <= 0.0:
         _fail("volume_contract", "computed net volume must be > 0")
     if not math.isclose(target, computed, rel_tol=1.0e-8, abs_tol=1.0e-12):
@@ -334,11 +351,12 @@ def _validate_volume(value: Any, target: float, geometry: Mapping[str, Any]) -> 
     )
     if not math.isclose(gross, geometric, rel_tol=1.0e-6, abs_tol=1.0e-12):
         _fail("volume_contract.gross_internal_volume_m3", "does not match axisymmetric cavity volume")
-    return VolumeContract(gross, driver, port, pr, reserved, computed)
+    return VolumeContract(gross, driver, port, pr, reserved, equalization, computed)
 
 
-def _validate_port(value: Any) -> tuple[Mapping[str, Any], bool]:
+def _validate_port(value: Any, air_value: Any) -> tuple[Mapping[str, Any], bool]:
     data = _mapping(value, "port")
+    air = _mapping(air_value, "air")
     enabled = _boolean(data, "enabled", "port")
     model = _string(data, "model", "port")
     if enabled and model != "lumped_helmholtz_reference":
@@ -346,11 +364,11 @@ def _validate_port(value: Any) -> tuple[Mapping[str, Any], bool]:
     if not enabled and model != "none":
         _fail("port.model", "disabled port must be none")
     cross_section = _choice(data, "cross_section", {"circular", "rectangular", "slit"}, "port")
-    _positive(data, "radius_m", "port")
-    _positive(data, "length_m", "port")
+    radius = _positive(data, "radius_m", "port")
+    length = _positive(data, "length_m", "port")
     _nonnegative(data, "resistance_Pa_s_m3", "port")
     _nonnegative(data, "surface_roughness_m", "port")
-    _choice(
+    terminal_condition = _choice(
         data,
         "terminal_condition",
         {"open-open", "closed-open", "open-closed", "closed-closed"},
@@ -372,7 +390,9 @@ def _validate_port(value: Any) -> tuple[Mapping[str, Any], bool]:
     if loss_model == "narrow_region_lrf_declared" and cross_section != "slit":
         _fail("port.loss_model", "narrow-region loss requires a slit cross-section")
     lumped = _mapping(_required(data, "lumped_reference", "port"), "port.lumped_reference")
-    _nonnegative(lumped, "end_correction_factor", "port.lumped_reference")
+    end_correction_factor = _nonnegative(
+        lumped, "end_correction_factor", "port.lumped_reference"
+    )
     if _string(lumped, "applies_to", "port.lumped_reference") != "lumped_reference_only":
         _fail("port.lumped_reference.applies_to", "must not apply to explicit FEM")
     explicit = _mapping(_required(data, "explicit_fem", "port"), "port.explicit_fem")
@@ -394,10 +414,21 @@ def _validate_port(value: Any) -> tuple[Mapping[str, Any], bool]:
     f_max = _positive(applicability, "frequency_max_Hz", "port.applicability")
     if f_max <= f_min:
         _fail("port.applicability", "frequency range is empty")
-    _positive(applicability, "first_longitudinal_mode_Hz", "port.applicability")
+    declared_first_mode = _positive(
+        applicability, "first_longitudinal_mode_Hz", "port.applicability"
+    )
     _positive(applicability, "minimum_radius_for_reference_m", "port.applicability")
     _positive(applicability, "boundary_layer_to_radius_max", "port.applicability")
     _positive(applicability, "ka_max", "port.applicability")
+    c0 = _positive(air, "c0_m_s", "air")
+    effective_length = length + end_correction_factor * radius
+    denominator = 4.0 if terminal_condition in {"closed-open", "open-closed"} else 2.0
+    expected_first_mode = c0 / (denominator * effective_length)
+    if not math.isclose(declared_first_mode, expected_first_mode, rel_tol=1.0e-10, abs_tol=1.0e-9):
+        _fail(
+            "port.applicability.first_longitudinal_mode_Hz",
+            f"must equal geometry-derived {expected_first_mode:.12g} Hz",
+        )
     return data, enabled
 
 
@@ -585,6 +616,7 @@ def validate_enclosure_config(config: Mapping[str, Any]) -> EnclosureConfig:
         _fail("title_cn", "must state 演示 and 非产品预测")
     _validate_provenance(config["provenance"])
     _validate_physics(config["physics"])
+    _validate_air(config["air"])
     geometry = _validate_geometry(config["geometry"])
     target = _positive(config, "net_volume_target_m3", "config")
     volume = _validate_volume(config["volume_contract"], target, geometry)
@@ -592,7 +624,7 @@ def validate_enclosure_config(config: Mapping[str, Any]) -> EnclosureConfig:
     pr_decl = _mapping(config["passive_radiator"], "passive_radiator")
     if port_decl.get("enabled") is True and pr_decl.get("enabled") is True:
         _fail("port/passive_radiator", "coaxial port and PR cannot occupy the same rear mount")
-    port, port_enabled = _validate_port(port_decl)
+    port, port_enabled = _validate_port(port_decl, config["air"])
     pr, pr_enabled = _validate_pr(pr_decl)
     _validate_thermoviscous(config["thermoviscous"])
     thermo_enabled = bool(config["thermoviscous"]["enabled"])
@@ -602,18 +634,44 @@ def validate_enclosure_config(config: Mapping[str, Any]) -> EnclosureConfig:
     if port_enabled:
         if volume.port_displacement_m3 <= 0.0:
             _fail("volume_contract.port_displacement_m3", "enabled port needs positive occupancy")
-        if volume.passive_radiator_back_displacement_m3 != 0.0 or volume.reserved_rear_feature_m3 != 0.0:
-            _fail("volume_contract", "port case cannot also claim PR or rear reserve occupancy")
+        expected_port_displacement = math.pi * _number(port, "radius_m", "port") ** 2 * float(
+            geometry["port_penetration_into_box_m"]
+        )
+        if not math.isclose(
+            volume.port_displacement_m3,
+            expected_port_displacement,
+            rel_tol=1.0e-9,
+            abs_tol=1.0e-15,
+        ):
+            _fail(
+                "volume_contract.port_displacement_m3",
+                f"must equal S_port*port_penetration {expected_port_displacement:.12g} m^3",
+            )
+        if volume.passive_radiator_back_displacement_m3 != 0.0:
+            _fail("volume_contract", "port case cannot claim PR occupancy")
     elif pr_enabled:
         if volume.passive_radiator_back_displacement_m3 <= 0.0:
             _fail(
                 "volume_contract.passive_radiator_back_displacement_m3",
                 "enabled PR needs positive occupancy",
             )
-        if volume.port_displacement_m3 != 0.0 or volume.reserved_rear_feature_m3 != 0.0:
-            _fail("volume_contract", "PR case cannot also claim port or rear reserve occupancy")
+        expected_pr_displacement = _number(pr, "Sd_m2", "passive_radiator") * _number(
+            pr, "rear_clearance_m", "passive_radiator"
+        )
+        if not math.isclose(
+            volume.passive_radiator_back_displacement_m3,
+            expected_pr_displacement,
+            rel_tol=1.0e-9,
+            abs_tol=1.0e-15,
+        ):
+            _fail(
+                "volume_contract.passive_radiator_back_displacement_m3",
+                f"must equal Sd*rear_clearance {expected_pr_displacement:.12g} m^3",
+            )
+        if volume.port_displacement_m3 != 0.0:
+            _fail("volume_contract", "PR case cannot claim port occupancy")
     elif volume.port_displacement_m3 != 0.0 or volume.passive_radiator_back_displacement_m3 != 0.0:
-        _fail("volume_contract", "disabled rear components cannot claim occupancy")
+        _fail("volume_contract", "disabled rear components cannot claim actual occupancy")
 
     if port_enabled:
         port_radius = _number(port, "radius_m", "port")
@@ -646,7 +704,6 @@ def validate_enclosure_config(config: Mapping[str, Any]) -> EnclosureConfig:
     if float(geometry["pml_inner_radius_m"]) <= entity_radius:
         _fail("geometry.pml_inner_radius_m", "PML inner boundary crosses an entity")
 
-    _validate_air(config["air"])
     _validate_mesh(config["mesh"])
     _validate_study(config["study"])
     _validate_limits(config["limits"])

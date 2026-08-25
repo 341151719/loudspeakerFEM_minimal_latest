@@ -308,6 +308,18 @@ class PassiveRadiatorBox:
     def input_impedance(self, f: float, air: AirProperties = AirProperties()) -> complex:
         return 1.0 / self.input_admittance(f, air)
 
+    def coupled_resonance_Hz(self, air: AirProperties = AirProperties()) -> float:
+        """Undamped PR tuning after adding the sealed-box air spring.
+
+        This is the low-order sealed, no-leak reference.  It is distinct from
+        ``radiator.resonance_Hz()`` because the cavity contributes
+        ``rho0*c0^2*Sd^2/V_b`` to the PR mechanical stiffness.
+        """
+
+        if self.leak is not None:
+            raise ValueError("coupled PR tuning requires a no-leak reference")
+        return passive_radiator_box_coupled_resonance_Hz(self.box, self.radiator, air)
+
     def radiator_volume_velocity(self, f: float, box_pressure_Pa: complex) -> complex:
         return complex(box_pressure_Pa) / self.radiator.acoustic_impedance(f)
 
@@ -319,6 +331,35 @@ class PassiveRadiatorBox:
             * self.radiator.Sd_m2
             / self.radiator.mechanical_impedance(f)
         )
+
+
+def passive_radiator_box_air_spring_stiffness_N_m(
+    box: ClosedBox,
+    radiator: PassiveRadiator,
+    air: AirProperties = AirProperties(),
+) -> float:
+    """Return the sealed-cavity mechanical spring seen by a PR piston."""
+
+    if not box.strictly_sealed:
+        raise ValueError("coupled PR tuning requires a strictly sealed box")
+    return air.rho0 * air.c0**2 * radiator.Sd_m2**2 / box.volume_m3
+
+
+def passive_radiator_box_coupled_resonance_Hz(
+    box: ClosedBox,
+    radiator: PassiveRadiator,
+    air: AirProperties = AirProperties(),
+) -> float:
+    """Return the undamped sealed-box/PR coupled resonance.
+
+    The independent stiffness sum is ``1/Cms + K_box``; mechanical damping
+    changes the peak shape but not this undamped reference value.
+    """
+
+    k_box = passive_radiator_box_air_spring_stiffness_N_m(box, radiator, air)
+    return math.sqrt(
+        (1.0 / radiator.Cms_m_N + k_box) / radiator.Mms_kg
+    ) / (2.0 * math.pi)
 
 
 @dataclass(frozen=True)

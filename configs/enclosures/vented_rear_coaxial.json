@@ -5,7 +5,8 @@
   "title_cn": "阶段1后置同轴导向管演示参数，非产品预测",
   "demonstrator": true,
   "provenance": {
-    "upstream_commit": "d7f8334660ab4177736315fe32a2d9a227698538",
+    "upstream_commit": "99deff739cb977d85af1a202fcd9d37376ced803",
+    "implementation_baseline_commit": "f18c06167d79686258511f4dd211a8f6cae9d8d5",
     "config_version": "phase1-demo-2026-08-25",
     "generated_by": "phase1 physics-contract and lumped-reference task",
     "parameter_source": "air values from configs/best_model.json; enclosure and transducer values are declared engineering assumptions",
@@ -54,10 +55,11 @@
   "volume_contract": {
     "gross_internal_volume_m3": 0.0064,
     "driver_displacement_m3": 0.0002,
-    "port_displacement_m3": 0.0001,
+    "port_displacement_m3": 0.000002035752039526,
     "passive_radiator_back_displacement_m3": 0.0,
     "reserved_rear_feature_m3": 0.0,
-    "occupancy_rule": "net = gross - driver - port - passive_radiator_back - reserved_rear_feature"
+    "fair_comparison_equalization_m3": 0.000097964247960474,
+    "occupancy_rule": "net = gross - driver - port - passive_radiator_back - reserved_rear_feature - fair_comparison_equalization"
   },
   "topology": {
     "rear_boundary": "sealed_with_rear_coaxial_port",
@@ -103,7 +105,7 @@
     "applicability": {
       "frequency_min_Hz": 10.0,
       "frequency_max_Hz": 1000.0,
-      "first_longitudinal_mode_Hz": 1380.0,
+      "first_longitudinal_mode_Hz": 1380.7675494561804,
       "minimum_radius_for_reference_m": 0.018,
       "boundary_layer_to_radius_max": 0.3,
       "ka_max": 0.8

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+import re
 
 import pytest
 
@@ -27,6 +28,8 @@ CONFIG_NAMES = (
     "passive_radiator_rear_coaxial",
 )
 CONFIG_DIR = ROOT / "configs" / "enclosures"
+UPSTREAM_COMMIT = "99deff739cb977d85af1a202fcd9d37376ced803"
+IMPLEMENTATION_BASELINE_COMMIT = "f18c06167d79686258511f4dd211a8f6cae9d8d5"
 
 
 def _raw(name: str) -> dict:
@@ -39,6 +42,12 @@ def test_all_phase1_demonstrators_validate_and_report_volume_contract():
     assert all(item.demonstrator for item in validated)
     assert {item.case for item in validated} == set(CONFIG_NAMES)
     assert all(item.computed_net_volume_m3 > 0.0 for item in validated)
+    for item in validated:
+        provenance = item.raw["provenance"]
+        assert provenance["upstream_commit"] == UPSTREAM_COMMIT
+        assert provenance["implementation_baseline_commit"] == IMPLEMENTATION_BASELINE_COMMIT
+        assert re.fullmatch(r"[0-9a-f]{40}", provenance["upstream_commit"])
+        assert re.fullmatch(r"[0-9a-f]{40}", provenance["implementation_baseline_commit"])
 
     comparable = {
         item.case: item.net_volume_target_m3
@@ -104,6 +113,19 @@ def test_schema_rejects_nonfinite_values_and_unknown_case():
         validate_enclosure_config(unknown)
 
 
+def test_schema_rejects_wrong_upstream_or_implementation_commit_identity():
+    cfg = _raw("sealed_lossless")
+    wrong_upstream = copy.deepcopy(cfg)
+    wrong_upstream["provenance"]["upstream_commit"] = "d7f8334660ab4177736315fe32a2d9a227698538"
+    with pytest.raises(EnclosureSchemaError, match="upstream_commit"):
+        validate_enclosure_config(wrong_upstream)
+
+    malformed_baseline = copy.deepcopy(cfg)
+    malformed_baseline["provenance"]["implementation_baseline_commit"] = "f18c061"
+    with pytest.raises(EnclosureSchemaError, match="implementation_baseline_commit"):
+        validate_enclosure_config(malformed_baseline)
+
+
 def test_schema_rejects_topology_and_geometry_conflicts():
     both_rear_features = _raw("passive_radiator_rear_coaxial")
     both_rear_features["port"]["enabled"] = True
@@ -117,7 +139,7 @@ def test_schema_rejects_topology_and_geometry_conflicts():
 
     port_hits_driver = _raw("vented_rear_coaxial")
     port_hits_driver["geometry"]["port_penetration_into_box_m"] = port_hits_driver["geometry"]["inner_depth_m"]
-    with pytest.raises(EnclosureSchemaError, match="intersect|相交"):
+    with pytest.raises(EnclosureSchemaError, match="intersect|相交|occupancy|port_displacement"):
         validate_enclosure_config(port_hits_driver)
 
 
@@ -127,6 +149,18 @@ def test_schema_rejects_loss_model_cross_section_mismatch():
 
     with pytest.raises(EnclosureSchemaError, match="截面|cross.section"):
         validate_enclosure_config(cfg)
+
+
+def test_schema_cross_checks_port_first_longitudinal_mode_from_geometry_and_terminals():
+    cfg = _raw("vented_rear_coaxial")
+    cfg["port"]["applicability"]["first_longitudinal_mode_Hz"] = 1380.0
+    with pytest.raises(EnclosureSchemaError, match="first_longitudinal_mode"):
+        validate_enclosure_config(cfg)
+
+    changed_terminal = _raw("vented_rear_coaxial")
+    changed_terminal["port"]["terminal_condition"] = "closed-open"
+    with pytest.raises(EnclosureSchemaError, match="first_longitudinal_mode"):
+        validate_enclosure_config(changed_terminal)
 
 
 def test_explicit_fem_radiation_cannot_reuse_lumped_port_corrections():
@@ -139,6 +173,34 @@ def test_explicit_fem_radiation_cannot_reuse_lumped_port_corrections():
     cfg["port"]["explicit_fem"]["reuse_radiation_mass"] = True
     with pytest.raises(EnclosureSchemaError, match="辐射质量|radiation.mass"):
         validate_enclosure_config(cfg)
+
+
+def test_schema_closes_port_and_pr_occupancy_against_geometry_and_allows_fair_equalization():
+    vented = _raw("vented_rear_coaxial")
+    validated = validate_enclosure_config(vented)
+    expected_port_volume = (
+        3.141592653589793
+        * vented["port"]["radius_m"] ** 2
+        * vented["geometry"]["port_penetration_into_box_m"]
+    )
+    assert vented["volume_contract"]["port_displacement_m3"] == pytest.approx(expected_port_volume)
+    assert vented["volume_contract"]["fair_comparison_equalization_m3"] > 0.0
+    assert validated.computed_net_volume_m3 == pytest.approx(0.0061)
+
+    bad_port = copy.deepcopy(vented)
+    bad_port["volume_contract"]["port_displacement_m3"] = 0.0001
+    with pytest.raises(EnclosureSchemaError, match="port_displacement|occupancy"):
+        validate_enclosure_config(bad_port)
+
+    pr = _raw("passive_radiator_rear_coaxial")
+    expected_pr_volume = pr["passive_radiator"]["Sd_m2"] * pr["passive_radiator"]["rear_clearance_m"]
+    assert pr["volume_contract"]["passive_radiator_back_displacement_m3"] == pytest.approx(expected_pr_volume)
+    assert validate_enclosure_config(pr).computed_net_volume_m3 == pytest.approx(0.0061)
+
+    bad_pr = copy.deepcopy(pr)
+    bad_pr["volume_contract"]["passive_radiator_back_displacement_m3"] = expected_pr_volume * 0.9
+    with pytest.raises(EnclosureSchemaError, match="passive_radiator_back_displacement|occupancy"):
+        validate_enclosure_config(bad_pr)
 
 
 def test_json_loader_rejects_nonstandard_nonfinite_literal(tmp_path):

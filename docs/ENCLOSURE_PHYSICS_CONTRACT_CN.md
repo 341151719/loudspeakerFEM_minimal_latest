@@ -42,6 +42,16 @@ PR 第一版是单一刚性活塞自由度：
 
 `v_pr=i*omega*x_pr`，`Mms/Cms/Rms` 是机械本体参数；若外部声场显式耦合，其辐射质量和辐射阻尼只能由该外场提供，不能预先重复塞入 `Mms/Rms`。缺少锥盆、悬边、材料和预张力数据时，不升级为分布式 PR FEM。
 
+无耗、严格密闭的箱体—PR 低阶耦合调谐另行定义为
+
+`K_box = rho0*c0^2*Sd^2/V_b`，
+
+`f_pr,free = 1/(2*pi*sqrt(Mms*Cms))`，
+
+`f_pr,box = sqrt((1/Cms + K_box)/Mms)/(2*pi)`。
+
+因此 PR 自由共振与装箱调谐不是同一个数；增大 `Mms`、增大 `Cms` 或增大 `V_b` 都使装箱调谐下降，增大箱体容积同时使 `K_box` 变软。该式是无耗解析参考，不替代外场辐射阻抗。
+
 ## 4. 拓扑、损耗和阶段边界
 
 - A `open_back` 是背腔与完整后方自由场连通，不是 pressure-release 边界；未来外场应使用闭合 HK/PML，不能沿用无限障板镜像。
@@ -50,4 +60,4 @@ PR 第一版是单一刚性活塞自由度：
 - D `vented_rear_coaxial` 只声明圆形同轴管及其圆管 LRF 适用性；管口端部修正仅用于解析参考。
 - E `passive_radiator_rear_coaxial` 只声明同轴 PR SDOF；PR 与端口不能同时占据同一后置同轴安装位。
 
-所有 JSON 的 `demonstrator` 必须为 `true`，并含来源与假设；B/C/D/E 由 `volume_contract` 明确从毛容积扣除驱动、端口或 PR 占积，使 `net_volume_target_m3` 相同。`Mach>0.03`、位移过大、涡脱落或非线性流动时，线性结果只能标记为超出可信范围。PML 只表示出射边界的数值吸收，不得当作箱体材料耗散。
+所有 JSON 的 `demonstrator` 必须为 `true`，并含来源与假设；B/C/D/E 由 `volume_contract` 明确从毛容积扣除驱动、端口或 PR 占积，使 `net_volume_target_m3` 相同。D 的管体主要向箱外伸出，背腔实际端口占积只取 `S_port*port_penetration_into_box`；为公平比较而补齐的体积必须单独记为 `fair_comparison_equalization_m3`，不能冒充实体管体。E 的 PR 背部占积必须等于 `Sd*rear_clearance`。`Mach>0.03`、位移过大、涡脱落或非线性流动时，线性结果只能标记为超出可信范围。PML 只表示出射边界的数值吸收，不得当作箱体材料耗散。

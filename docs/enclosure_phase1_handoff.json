@@ -1,7 +1,7 @@
 {
   "phase": 1,
   "status": "pass",
-  "generated_at": "2026-08-25T17:07:00+08:00",
+  "generated_at": "2026-08-25T17:30:00+08:00",
   "scope": {
     "plan": "docs/LUNA_ENCLOSURE_FEM_PLAN_CN.md",
     "executed_only": "phase 1",
@@ -13,9 +13,10 @@
   },
   "git": {
     "branch": "feature/enclosure-axisym-fem",
-    "base_commit": "d7f8334660ab4177736315fe32a2d9a227698538",
-    "commit": "HEAD",
-    "commit_message": "feat: define enclosure physics and lumped references",
+    "upstream_commit": "99deff739cb977d85af1a202fcd9d37376ced803",
+    "phase1_implementation_commit": "f18c06167d79686258511f4dd211a8f6cae9d8d5",
+    "phase1_fix_commit": "HEAD",
+    "commit_message": "fix: close enclosure reference contracts",
     "push_performed": false,
     "initial_worktree_clean": true
   },
@@ -39,6 +40,10 @@
     "vented_mass": "M_ap = rho0*L_eff/S_port",
     "vented_frequency": "f_b = 1/(2*pi*sqrt(M_ap*C_ab))",
     "pr_equation": "(-omega^2*Mms + i*omega*Rms + 1/Cms)*x_pr = F_cavity - F_exterior",
+    "pr_box_air_spring": "K_box = rho0*c0^2*Sd^2/V_b",
+    "pr_box_coupled_frequency": "f_pr,box = sqrt((1/Cms + K_box)/Mms)/(2*pi)",
+    "port_intrusion_occupancy": "V_port,in = S_port*port_penetration_into_box",
+    "pr_rear_occupancy": "V_pr,rear = Sd*rear_clearance",
     "impedance_conversion": "Za = Zm/Sd^2 and Zm = Za*Sd^2",
     "average_power": "P_avg = 0.5*Re(p*conj(U)) = 0.5*Re(F*conj(v))"
   },
@@ -50,6 +55,11 @@
     "port_open_open_first_mode_Hz": 1380.7675494561804,
     "port_closed_open_explicit_mode_Hz": 690.3837747280902,
     "pr_free_resonance_Hz": 77.65966028675014,
+    "pr_box_air_spring_N_m": 209.294262295082,
+    "pr_box_coupled_resonance_Hz": 80.4537960708729,
+    "port_intrusion_occupancy_m3": 2.03575203952619e-06,
+    "port_fair_comparison_equalization_m3": 9.79642479604738e-05,
+    "pr_rear_occupancy_m3": 9.99999999999999e-05,
     "port_end_correction_used_only_by_lumped_reference": true,
     "fem_radiation_reuse_end_correction": false,
     "fem_radiation_reuse_radiation_mass": false,
@@ -60,6 +70,30 @@
       "name": "schema validation for base and A/B/C/D/E",
       "value": 6,
       "limit": "all six JSON demonstrators load and validate",
+      "result": "pass"
+    },
+    {
+      "name": "provenance identity",
+      "value": "upstream 99deff739cb977d85af1a202fcd9d37376ced803",
+      "limit": "40 lowercase hex characters and exact phase-0 upstream",
+      "result": "pass"
+    },
+    {
+      "name": "port longitudinal-mode cross-check",
+      "value": 1380.7675494561804,
+      "limit": "c0/(2*(L + end_correction_factor*radius)) for open-open",
+      "result": "pass"
+    },
+    {
+      "name": "PR box coupling trends",
+      "value": "Mms/Cms/V changes move coupled tuning down; f_box > f_free",
+      "limit": "independent hand formula",
+      "result": "pass"
+    },
+    {
+      "name": "physical rear occupancy",
+      "value": "D=S*2 mm; E=Sd*rear_clearance; B/C/D/E net=0.0061 m^3",
+      "limit": "schema geometry cross-check",
       "result": "pass"
     },
     {
@@ -85,12 +119,12 @@
     {
       "command": ".venv/bin/python -m pytest -q tests/test_enclosure_schema.py tests/test_enclosure_lumped_limits.py",
       "result": "pass",
-      "summary": "21 passed"
+      "summary": "26 passed"
     },
     {
       "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu .venv/bin/python -m pytest -q",
       "result": "pass",
-      "summary": "35 passed; pre-existing ignored runs/ was moved to a recoverable temp directory and restored unchanged"
+      "summary": "40 passed; pre-existing ignored runs/ was moved to a recoverable temp directory and restored unchanged"
     },
     {
       "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu .venv/bin/python cli.py self-test",

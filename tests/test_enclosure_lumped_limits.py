@@ -18,6 +18,7 @@ from loudspeaker_axisym_fem.enclosure_models import (  # noqa: E402
     VentedBox,
     acoustic_impedance_from_mechanical,
     loudspeaker_side_mechanical_impedance_from_acoustic,
+    passive_radiator_box_coupled_resonance_Hz,
 )
 
 
@@ -81,6 +82,38 @@ def test_vented_helmholtz_reference_uses_parallel_box_and_port_network():
     ) < 1e-6 * mass_hand
 
 
+def test_vented_tuning_trends_use_independent_hand_formula():
+    volume = 0.0061
+    radius = 0.018
+    length = 0.098
+    end_correction_factor = 1.46
+
+    def hand_frequency(volume_m3, radius_m, length_m):
+        area_m2 = math.pi * radius_m**2
+        effective_length_m = length_m + end_correction_factor * radius_m
+        mass_Pa_s2_m3 = AIR.rho0 * effective_length_m / area_m2
+        compliance_m3_Pa = volume_m3 / (AIR.rho0 * AIR.c0**2)
+        return 1.0 / (2.0 * math.pi * math.sqrt(mass_Pa_s2_m3 * compliance_m3_Pa))
+
+    base_hand = hand_frequency(volume, radius, length)
+    longer_hand = hand_frequency(volume, radius, length * 1.5)
+    wider_hand = hand_frequency(volume, radius * 1.2, length)
+    larger_box_hand = hand_frequency(volume * 1.5, radius, length)
+
+    base_model = VentedBox(ClosedBox(volume), Port(radius, length, end_correction_radii=end_correction_factor))
+    longer_model = VentedBox(ClosedBox(volume), Port(radius, length * 1.5, end_correction_radii=end_correction_factor))
+    wider_model = VentedBox(ClosedBox(volume), Port(radius * 1.2, length, end_correction_radii=end_correction_factor))
+    larger_box_model = VentedBox(ClosedBox(volume * 1.5), Port(radius, length, end_correction_radii=end_correction_factor))
+
+    assert base_model.helmholtz_frequency_Hz(AIR) == pytest.approx(base_hand, rel=1e-12)
+    assert longer_model.helmholtz_frequency_Hz(AIR) == pytest.approx(longer_hand, rel=1e-12)
+    assert wider_model.helmholtz_frequency_Hz(AIR) == pytest.approx(wider_hand, rel=1e-12)
+    assert larger_box_model.helmholtz_frequency_Hz(AIR) == pytest.approx(larger_box_hand, rel=1e-12)
+    assert longer_hand < base_hand
+    assert wider_hand > base_hand
+    assert larger_box_hand < base_hand
+
+
 def test_port_mode_defaults_to_open_open_and_quarter_wave_is_explicit():
     port = Port(radius_m=0.018, length_m=0.098)
     leff = 0.098 + 1.46 * 0.018
@@ -126,6 +159,38 @@ def test_passive_radiator_resonance_and_mechanical_acoustic_conversion_are_indep
     assert loudspeaker_side_mechanical_impedance_from_acoustic(z_acoustic_hand, area) == pytest.approx(
         z_mechanical
     )
+
+
+def test_passive_radiator_box_coupled_tuning_adds_box_air_spring_and_keeps_free_resonance_distinct():
+    volume = 0.0061
+    area = 0.0030
+    mass = 0.012
+    compliance = 0.00035
+    radiator = PassiveRadiator(area, mass, compliance, 0.0)
+    model = PassiveRadiatorBox(ClosedBox(volume), radiator)
+
+    air_spring_hand = AIR.rho0 * AIR.c0**2 * area**2 / volume
+    coupled_frequency_hand = math.sqrt(
+        (1.0 / compliance + air_spring_hand) / mass
+    ) / (2.0 * math.pi)
+    free_frequency = 1.0 / (2.0 * math.pi * math.sqrt(mass * compliance))
+
+    assert model.coupled_resonance_Hz(AIR) == pytest.approx(coupled_frequency_hand, rel=1e-12)
+    assert passive_radiator_box_coupled_resonance_Hz(model.box, radiator, AIR) == pytest.approx(
+        coupled_frequency_hand, rel=1e-12
+    )
+    assert radiator.resonance_Hz() == pytest.approx(free_frequency, rel=1e-12)
+    assert coupled_frequency_hand > free_frequency
+
+    heavier = PassiveRadiatorBox(ClosedBox(volume), PassiveRadiator(area, mass * 1.5, compliance, 0.0))
+    softer_pr = PassiveRadiatorBox(ClosedBox(volume), PassiveRadiator(area, mass, compliance * 1.5, 0.0))
+    larger_box = PassiveRadiatorBox(ClosedBox(volume * 1.5), radiator)
+    softer_air_spring_hand = AIR.rho0 * AIR.c0**2 * area**2 / (volume * 1.5)
+
+    assert heavier.coupled_resonance_Hz(AIR) < model.coupled_resonance_Hz(AIR)
+    assert softer_pr.coupled_resonance_Hz(AIR) < model.coupled_resonance_Hz(AIR)
+    assert larger_box.coupled_resonance_Hz(AIR) < model.coupled_resonance_Hz(AIR)
+    assert softer_air_spring_hand < air_spring_hand
 
 
 def test_zero_loss_is_reactive_and_positive_damping_is_passive():
