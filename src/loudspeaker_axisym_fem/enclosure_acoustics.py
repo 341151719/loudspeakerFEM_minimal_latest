@@ -1,8 +1,8 @@
-r"""Reference-only axisymmetric acoustics for the sealed enclosure demonstrator.
+r"""Reference-only axisymmetric acoustics for the A/B enclosure demonstrators.
 
-This module is the deliberately small ``Stage 3A-B sealed reference-only
-core``; it is not a complete Stage 3A implementation.  It loads the
-audited reference mesh, keeps only ``air_*`` triangles in the pressure space,
+This module is the deliberately scoped ``Stage 3B1 reference A/B open-back
+and sealed compatibility core``; it is not a complete Stage 3 implementation.
+It loads the audited reference mesh, keeps only ``air_*`` triangles in the pressure space,
 and assembles the P1 weak form
 
 .. math::
@@ -45,9 +45,18 @@ from scipy.sparse.linalg import spsolve
 from skfem import Basis, BilinearForm, ElementTriP1, FacetBasis, LinearForm, MeshTri, asm
 from skfem.helpers import grad
 
-from .enclosure_geometry import DOMAIN_PHYSICAL_TAGS, expected_domain_names
+from .enclosure_geometry import (
+    DOMAIN_PHYSICAL_TAGS,
+    case_id_for_config,
+    expected_domain_names,
+)
 from .enclosure_schema import EnclosureConfig, load_enclosure_config
 from .enclosure_topology import audit_mesh
+from .exterior_field import (
+    facet_samples_from_fe,
+    hk_pressure_from_samples,
+    intensity_power_from_samples,
+)
 
 
 REFERENCE_PLANAR_PISTON_IDENTITY = "reference planar piston"
@@ -60,6 +69,12 @@ PML_DOMAINS = frozenset(("air_pml_front", "air_pml_rear"))
 DEFAULT_REFERENCE_VELOCITY_M_S = 1.0
 DEFAULT_PML_ALPHA = 4.0
 DEFAULT_PML_EXPONENT = 2
+DEFAULT_PML_TARGET_ATTENUATION_NEPERS = 8.0
+EXPLICIT_PML_MODE = "explicit_alpha"
+TARGET_PML_MODE = "target_nepers"
+DEFAULT_PML_MODE = EXPLICIT_PML_MODE
+SUPPORTED_PML_MODES = frozenset((TARGET_PML_MODE, EXPLICIT_PML_MODE))
+SUPPORTED_ACOUSTIC_CASES = frozenset(("A", "B"))
 PML_RADIUS_TOLERANCE_M = 2.0e-10
 PML_GEOMETRY_TOLERANCE_M = 2.0e-8
 CAVITY_VOLUME_RELATIVE_TOLERANCE = 5.0e-3
@@ -271,6 +286,79 @@ def pml_coefficients(
     }
 
 
+def pml_alpha_for_frequency(
+    frequency_Hz: float,
+    c0_m_s: float,
+    thickness_m: float,
+    target_attenuation_nepers: float = DEFAULT_PML_TARGET_ATTENUATION_NEPERS,
+    *,
+    exponent: int = DEFAULT_PML_EXPONENT,
+) -> float:
+    r"""Return the frequency-scaled spherical-stretch ``alpha``.
+
+    For ``s_R = 1 - i alpha eta**m`` and ``k = omega / c``, the imaginary
+    stretch integral is ``k * alpha * thickness / (m + 1)``.  Choosing
+
+    ``alpha(f) = target * (m + 1) / (k * thickness)``
+
+    therefore gives the theoretical outer-boundary amplitude factor
+    ``exp(-target)``.  The public low-level :func:`pml_coefficients` remains
+    explicit-alpha only; the reference solver calls this function when its
+    ``target_nepers`` mode is selected.
+    """
+
+    frequency = float(frequency_Hz)
+    c0 = float(c0_m_s)
+    thickness = float(thickness_m)
+    target = float(target_attenuation_nepers)
+    order = int(exponent)
+    if frequency <= 0.0 or c0 <= 0.0 or thickness <= 0.0:
+        raise ValueError("frequency, sound speed, and PML thickness must be positive")
+    if target <= 0.0 or order < 1:
+        raise ValueError("PML target attenuation must be positive and exponent >= 1")
+    wavenumber = 2.0 * math.pi * frequency / c0
+    return float(target * (order + 1) / (wavenumber * thickness))
+
+
+def pml_operator_coefficients(
+    r: np.ndarray | float,
+    z: np.ndarray | float,
+    inner_radius_m: float,
+    thickness_m: float,
+    rho0_kg_m3: float,
+    bulk_modulus_Pa: float,
+    *,
+    alpha: float = DEFAULT_PML_ALPHA,
+    exponent: int = DEFAULT_PML_EXPONENT,
+) -> dict[str, np.ndarray]:
+    """Return complete weak-form PML coefficients including material factors.
+
+    At the HK interface these are exactly the ordinary coefficients
+    ``gradient_radial = gradient_tangential = 1/rho`` and
+    ``mass = 1/K``.  Keeping this public makes the operator-continuity check
+    independent of the solver assembly path.
+    """
+
+    rho = float(rho0_kg_m3)
+    bulk = float(bulk_modulus_Pa)
+    if rho <= 0.0 or bulk <= 0.0:
+        raise ValueError("rho0 and bulk modulus must be positive")
+    coeff = pml_coefficients(
+        r,
+        z,
+        inner_radius_m,
+        thickness_m,
+        alpha=alpha,
+        exponent=exponent,
+    )
+    return {
+        **coeff,
+        "operator_gradient_radial": coeff["gradient_radial"] / rho,
+        "operator_gradient_tangential": coeff["gradient_tangential"] / rho,
+        "operator_mass": coeff["mass"] / bulk,
+    }
+
+
 def validate_pml_geometry(
     points_rz: np.ndarray,
     triangles: np.ndarray,
@@ -378,9 +466,139 @@ def validate_pml_geometry(
     return report
 
 
+def validate_closed_hk_geometry(
+    points_rz: np.ndarray,
+    facet_edges: Mapping[str, Iterable[tuple[int, int]]],
+    inner_radius_m: float,
+    *,
+    tolerance_m: float = PML_GEOMETRY_TOLERANCE_M,
+    strict: bool = True,
+) -> dict[str, Any]:
+    """Validate that ``hk_front`` plus ``hk_rear`` is a complete sphere.
+
+    The meridian representation of a closed spherical Huygens--Kirchhoff
+    surface is a connected polyline from the positive axis to the negative
+    axis.  This check deliberately stays at the named-mesh level: it verifies
+    both named halves, radial node placement, endpoint/degree topology, and
+    angular coverage, without attempting a general CAD intersection test.
+    """
+
+    points = _as_points_rz(points_rz)
+    radius = float(inner_radius_m)
+    tolerance = float(tolerance_m)
+    if radius <= 0.0 or tolerance < 0.0:
+        raise ValueError("HK radius must be positive and tolerance non-negative")
+    failures: list[str] = []
+    front_edges = tuple(_edge_key(int(a), int(b)) for a, b in facet_edges.get("hk_front", ()))
+    rear_edges = tuple(_edge_key(int(a), int(b)) for a, b in facet_edges.get("hk_rear", ()))
+    if not front_edges:
+        failures.append("missing_hk_front_edges")
+    if not rear_edges:
+        failures.append("missing_hk_rear_edges")
+    overlap = set(front_edges) & set(rear_edges)
+    if overlap:
+        failures.append("duplicate_hk_front_rear_edges")
+    all_edges = tuple(sorted(set(front_edges) | set(rear_edges)))
+    nodes = sorted({node for edge in all_edges for node in edge})
+    if not nodes:
+        failures.append("missing_hk_nodes")
+
+    node_radius = np.sqrt(np.sum(points * points, axis=1)) if nodes else np.empty(0)
+    if nodes:
+        selected_r = node_radius[np.asarray(nodes, dtype=np.int64)]
+        if np.max(np.abs(selected_r - radius)) > tolerance:
+            failures.append("hk_nodes_not_on_inner_radius")
+    else:
+        selected_r = np.empty(0)
+
+    degrees: dict[int, int] = defaultdict(int)
+    graph: dict[int, set[int]] = {node: set() for node in nodes}
+    for first, second in all_edges:
+        degrees[first] += 1
+        degrees[second] += 1
+        graph[first].add(second)
+        graph[second].add(first)
+    endpoints = sorted(node for node, degree in degrees.items() if degree == 1)
+    if len(endpoints) != 2:
+        failures.append("hk_meridian_endpoint_count")
+    if any(degree != 2 for degree in degrees.values() if degree != 1):
+        failures.append("hk_meridian_branch_or_duplicate")
+    if nodes:
+        seen = {nodes[0]}
+        queue: deque[int] = deque([nodes[0]])
+        while queue:
+            current = queue.popleft()
+            for neighbor in sorted(graph[current]):
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    queue.append(neighbor)
+        if len(seen) != len(nodes):
+            failures.append("hk_meridian_disconnected")
+
+    angles_by_name: dict[str, list[float | None]] = {}
+    for name, edges in (("hk_front", front_edges), ("hk_rear", rear_edges)):
+        named_nodes = sorted({node for edge in edges for node in edge})
+        if not named_nodes:
+            angles_by_name[name] = [None, None]
+            continue
+        coords = points[np.asarray(named_nodes, dtype=np.int64)]
+        angles = np.arctan2(coords[:, 0], coords[:, 1])
+        angles = np.clip(angles, 0.0, math.pi)
+        angles_by_name[name] = [float(np.min(angles)), float(np.max(angles))]
+    angle_tolerance = max(1.0e-8, tolerance / radius)
+    front_range = angles_by_name["hk_front"]
+    rear_range = angles_by_name["hk_rear"]
+    if front_range[0] is None or front_range[0] > angle_tolerance:
+        failures.append("hk_front_does_not_reach_positive_axis")
+    if front_range[1] is None or front_range[1] < math.pi / 2.0 - angle_tolerance:
+        failures.append("hk_front_does_not_reach_equator")
+    if rear_range[0] is None or rear_range[0] > math.pi / 2.0 + angle_tolerance:
+        failures.append("hk_rear_does_not_start_at_equator")
+    if rear_range[1] is None or rear_range[1] < math.pi - angle_tolerance:
+        failures.append("hk_rear_does_not_reach_negative_axis")
+    if front_range[1] is not None and front_range[1] > math.pi / 2.0 + angle_tolerance:
+        failures.append("hk_front_crosses_equator")
+    if rear_range[0] is not None and rear_range[0] < math.pi / 2.0 - angle_tolerance:
+        failures.append("hk_rear_crosses_equator")
+    if endpoints:
+        endpoint_coords = points[np.asarray(endpoints, dtype=np.int64)]
+        endpoint_r = endpoint_coords[:, 0]
+        endpoint_z = endpoint_coords[:, 1]
+        if np.max(endpoint_r) > tolerance:
+            failures.append("hk_endpoints_not_on_axis")
+        if not (np.any(endpoint_z > 0.0) and np.any(endpoint_z < 0.0)):
+            failures.append("hk_endpoints_do_not_span_both_axes")
+
+    report = {
+        "passed": not failures,
+        "failures": sorted(set(failures)),
+        "surface": "complete closed spherical HK after rotation",
+        "mirror": False,
+        "inner_radius_m": radius,
+        "tolerance_m": tolerance,
+        "front_edge_count": int(len(front_edges)),
+        "rear_edge_count": int(len(rear_edges)),
+        "combined_edge_count": int(len(all_edges)),
+        "unique_node_count": int(len(nodes)),
+        "endpoint_count": int(len(endpoints)),
+        "endpoint_nodes": [int(node) for node in endpoints],
+        "front_theta_range_rad": angles_by_name["hk_front"],
+        "rear_theta_range_rad": angles_by_name["hk_rear"],
+        "angular_coverage_rad": [0.0, math.pi],
+        "node_R_range_m": (
+            [float(np.min(selected_r)), float(np.max(selected_r))]
+            if len(selected_r)
+            else [None, None]
+        ),
+    }
+    if failures and strict:
+        raise ValueError("closed HK geometry contract failed: " + ", ".join(report["failures"]))
+    return report
+
+
 @dataclass(frozen=True)
 class AcousticPhysicalParameters:
-    """Validated material and reference-drive parameters for phase 3A."""
+    """Validated material, drive, and frequency-scaled PML parameters."""
 
     rho0_kg_m3: float
     c0_m_s: float
@@ -388,7 +606,9 @@ class AcousticPhysicalParameters:
     pml_inner_radius_m: float
     pml_thickness_m: float
     reference_velocity_m_s: float = DEFAULT_REFERENCE_VELOCITY_M_S
-    pml_alpha: float = DEFAULT_PML_ALPHA
+    pml_mode: str = DEFAULT_PML_MODE
+    pml_target_attenuation_nepers: float = DEFAULT_PML_TARGET_ATTENUATION_NEPERS
+    pml_alpha: float | None = None
     pml_exponent: int = DEFAULT_PML_EXPONENT
 
 
@@ -423,6 +643,7 @@ class ReferencePressureMesh:
     outer_dirichlet_dofs: np.ndarray
     cavity_volume_m3: float
     pml_geometry_report: dict[str, Any]
+    hk_geometry_report: dict[str, Any]
     trace_metrics: dict[str, dict[str, Any]]
 
     @property
@@ -445,6 +666,7 @@ class AcousticAssemblyResult:
     frequency_Hz: float
     omega_rad_s: float
     matrix: csr_matrix
+    pml_matrix: csr_matrix
     rhs: np.ndarray
     rhs_front: np.ndarray
     rhs_back: np.ndarray
@@ -469,6 +691,29 @@ class SealedBAnalyticLimit:
     q_into_cavity_m3_s: complex
     mean_pressure_Pa: complex
 
+    def as_dict(self) -> dict[str, Any]:
+        """Return JSON-safe analytic B diagnostics."""
+
+        return {
+            "frequency_Hz": float(self.frequency_Hz),
+            "cavity_volume_m3": float(self.cavity_volume_m3),
+            "rho0_kg_m3": float(self.rho0_kg_m3),
+            "c0_m_s": float(self.c0_m_s),
+            "compliance_m3_Pa": float(self.compliance_m3_Pa),
+            "impedance_Pa_s_m3": {
+                "real": float(np.real(self.impedance_Pa_s_m3)),
+                "imag": float(np.imag(self.impedance_Pa_s_m3)),
+            },
+            "q_into_cavity_m3_s": {
+                "real": float(np.real(self.q_into_cavity_m3_s)),
+                "imag": float(np.imag(self.q_into_cavity_m3_s)),
+            },
+            "mean_pressure_Pa": {
+                "real": float(np.real(self.mean_pressure_Pa)),
+                "imag": float(np.imag(self.mean_pressure_Pa)),
+            },
+        }
+
 
 @dataclass
 class AcousticSolveResult:
@@ -484,11 +729,18 @@ class AcousticSolveResult:
     front_back_traces: dict[str, dict[str, Any]]
     q_into_cavity_m3_s: complex
     z_box_Pa_s_m3: complex
-    analytic_limit: SealedBAnalyticLimit
-    relative_impedance_error: float
+    analytic_limit: SealedBAnalyticLimit | None
+    relative_impedance_error: float | None
     residual_absolute: float
     residual_relative: float
-    cavity_real_impedance_ratio: float
+    cavity_real_impedance_ratio: float | None
+    q_out_total_m3_s: float
+    q_into_total_m3_s: float
+    q_balance_relative_error: float
+    drive_power_into_fluid_W: dict[str, float]
+    input_power_from_rhs_W: float
+    input_power_boundary_cross_error_W: float
+    hk_diagnostics: dict[str, Any]
     pml_diagnostics: dict[str, Any]
 
     @property
@@ -508,6 +760,9 @@ class AcousticSolveResult:
 
         return {
             "frequency_Hz": float(self.frequency_Hz),
+            "case_id": self.mesh.case_id,
+            "reference_identity": REFERENCE_PLANAR_PISTON_IDENTITY,
+            "final_production_interface_ready": False,
             "pressure_dof_count": int(len(self.pressure)),
             "pressure_triangle_count": int(self.mesh.pressure_triangle_count),
             "cavity_volume_m3": float(self.mesh.cavity_volume_m3),
@@ -526,12 +781,30 @@ class AcousticSolveResult:
             "analytic_z_box_Pa_s_m3": {
                 "real": float(np.real(self.analytic_limit.impedance_Pa_s_m3)),
                 "imag": float(np.imag(self.analytic_limit.impedance_Pa_s_m3)),
-            },
-            "relative_impedance_error": float(self.relative_impedance_error),
+            } if self.analytic_limit is not None else "N/A",
+            "analytic_limit": self.analytic_limit.as_dict() if self.analytic_limit is not None else "N/A",
+            "relative_impedance_error": (
+                float(self.relative_impedance_error)
+                if self.relative_impedance_error is not None
+                else "N/A"
+            ),
             "residual_absolute": float(self.residual_absolute),
             "residual_relative": float(self.residual_relative),
-            "cavity_real_impedance_ratio": float(self.cavity_real_impedance_ratio),
+            "cavity_real_impedance_ratio": (
+                float(self.cavity_real_impedance_ratio)
+                if self.cavity_real_impedance_ratio is not None
+                else "N/A"
+            ),
+            "q_out_total_m3_s": float(self.q_out_total_m3_s),
+            "q_into_total_m3_s": float(self.q_into_total_m3_s),
+            "q_balance_relative_error": float(self.q_balance_relative_error),
+            "drive_power_into_fluid_W": self.drive_power_into_fluid_W,
+            "input_power_from_rhs_W": float(self.input_power_from_rhs_W),
+            "input_power_boundary_cross_error_W": float(
+                self.input_power_boundary_cross_error_W
+            ),
             "front_back_traces": self.front_back_traces,
+            "hk_diagnostics": self.hk_diagnostics,
             "pml_diagnostics": self.pml_diagnostics,
         }
 
@@ -764,25 +1037,32 @@ def load_reference_pressure_mesh(
     mesh_path: str | Path,
     config_path: str | Path,
     *,
-    case_id: str = "B",
+    case_id: str | None = None,
     reference_velocity_m_s: float = DEFAULT_REFERENCE_VELOCITY_M_S,
 ) -> ReferencePressureMesh:
-    """Load an audited sealed-B mesh and build a pressure-only P1 map.
+    """Load an audited reference A/B mesh and build a pressure-only P1 map.
 
-    Phase 3A intentionally rejects all cases other than sealed lossless B.  In
-    particular, this prevents an open A mesh from being mistaken for a tested
-    radiation or production interface.
+    The case is inferred from the validated config unless an explicit case is
+    supplied for a consistency check.  A is one connected pressure component
+    through its rear opening; B is deliberately two pressure components.  A
+    rear opening is never converted into a pressure-release boundary.
     """
 
     path = Path(mesh_path)
     config_file = Path(config_path)
-    requested_case = str(case_id).upper()
-    if requested_case != "B":
-        raise ValueError("phase 3A reference acoustics supports sealed case B only")
     config = load_enclosure_config(config_file)
-    if config.case != "sealed_lossless":
-        raise ValueError("phase 3A analytic limit requires sealed_lossless.json")
-    audit = audit_mesh(path, case_id="B", config_path=config_file)
+    inferred_case = case_id_for_config(config.case)
+    if inferred_case not in SUPPORTED_ACOUSTIC_CASES:
+        raise ValueError(
+            f"reference open/sealed core supports cases A/B, not config {config.case!r}"
+        )
+    requested_case = inferred_case if case_id is None else str(case_id).upper()
+    if requested_case != inferred_case:
+        raise ValueError(
+            f"case mismatch: config case {config.case!r} maps to {inferred_case}; "
+            f"sealed case B only for this sealed mesh, not requested {requested_case}"
+        )
+    audit = audit_mesh(path, case_id=requested_case, config_path=config_file)
     if audit["status"] != "pass":
         raise ValueError(
             "reference mesh failed exact enclosure audit: "
@@ -790,7 +1070,7 @@ def load_reference_pressure_mesh(
         )
     meshio_mesh = meshio.read(path)
     field_data = _field_data_map(meshio_mesh)
-    expected_names = set(expected_domain_names("B"))
+    expected_names = set(expected_domain_names(requested_case))
     for name in expected_names:
         expected = (int(DOMAIN_PHYSICAL_TAGS[name]), 2)
         if field_data.get(name) != expected:
@@ -802,7 +1082,7 @@ def load_reference_pressure_mesh(
         triangles,
         triangle_tags,
         field_data,
-        "B",
+        requested_case,
     )
     points_rz_old = _as_points_rz(meshio_mesh.points)
     original_point_indices = np.unique(pressure_triangles_old.reshape(-1)).astype(np.int64)
@@ -855,9 +1135,12 @@ def load_reference_pressure_mesh(
             0.0,
             require_boundary=False,
         )
+        if any(len(facet_adjacency[int(facet)]) != 2 for facet in facets):
+            raise ValueError(f"{name} must be an internal pressure-pressure interface")
         line_facets[name] = facets
         facet_edges[name] = edges
         facet_normals[name] = normals
+        trace_metrics[name] = metrics
 
     front_nodes = {node for edge in facet_edges[REFERENCE_PLANAR_PISTON_FRONT] for node in edge}
     back_nodes = {node for edge in facet_edges[REFERENCE_PLANAR_PISTON_BACK] for node in edge}
@@ -891,6 +1174,11 @@ def load_reference_pressure_mesh(
         float(config.raw["geometry"]["pml_inner_radius_m"]),
         float(config.raw["geometry"]["pml_thickness_m"]),
     )
+    hk_geometry_report = validate_closed_hk_geometry(
+        pressure_mesh.p.T,
+        facet_edges,
+        float(config.raw["geometry"]["pml_inner_radius_m"]),
+    )
 
     component_by_triangle, component_triangles, component_dofs, component_domains = _connected_components(
         pressure_mesh,
@@ -902,17 +1190,39 @@ def load_reference_pressure_mesh(
         if "air_cavity" in domains
     ]
     if len(cavity_components) != 1:
-        raise ValueError("sealed B pressure mesh must have one air_cavity component")
+        raise ValueError("reference pressure mesh must have one air_cavity component")
     cavity_component = int(cavity_components[0])
-    if component_domains[cavity_component] != ("air_cavity",):
-        raise ValueError("sealed B air_cavity is not pressure-disconnected from exterior")
+    exterior_domain_names = {
+        "air_front_free",
+        "air_side_free",
+        "air_rear_free",
+        "air_pml_front",
+        "air_pml_rear",
+    }
     exterior_components = tuple(
-        sorted(component for component in component_triangles if component != cavity_component)
+        sorted(
+            component
+            for component, domains in component_domains.items()
+            if set(domains) & exterior_domain_names
+        )
     )
-    if len(exterior_components) != 1:
-        raise ValueError("sealed B exterior pressure field must be one connected component")
+    if requested_case == "A":
+        if len(component_triangles) != 1 or component_domains[cavity_component] == ("air_cavity",):
+            raise ValueError("open A pressure domains must be one component through rear opening")
+        if not exterior_components or exterior_components != (cavity_component,):
+            raise ValueError("open A pressure mesh must connect cavity and exterior in one component")
+    else:
+        if component_domains[cavity_component] != ("air_cavity",):
+            raise ValueError("sealed B air_cavity is not pressure-disconnected from exterior")
+        if len(exterior_components) != 1 or exterior_components[0] == cavity_component:
+            raise ValueError("sealed B exterior pressure field must be one connected component")
 
-    cavity_triangle_indices = component_triangles[cavity_component]
+    cavity_triangle_indices = np.asarray(
+        [index for index, name in enumerate(pressure_names) if name == "air_cavity"],
+        dtype=np.int64,
+    )
+    if not len(cavity_triangle_indices):
+        raise ValueError("reference pressure mesh contains no air_cavity triangles")
     pml_triangle_indices = np.asarray(
         [index for index, name in enumerate(pressure_names) if name in PML_DOMAINS],
         dtype=np.int64,
@@ -929,7 +1239,7 @@ def load_reference_pressure_mesh(
         rel_tol=CAVITY_VOLUME_RELATIVE_TOLERANCE,
         abs_tol=1.0e-12,
     ):
-        raise ValueError("pressure-only cavity volume fails the sealed B volume contract")
+        raise ValueError("pressure-only cavity volume fails the A/B volume contract")
 
     dof_component = np.full(pressure_mesh.p.shape[1], -1, dtype=np.int64)
     for component, dofs in component_dofs.items():
@@ -940,7 +1250,7 @@ def load_reference_pressure_mesh(
     return ReferencePressureMesh(
         path=path,
         source_sha256=sha256_file(path),
-        case_id="B",
+        case_id=requested_case,
         config_path=config_file,
         config=config,
         audit_report=audit,
@@ -965,6 +1275,7 @@ def load_reference_pressure_mesh(
         outer_dirichlet_dofs=outer_dofs,
         cavity_volume_m3=cavity_volume,
         pml_geometry_report=pml_geometry_report,
+        hk_geometry_report=hk_geometry_report,
         trace_metrics=trace_metrics,
     )
 
@@ -1003,20 +1314,40 @@ def sealed_b_analytic_limit(
 
 
 class ReferencePrescribedVelocityAcoustics:
-    """P1 axisymmetric reference solver for sealed demonstrator B only."""
+    """P1 axisymmetric reference solver for open A and sealed B only."""
 
     def __init__(
         self,
         pressure_mesh: ReferencePressureMesh,
         *,
         reference_velocity_m_s: float = DEFAULT_REFERENCE_VELOCITY_M_S,
-        pml_alpha: float = DEFAULT_PML_ALPHA,
+        pml_mode: str = DEFAULT_PML_MODE,
+        target_attenuation_nepers: float = DEFAULT_PML_TARGET_ATTENUATION_NEPERS,
+        pml_alpha: float | None = None,
         pml_exponent: int = DEFAULT_PML_EXPONENT,
+        pml_attenuation_mode: str | None = None,
     ) -> None:
-        if pressure_mesh.case_id != "B":
-            raise ValueError("phase 3A reference solver supports sealed case B only")
-        if pml_alpha <= 0.0 or int(pml_exponent) < 1:
-            raise ValueError("PML alpha must be positive and exponent >= 1")
+        if pressure_mesh.case_id not in SUPPORTED_ACOUSTIC_CASES:
+            raise ValueError("reference acoustic solver supports cases A and B only")
+        if pml_attenuation_mode is not None:
+            if pml_mode != DEFAULT_PML_MODE and pml_mode != str(pml_attenuation_mode):
+                raise ValueError("pml_mode and pml_attenuation_mode disagree")
+            pml_mode = str(pml_attenuation_mode)
+        mode = str(pml_mode).strip().lower()
+        if mode not in SUPPORTED_PML_MODES:
+            raise ValueError(f"unsupported PML mode {pml_mode!r}")
+        if int(pml_exponent) < 1:
+            raise ValueError("PML exponent must be >= 1")
+        target = float(target_attenuation_nepers)
+        if target <= 0.0:
+            raise ValueError("target attenuation must be positive")
+        if mode == EXPLICIT_PML_MODE:
+            if pml_alpha is None:
+                pml_alpha = DEFAULT_PML_ALPHA
+            if float(pml_alpha) <= 0.0:
+                raise ValueError("explicit_alpha mode requires positive pml_alpha")
+        elif pml_alpha is not None:
+            raise ValueError("fixed pml_alpha cannot be mixed with target_nepers mode")
         air = pressure_mesh.config.raw["air"]
         geometry = pressure_mesh.config.raw["geometry"]
         self.mesh_data = pressure_mesh
@@ -1029,7 +1360,9 @@ class ReferencePrescribedVelocityAcoustics:
             pml_inner_radius_m=float(geometry["pml_inner_radius_m"]),
             pml_thickness_m=float(geometry["pml_thickness_m"]),
             reference_velocity_m_s=float(reference_velocity_m_s),
-            pml_alpha=float(pml_alpha),
+            pml_mode=mode,
+            pml_target_attenuation_nepers=target,
+            pml_alpha=None if pml_alpha is None else float(pml_alpha),
             pml_exponent=int(pml_exponent),
         )
         self._dof_component = np.full(self.basis.N, -1, dtype=np.int64)
@@ -1047,10 +1380,13 @@ class ReferencePrescribedVelocityAcoustics:
         mesh_path: str | Path,
         config_path: str | Path,
         *,
-        case_id: str = "B",
+        case_id: str | None = None,
         reference_velocity_m_s: float = DEFAULT_REFERENCE_VELOCITY_M_S,
-        pml_alpha: float = DEFAULT_PML_ALPHA,
+        pml_mode: str = DEFAULT_PML_MODE,
+        target_attenuation_nepers: float = DEFAULT_PML_TARGET_ATTENUATION_NEPERS,
+        pml_alpha: float | None = None,
         pml_exponent: int = DEFAULT_PML_EXPONENT,
+        pml_attenuation_mode: str | None = None,
     ) -> "ReferencePrescribedVelocityAcoustics":
         mesh_data = load_reference_pressure_mesh(
             mesh_path,
@@ -1061,13 +1397,28 @@ class ReferencePrescribedVelocityAcoustics:
         return cls(
             mesh_data,
             reference_velocity_m_s=reference_velocity_m_s,
+            pml_mode=pml_mode,
+            target_attenuation_nepers=target_attenuation_nepers,
             pml_alpha=pml_alpha,
             pml_exponent=pml_exponent,
+            pml_attenuation_mode=pml_attenuation_mode,
         )
 
     @property
     def pressure_dof_count(self) -> int:
         return int(self.basis.N)
+
+    def _alpha_for_frequency(self, frequency_Hz: float) -> float:
+        if self.parameters.pml_mode == EXPLICIT_PML_MODE:
+            assert self.parameters.pml_alpha is not None
+            return float(self.parameters.pml_alpha)
+        return pml_alpha_for_frequency(
+            frequency_Hz,
+            self.parameters.c0_m_s,
+            self.parameters.pml_thickness_m,
+            self.parameters.pml_target_attenuation_nepers,
+            exponent=self.parameters.pml_exponent,
+        )
 
     def _ordinary_form(self, omega: float):
         rho = self.parameters.rho0_kg_m3
@@ -1085,12 +1436,11 @@ class ReferencePrescribedVelocityAcoustics:
 
         return form
 
-    def _pml_form(self, omega: float):
+    def _pml_form(self, omega: float, alpha: float):
         rho = self.parameters.rho0_kg_m3
         bulk = self.parameters.bulk_modulus_Pa
         inner = self.parameters.pml_inner_radius_m
         thickness = self.parameters.pml_thickness_m
-        alpha = self.parameters.pml_alpha
         exponent = self.parameters.pml_exponent
 
         @BilinearForm(dtype=np.complex128)
@@ -1118,8 +1468,10 @@ class ReferencePrescribedVelocityAcoustics:
                 exponent=exponent,
             )
             return 2.0 * math.pi * r * (
-                coeff["gradient_radial"] * du_radial * dv_radial
-                + coeff["gradient_tangential"] * du_tangent * dv_tangent
+                (
+                    coeff["gradient_radial"] * du_radial * dv_radial
+                    + coeff["gradient_tangential"] * du_tangent * dv_tangent
+                ) / rho
                 - (omega * omega / bulk) * coeff["mass"] * u * v
             )
 
@@ -1128,15 +1480,22 @@ class ReferencePrescribedVelocityAcoustics:
     def _assemble_domain_form(
         self,
         frequency_Hz: float,
-    ) -> tuple[csr_matrix, dict[str, Any]]:
-        omega = 2.0 * math.pi * float(frequency_Hz)
+    ) -> tuple[csr_matrix, csr_matrix, dict[str, Any]]:
+        frequency = float(frequency_Hz)
+        omega = 2.0 * math.pi * frequency
+        alpha = self._alpha_for_frequency(frequency)
         pml = self.mesh_data.pml_triangle_indices
         non_pml = self.mesh_data.non_pml_triangle_indices
         matrix = csr_matrix((self.basis.N, self.basis.N), dtype=np.complex128)
+        pml_matrix = csr_matrix((self.basis.N, self.basis.N), dtype=np.complex128)
         if len(non_pml):
             matrix = matrix + asm(self._ordinary_form(omega), self.basis.with_elements(non_pml))
         if len(pml):
-            matrix = matrix + asm(self._pml_form(omega), self.basis.with_elements(pml))
+            pml_matrix = asm(
+                self._pml_form(omega, alpha),
+                self.basis.with_elements(pml),
+            ).tocsr()
+            matrix = matrix + pml_matrix
         points = self.mesh_data.points_rz
         hk_points: list[np.ndarray] = []
         for name in HK_BOUNDARIES:
@@ -1149,24 +1508,86 @@ class ReferencePrescribedVelocityAcoustics:
                 interface[:, 1],
                 self.parameters.pml_inner_radius_m,
                 self.parameters.pml_thickness_m,
-                alpha=self.parameters.pml_alpha,
+                alpha=alpha,
                 exponent=self.parameters.pml_exponent,
             )
             interface_error = max(
                 float(np.max(np.abs(coeff[name] - 1.0)))
                 for name in ("s_R", "s_t", "gradient_radial", "gradient_tangential", "mass")
             )
+            operator_coeff = pml_operator_coefficients(
+                interface[:, 0],
+                interface[:, 1],
+                self.parameters.pml_inner_radius_m,
+                self.parameters.pml_thickness_m,
+                self.parameters.rho0_kg_m3,
+                self.parameters.bulk_modulus_Pa,
+                alpha=alpha,
+                exponent=self.parameters.pml_exponent,
+            )
+            interface_operator_error = max(
+                float(
+                    np.max(
+                        np.abs(
+                            operator_coeff[name]
+                            - reference
+                        )
+                    )
+                )
+                for name, reference in (
+                    (
+                        "operator_gradient_radial",
+                        1.0 / self.parameters.rho0_kg_m3,
+                    ),
+                    (
+                        "operator_gradient_tangential",
+                        1.0 / self.parameters.rho0_kg_m3,
+                    ),
+                    ("operator_mass", 1.0 / self.parameters.bulk_modulus_Pa),
+                )
+            )
         else:
             interface_error = math.inf
+            interface_operator_error = math.inf
         pml_mid_radius = self.parameters.pml_inner_radius_m + 0.5 * self.parameters.pml_thickness_m
         mid_coeff = pml_coefficients(
             pml_mid_radius,
             0.0,
             self.parameters.pml_inner_radius_m,
             self.parameters.pml_thickness_m,
-            alpha=self.parameters.pml_alpha,
+            alpha=alpha,
             exponent=self.parameters.pml_exponent,
         )
+        target = self.parameters.pml_target_attenuation_nepers
+        wavenumber = omega / self.parameters.c0_m_s
+        if len(pml):
+            pml_vertices = self.mesh_data.mesh.p[:, self.mesh_data.mesh.t[:, pml]].transpose(2, 1, 0)
+            pml_edge_vectors = pml_vertices[:, [1, 2, 0], :] - pml_vertices[:, [0, 1, 2], :]
+            pml_edge_lengths = np.linalg.norm(pml_edge_vectors, axis=2)
+            pml_h_min = float(np.min(pml_edge_lengths))
+            pml_h_max = float(np.max(pml_edge_lengths))
+            pml_centroids = np.mean(pml_vertices, axis=1)
+            centroid_coeff = pml_coefficients(
+                pml_centroids[:, 0],
+                pml_centroids[:, 1],
+                self.parameters.pml_inner_radius_m,
+                self.parameters.pml_thickness_m,
+                alpha=alpha,
+                exponent=self.parameters.pml_exponent,
+            )
+            max_stretched_phase_per_edge = float(
+                np.max(
+                    np.abs(
+                        wavenumber
+                        * centroid_coeff["s_R"]
+                        * pml_h_max
+                    )
+                )
+            )
+        else:
+            pml_h_min = None
+            pml_h_max = None
+            max_stretched_phase_per_edge = None
         pml_diagnostics = {
             "implementation": "spherical radial coordinate transform",
             "affected_domain_names": sorted(PML_DOMAINS),
@@ -1174,17 +1595,50 @@ class ReferencePrescribedVelocityAcoustics:
             "non_pml_triangle_count": int(len(non_pml)),
             "inner_radius_m": float(self.parameters.pml_inner_radius_m),
             "thickness_m": float(self.parameters.pml_thickness_m),
-            "alpha": float(self.parameters.pml_alpha),
+            "mode": self.parameters.pml_mode,
+            "alpha": float(alpha),
+            "configured_alpha": (
+                None
+                if self.parameters.pml_alpha is None
+                else float(self.parameters.pml_alpha)
+            ),
+            "actual_alpha": float(alpha),
             "exponent": int(self.parameters.pml_exponent),
+            "target_attenuation_nepers": float(target),
+            "wavenumber_rad_m": float(wavenumber),
+            "mesh_resolution_indicator": {
+                "pml_edge_length_min_m": pml_h_min,
+                "pml_edge_length_max_m": pml_h_max,
+                "elements_per_pml_thickness_using_hmax": (
+                    None
+                    if pml_h_max is None
+                    else float(self.parameters.pml_thickness_m / pml_h_max)
+                ),
+                "max_abs_stretched_k_hmax": max_stretched_phase_per_edge,
+            },
+            "theoretical_outer_amplitude_factor": float(
+                math.exp(-target)
+                if self.parameters.pml_mode == TARGET_PML_MODE
+                else math.exp(
+                    -wavenumber
+                    * alpha
+                    * self.parameters.pml_thickness_m
+                    / (self.parameters.pml_exponent + 1)
+                )
+            ),
             "interface_max_coefficient_error": float(interface_error),
             "interface_coefficients_equal_one": bool(interface_error <= PML_RADIUS_TOLERANCE_M),
+            "interface_operator_max_error": float(interface_operator_error),
+            "interface_operator_continuity": bool(
+                interface_operator_error <= PML_RADIUS_TOLERANCE_M
+            ),
             "mid_pml_s_R_imag": float(np.imag(mid_coeff["s_R"].reshape(-1)[0])),
             "mid_pml_mass_imag": float(np.imag(mid_coeff["mass"].reshape(-1)[0])),
             "exp_iwt_absorption_sign": bool(np.imag(mid_coeff["s_R"].reshape(-1)[0]) < 0.0),
             "outer_boundary_condition": "Dirichlet p=0 on outer_pml_boundary",
             "geometry_contract": self.mesh_data.pml_geometry_report,
         }
-        return matrix.tocsr(), pml_diagnostics
+        return matrix.tocsr(), pml_matrix, pml_diagnostics
 
     def _assemble_trace_rhs(self, frequency_Hz: float, trace_name: str) -> np.ndarray:
         omega = 2.0 * math.pi * float(frequency_Hz)
@@ -1200,13 +1654,126 @@ class ReferencePrescribedVelocityAcoustics:
 
         return np.asarray(asm(rhs, facet_basis), dtype=complex)
 
+    def _drive_power_into_fluid(
+        self,
+        trace_name: str,
+        pressure: np.ndarray,
+    ) -> float:
+        """Return driver power into fluid from the outward-from-fluid normal.
+
+        The FE trace normal points from the pressure domain into the rigid
+        displacement body.  Thus the outward acoustic flux is
+        ``P_out = 0.5 Re integral(p * conj(v_n) dS)`` with
+        ``v_n = v_z*n_z``; power delivered into the fluid is ``-P_out``.
+        This sign is derived here independently of the Q bookkeeping.
+        """
+
+        samples = facet_samples_from_fe(
+            self.mesh_data.mesh,
+            self.element,
+            self.mesh_data.line_facets[trace_name],
+            pressure,
+            intorder=6,
+        )
+        rs, _, _, nz, ds_w, p_boundary, _ = samples
+        vn = self.parameters.reference_velocity_m_s * nz
+        p_out = np.sum(
+            0.5
+            * p_boundary
+            * np.conj(vn)
+            * 2.0
+            * math.pi
+            * rs
+            * ds_w
+        )
+        return float(-np.real(p_out))
+
+    def _hk_diagnostics(
+        self,
+        frequency_Hz: float,
+        pressure: np.ndarray,
+    ) -> dict[str, Any]:
+        """Evaluate the complete front+rear HK sphere and its flux power."""
+
+        facets = np.unique(
+            np.concatenate(
+                [self.mesh_data.line_facets[name] for name in HK_BOUNDARIES]
+            )
+        )
+        if not len(facets):
+            raise ValueError("closed HK evaluation requires hk_front and hk_rear facets")
+        samples = facet_samples_from_fe(
+            self.mesh_data.mesh,
+            self.element,
+            facets,
+            pressure,
+            intorder=6,
+            prefer_inside_radius=self.parameters.pml_inner_radius_m,
+            force_radial_normals=True,
+        )
+        rs, zs, nr, nz, ds_w, p_boundary, dpdn_boundary = samples
+        axis_pressure = complex(
+            np.asarray(
+                hk_pressure_from_samples(
+                    frequency_Hz,
+                    self.parameters.c0_m_s,
+                    rs,
+                    zs,
+                    nr,
+                    nz,
+                    ds_w,
+                    p_boundary,
+                    dpdn_boundary,
+                    obs_r=0.0,
+                    obs_z=1.0,
+                    nphi=64,
+                    mirror=False,
+                    sign=-1,
+                )
+            ).reshape(-1)[0]
+        )
+        hk_power = intensity_power_from_samples(
+            frequency_Hz,
+            self.parameters.rho0_kg_m3,
+            rs,
+            ds_w,
+            p_boundary,
+            dpdn_boundary,
+        )
+        p_ref = float(self.mesh_data.config.raw["air"]["p_ref_Pa"])
+        peak = abs(axis_pressure)
+        rms = peak / math.sqrt(2.0)
+        return {
+            "mirror": False,
+            "surface": "hk_front + hk_rear complete closed spherical surface",
+            "normal": "forced spherical radial outward normal (r,z)/R",
+            "pressure_side": "physical free-field side of HK, excluding PML side",
+            "velocity_formula": "v_n = i/(omega*rho0) * dp/dn",
+            "facet_count": int(len(facets)),
+            "front_facet_count": int(len(self.mesh_data.line_facets["hk_front"])),
+            "rear_facet_count": int(len(self.mesh_data.line_facets["hk_rear"])),
+            "axis_observation_r_m": 0.0,
+            "axis_observation_z_m": 1.0,
+            "axis_pressure_1m_Pa": {
+                "real": float(np.real(axis_pressure)),
+                "imag": float(np.imag(axis_pressure)),
+            },
+            "axis_pressure_peak_Pa": float(peak),
+            "axis_pressure_rms_Pa": float(rms),
+            "axis_peak_spl_dB": float(20.0 * math.log10(max(peak / p_ref, 1.0e-300))),
+            "axis_rms_spl_dB": float(20.0 * math.log10(max(rms / p_ref, 1.0e-300))),
+            "axis_phase_deg": float(np.angle(axis_pressure, deg=True)),
+            "hk_flux_power_W": float(hk_power),
+            "geometry_contract": self.mesh_data.hk_geometry_report,
+        }
+
     def assemble(self, frequency_Hz: float) -> AcousticAssemblyResult:
         """Assemble one frequency without solving or calibrating a sign."""
 
         frequency = float(frequency_Hz)
         if frequency <= 0.0:
             raise ValueError("frequency must be positive")
-        matrix, pml_diagnostics = self._assemble_domain_form(frequency)
+        matrix, pml_matrix, pml_diagnostics = self._assemble_domain_form(frequency)
         rhs_front = self._assemble_trace_rhs(frequency, REFERENCE_PLANAR_PISTON_FRONT)
         rhs_back = self._assemble_trace_rhs(frequency, REFERENCE_PLANAR_PISTON_BACK)
         rhs = rhs_front + rhs_back
@@ -1216,6 +1783,7 @@ class ReferencePrescribedVelocityAcoustics:
             frequency_Hz=frequency,
             omega_rad_s=2.0 * math.pi * frequency,
             matrix=matrix,
+            pml_matrix=pml_matrix,
             rhs=rhs,
             rhs_front=rhs_front,
             rhs_back=rhs_back,
@@ -1227,8 +1795,19 @@ class ReferencePrescribedVelocityAcoustics:
             matrix_symmetry_error=symmetry_error,
         )
 
-    def solve(self, frequency_Hz: float) -> AcousticSolveResult:
-        """Solve one prescribed-velocity reference point, with p=0 outer PML."""
+    def solve(
+        self,
+        frequency_Hz: float,
+        *,
+        allow_unresolved_pml: bool = False,
+    ) -> AcousticSolveResult:
+        """Solve one prescribed-velocity point with p=0 outer PML.
+
+        A non-positive discrete PML absorption or outward HK/input power is a
+        hard physical failure.  ``allow_unresolved_pml=True`` is an explicit
+        diagnostic escape hatch for recording an unresolved target-nepers
+        result; it never changes a sign or calibrates a result.
+        """
 
         assembly = self.assemble(frequency_Hz)
         pressure = np.zeros(self.basis.N, dtype=complex)
@@ -1241,6 +1820,16 @@ class ReferencePrescribedVelocityAcoustics:
         residual_absolute = float(np.linalg.norm(residual))
         rhs_norm = float(np.linalg.norm(assembly.rhs[assembly.free_dofs]))
         residual_relative = residual_absolute / max(rhs_norm, 1.0e-30)
+        omega = assembly.omega_rad_s
+        rhs_input_power = float(
+            np.imag(np.vdot(pressure, assembly.rhs)) / (2.0 * omega)
+        )
+        pml_quadratic_form = complex(
+            np.vdot(pressure, assembly.pml_matrix.dot(pressure))
+        )
+        pml_discrete_absorption = float(
+            np.imag(pml_quadratic_form) / (2.0 * omega)
+        )
 
         means: dict[int, complex] = {}
         for component, triangle_indices in self.mesh_data.component_triangles.items():
@@ -1252,19 +1841,103 @@ class ReferencePrescribedVelocityAcoustics:
                 pressure,
             )
             means[int(component)] = integral / volume
-        cavity_mean = means[self.mesh_data.cavity_component]
+        cavity_triangles = self.mesh_data.mesh.t[:, self.mesh_data.cavity_triangle_indices].T
+        cavity_integral = _integral_r_times_linear_field(
+            self.mesh_data.points_rz,
+            cavity_triangles,
+            pressure,
+        )
+        cavity_mean = cavity_integral / self.mesh_data.cavity_volume_m3
         back_trace = self.mesh_data.trace_metrics[REFERENCE_PLANAR_PISTON_BACK]
         q_into_cavity = complex(back_trace["q_into_m3_s"])
         z_box = cavity_mean / q_into_cavity
-        analytic = sealed_b_analytic_limit(
-            frequency_Hz,
-            self.mesh_data.cavity_volume_m3,
-            self.parameters.rho0_kg_m3,
-            self.parameters.c0_m_s,
-            q_into_cavity,
+        analytic = (
+            sealed_b_analytic_limit(
+                frequency_Hz,
+                self.mesh_data.cavity_volume_m3,
+                self.parameters.rho0_kg_m3,
+                self.parameters.c0_m_s,
+                q_into_cavity,
+            )
+            if self.mesh_data.case_id == "B"
+            else None
         )
-        relative_error = float(abs(z_box - analytic.impedance_Pa_s_m3) / abs(analytic.impedance_Pa_s_m3))
-        real_ratio = float(abs(np.real(z_box)) / max(abs(z_box), 1.0e-30))
+        relative_error = (
+            float(abs(z_box - analytic.impedance_Pa_s_m3) / abs(analytic.impedance_Pa_s_m3))
+            if analytic is not None
+            else None
+        )
+        real_ratio = (
+            float(abs(np.real(z_box)) / max(abs(z_box), 1.0e-30))
+            if analytic is not None
+            else None
+        )
+        front_trace = self.mesh_data.trace_metrics[REFERENCE_PLANAR_PISTON_FRONT]
+        q_out_total = float(
+            front_trace["q_out_m3_s"] + back_trace["q_out_m3_s"]
+        )
+        q_into_total = float(-q_out_total)
+        q_scale = max(
+            abs(float(front_trace["q_out_m3_s"])),
+            abs(float(back_trace["q_out_m3_s"])),
+            1.0e-30,
+        )
+        q_balance_relative_error = float(abs(q_out_total) / q_scale)
+        drive_power = {
+            "front": self._drive_power_into_fluid(
+                REFERENCE_PLANAR_PISTON_FRONT,
+                pressure,
+            ),
+            "back": self._drive_power_into_fluid(
+                REFERENCE_PLANAR_PISTON_BACK,
+                pressure,
+            ),
+        }
+        drive_power["total"] = float(drive_power["front"] + drive_power["back"])
+        boundary_input_cross_error = float(drive_power["total"] - rhs_input_power)
+        hk_diagnostics = self._hk_diagnostics(frequency_Hz, pressure)
+        hk_diagnostics["drive_power_total_W"] = drive_power["total"]
+        hk_diagnostics["power_balance_residual_W"] = float(
+            hk_diagnostics["hk_flux_power_W"] - drive_power["total"]
+        )
+        hk_diagnostics["power_balance_relative_to_drive"] = float(
+            abs(hk_diagnostics["power_balance_residual_W"])
+            / max(abs(drive_power["total"]), 1.0e-30)
+        )
+        pml_diagnostics = dict(assembly.pml_diagnostics)
+        pml_diagnostics.update(
+            {
+                "discrete_absorption_definition": (
+                    "Im(p^H A_pml p)/(2 omega); numerical PML absorption, "
+                    "not physical material loss"
+                ),
+                "pml_quadratic_form": {
+                    "real": float(np.real(pml_quadratic_form)),
+                    "imag": float(np.imag(pml_quadratic_form)),
+                },
+                "discrete_absorption_power_W": pml_discrete_absorption,
+                "input_power_boundary_W": float(drive_power["total"]),
+                "input_power_rhs_W": rhs_input_power,
+                "input_power_boundary_rhs_error_W": boundary_input_cross_error,
+            }
+        )
+        passivity_failures = []
+        if drive_power["total"] <= 0.0:
+            passivity_failures.append("non_positive_input_power")
+        if hk_diagnostics["hk_flux_power_W"] <= 0.0:
+            passivity_failures.append("non_positive_hk_outward_power")
+        if pml_discrete_absorption <= 0.0:
+            passivity_failures.append("non_positive_discrete_pml_absorption")
+        pml_diagnostics["passivity_status"] = "pass" if not passivity_failures else "unresolved"
+        pml_diagnostics["passivity_failures"] = passivity_failures
+        if passivity_failures and not allow_unresolved_pml:
+            raise RuntimeError(
+                "reference PML/passivity unresolved: "
+                + ", ".join(passivity_failures)
+                + f"; input={drive_power['total']:.6e}, "
+                + f"hk={hk_diagnostics['hk_flux_power_W']:.6e}, "
+                + f"pml={pml_discrete_absorption:.6e}"
+            )
         return AcousticSolveResult(
             frequency_Hz=float(frequency_Hz),
             pressure=pressure,
@@ -1284,7 +1957,14 @@ class ReferencePrescribedVelocityAcoustics:
             residual_absolute=residual_absolute,
             residual_relative=float(residual_relative),
             cavity_real_impedance_ratio=real_ratio,
-            pml_diagnostics=dict(assembly.pml_diagnostics),
+            q_out_total_m3_s=q_out_total,
+            q_into_total_m3_s=q_into_total,
+            q_balance_relative_error=q_balance_relative_error,
+            drive_power_into_fluid_W=drive_power,
+            input_power_from_rhs_W=rhs_input_power,
+            input_power_boundary_cross_error_W=boundary_input_cross_error,
+            hk_diagnostics=hk_diagnostics,
+            pml_diagnostics=pml_diagnostics,
         )
 
 
@@ -1299,7 +1979,7 @@ def assemble_reference_acoustics(
     frequency_Hz: float,
     **kwargs: Any,
 ) -> AcousticAssemblyResult:
-    """Load sealed B and assemble one reference acoustic frequency."""
+    """Load reference A/B and assemble one reference acoustic frequency."""
 
     return ReferencePrescribedVelocityAcoustics.from_files(
         mesh_path,
@@ -1314,7 +1994,7 @@ def solve_reference_acoustics(
     frequency_Hz: float,
     **kwargs: Any,
 ) -> AcousticSolveResult:
-    """Load sealed B and solve one reference acoustic frequency."""
+    """Load reference A/B and solve one reference acoustic frequency."""
 
     return ReferencePrescribedVelocityAcoustics.from_files(
         mesh_path,
@@ -1337,6 +2017,10 @@ __all__ = [
     "AxisymmetricP1Operators",
     "AxisymmetricAcousticModel",
     "CAVITY_VOLUME_RELATIVE_TOLERANCE",
+    "DEFAULT_PML_MODE",
+    "DEFAULT_PML_TARGET_ATTENUATION_NEPERS",
+    "EXPLICIT_PML_MODE",
+    "TARGET_PML_MODE",
     "ReferencePrescribedVelocityAcoustics",
     "ReferencePressureMesh",
     "SealedBAnalyticLimit",
@@ -1349,8 +2033,11 @@ __all__ = [
     "load_pressure_mesh",
     "load_reference_pressure_mesh",
     "pml_coefficients",
+    "pml_alpha_for_frequency",
+    "pml_operator_coefficients",
     "sealed_b_analytic_limit",
     "sha256_file",
     "solve_reference_acoustics",
     "validate_pml_geometry",
+    "validate_closed_hk_geometry",
 ]

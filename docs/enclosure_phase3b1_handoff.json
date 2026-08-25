@@ -1,0 +1,118 @@
+{
+  "schema": "luna.enclosure_phase3b1_handoff.v1",
+  "title": "Stage 3B1 reference A open-back plus B sealed compatibility core",
+  "status": "pass_with_target_nepers_unresolved",
+  "scope_status": "reference-only A/B low-frequency response; not complete Stage 3",
+  "parent_commit": "f2bf7f94c6d3a34de744762a303919d896a4e16c",
+  "expected_commit": {
+    "message": "feat: add open-back acoustic reference response",
+    "final_commit": "pending; do not self-reference the final SHA here"
+  },
+  "identity": {
+    "source": "reference planar piston",
+    "prescribed_velocity": "global v_z = +1 m/s",
+    "time_convention": "exp(+i omega t)",
+    "final_production_interface_ready": false,
+    "product_spl_claim": false
+  },
+  "implemented": {
+    "module": "src/loudspeaker_axisym_fem/enclosure_acoustics.py",
+    "finite_element": "scikit-fem P1",
+    "supported_cases": ["A", "B"],
+    "case_detection": "validated config maps open_back->A and sealed_lossless->B; optional case argument is checked",
+    "pressure_domains": "only audited air_* triangles; rigid_* domains never enter pressure DOFs",
+    "rear_opening": "A remains a conforming air_cavity-air_rear_opening-air_rear_free pressure path; no pressure-release boundary",
+    "sealed_B": "cavity and exterior remain two pressure components and retain the analytic sealed limit",
+    "front_back": "front/back traces use automatic pressure-domain outward normals and remain separate",
+    "hk": "hk_front+hk_rear is checked as a complete closed spherical surface, mirror=false, physical free-field side and forced radial outward normal",
+    "power": "driver boundary power, Im(p^H b)/(2 omega), discrete PML quadratic-form absorption, and HK outward flux are all reported"
+  },
+  "formulas": {
+    "weak_form": "integral 2*pi*r*((1/rho)*grad(p).grad(q) - (omega^2/K)*p*q)dA = integral 2*pi*r*q*(1/rho*dp/dn)dGamma",
+    "drive": "dp/dn = -i*omega*rho*(v dot n); Q_out = integral(v dot n)dS; Q_into = -Q_out",
+    "input_power_boundary": "P_into = -0.5*Re integral(p*conj(v_n))dS with v_n=v_z*n_z",
+    "input_power_rhs": "P_into = Im(p^H b)/(2*omega), independently cross-checked against the boundary integral",
+    "hk_velocity": "v_n = i/(omega*rho)*dp/dn",
+    "pml_target_mode": "alpha(f)=target_attenuation_nepers*(m+1)/(k*thickness); theoretical outer amplitude factor exp(-target)",
+    "pml_discrete_absorption": "Im(p^H A_pml p)/(2*omega); numerical coordinate-stretch absorption, not physical material loss"
+  },
+  "pml": {
+    "default_mode": "explicit_alpha",
+    "default_alpha": 4.0,
+    "target_mode": "target_nepers",
+    "target_default_nepers": 8.0,
+    "interface_operator_check": "gradient radial and tangential include 1/rho; mass includes 1/K; all three equal ordinary operators at HK",
+    "target8_status": "unresolved/fail on current reference L1 low-frequency discretization; opt-in solve rejects passivity failure unless explicitly diagnostic",
+    "target8_theoretical_outer_amplitude_factor": 0.00033546262790251185,
+    "target8_l1_evidence": [
+      {"case": "A", "frequency_Hz": 20.0, "actual_alpha": 655.4705589230243, "input_power_W": -0.0006481540127970122, "hk_outward_power_W": -0.0006659328405112689, "discrete_pml_absorption_W": -0.000648154012797011, "status": "unresolved"},
+      {"case": "A", "frequency_Hz": 50.0, "actual_alpha": 262.18822356920975, "input_power_W": -0.0005646926286474753, "hk_outward_power_W": -0.0005851966230506068, "discrete_pml_absorption_W": -0.0005646926286474729, "status": "unresolved"},
+      {"case": "A", "frequency_Hz": 100.0, "actual_alpha": 131.09411178460488, "input_power_W": -0.000397647887934007, "hk_outward_power_W": -0.00040315793884052357, "discrete_pml_absorption_W": -0.000397647887934074, "status": "unresolved"},
+      {"case": "B", "frequency_Hz": 20.0, "actual_alpha": 655.4705589230243, "input_power_W": -0.00021527375518127706, "hk_outward_power_W": -0.00021991926241592333, "discrete_pml_absorption_W": -0.00021527375518127522, "status": "unresolved"},
+      {"case": "B", "frequency_Hz": 50.0, "actual_alpha": 262.18822356920975, "input_power_W": -0.00032170114666454496, "hk_outward_power_W": -0.0003343639485937319, "discrete_pml_absorption_W": -0.0003217011466645421, "status": "unresolved"},
+      {"case": "B", "frequency_Hz": 100.0, "actual_alpha": 131.09411178460488, "input_power_W": 0.00136400229148425, "hk_outward_power_W": 0.0014036232520180567, "discrete_pml_absorption_W": 0.001364002291484208, "status": "pass"}
+    ],
+    "mesh_resolution_indicator": "reported per solve as PML edge length range, elements-per-thickness estimate, and max abs(stretched k*h); no silent alpha truncation"
+  },
+  "safe_explicit_alpha_scan": [
+    {"level": "L1", "case": "A", "frequency_Hz": 20.0, "dof": 4786, "solve_wall_s": 0.06854644600025495, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.0063617251235193305, "q_total_m3_s": 0.0, "axis_pressure_1m_Pa": {"real": 0.0007381148494717011, "imag": 0.02726478812834298}, "axis_rms_spl_dB": 59.6843244441591, "axis_phase_deg": 88.44926216261254, "input_power_W": 0.0003539996079382552, "input_power_rhs_W": 0.00035399960793825526, "boundary_rhs_error_W": -5.421010862427522e-20, "hk_outward_power_W": 0.00036337701129637623, "discrete_pml_absorption_W": 0.000353999607938256, "hk_minus_input_W": 9.377403358121021e-06},
+    {"level": "L1", "case": "B", "frequency_Hz": 20.0, "dof": 4696, "solve_wall_s": 0.04191018100027577, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.0063617251235193305, "q_total_m3_s": 0.0, "axis_pressure_1m_Pa": {"real": 0.02836791663420224, "imag": 0.08130604641372763}, "axis_rms_spl_dB": 69.67045291258431, "axis_phase_deg": 70.76597142569894, "input_power_W": 0.00016464021032348524, "input_power_rhs_W": 0.00016464021032348527, "boundary_rhs_error_W": -2.710505172427522e-20, "hk_outward_power_W": 0.00016928629179460133, "discrete_pml_absorption_W": 0.00016464021032348548, "hk_minus_input_W": 4.646081471116091e-06},
+    {"level": "L1", "case": "A", "frequency_Hz": 50.0, "dof": 4786, "solve_wall_s": 0.04121599200152559, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.0063617251235193305, "q_total_m3_s": 0.0, "axis_pressure_1m_Pa": {"real": 0.013958114442236519, "imag": 0.08535850524668952}, "axis_rms_spl_dB": 69.70864058444734, "axis_phase_deg": 80.71299411945724, "input_power_W": 0.0009715944650143984, "input_power_rhs_W": 0.0009715944650143984, "boundary_rhs_error_W": 0.0, "hk_outward_power_W": 0.000997279774234579, "discrete_pml_absorption_W": 0.0009715944650143982, "hk_minus_input_W": 2.568530922018061e-05},
+    {"level": "L1", "case": "B", "frequency_Hz": 50.0, "dof": 4696, "solve_wall_s": 0.03977743699942948, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.0063617251235193305, "q_total_m3_s": 0.0, "axis_pressure_1m_Pa": {"real": 0.16037409941518604, "imag": 0.1443115449126847}, "axis_rms_spl_dB": 77.64789334196442, "axis_phase_deg": 41.9822489990617, "input_power_W": 0.000432001551828342, "input_power_rhs_W": 0.00043200155182834214, "boundary_rhs_error_W": -1.0842021724855044e-19, "hk_outward_power_W": 0.0004441887006500345, "discrete_pml_absorption_W": 0.000432001551828343, "hk_minus_input_W": 1.2187148821692475e-05},
+    {"level": "L1", "case": "A", "frequency_Hz": 100.0, "dof": 4786, "solve_wall_s": 0.03830306199961342, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.0063617251235193305, "q_total_m3_s": 0.0, "axis_pressure_1m_Pa": {"real": 0.17800479034045527, "imag": 0.22331549755002}, "axis_rms_spl_dB": 80.08363357266742, "axis_phase_deg": 51.44164973884697, "input_power_W": 0.0027979947133752597, "input_power_rhs_W": 0.0027979947133752606, "boundary_rhs_error_W": -8.673617379884035e-19, "hk_outward_power_W": 0.0028714138067759123, "discrete_pml_absorption_W": 0.0027979947133752615, "hk_minus_input_W": 7.341909340065258e-05},
+    {"level": "L1", "case": "B", "frequency_Hz": 100.0, "dof": 4696, "solve_wall_s": 0.038691482001013355, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.0063617251235193305, "q_total_m3_s": 0.0, "axis_pressure_1m_Pa": {"real": 0.43245537795056244, "imag": -0.04477830409653637}, "axis_rms_spl_dB": 83.7342409122497, "axis_phase_deg": -5.911586511615079, "input_power_W": 0.0010280759400371402, "input_power_rhs_W": 0.0010280759400371404, "boundary_rhs_error_W": -2.168404344971009e-19, "hk_outward_power_W": 0.0010570469969261665, "discrete_pml_absorption_W": 0.0010280759400371424, "hk_minus_input_W": 2.897105688902629e-05},
+    {"level": "L2", "case": "A", "frequency_Hz": 20.0, "dof": 18170, "solve_wall_s": 0.27693013600219274, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.00636172512351933, "q_total_m3_s": -8.673617379884035e-19, "axis_pressure_1m_Pa": {"real": 0.000680178143910479, "imag": 0.026881987070454035}, "axis_rms_spl_dB": 59.56110699559844, "axis_phase_deg": 88.5505899010381, "input_power_W": 0.00035617882475609905, "input_power_rhs_W": 0.00035617882475609905, "boundary_rhs_error_W": 0.0, "hk_outward_power_W": 0.00036069608235266216, "discrete_pml_absorption_W": 0.0003561788247560975, "hk_minus_input_W": 4.51725759656311e-06},
+    {"level": "L2", "case": "B", "frequency_Hz": 20.0, "dof": 17864, "solve_wall_s": 0.264687236998725, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.00636172512351933, "q_total_m3_s": -8.673617379884035e-19, "axis_pressure_1m_Pa": {"real": 0.027974407983835964, "imag": 0.08020424218510616}, "axis_rms_spl_dB": 69.55163681740504, "axis_phase_deg": 70.77175799290087, "input_power_W": 0.00016489227684704245, "input_power_rhs_W": 0.00016489227684704242, "boundary_rhs_error_W": 2.710505431213761e-20, "hk_outward_power_W": 0.00016718915699396843, "discrete_pml_absorption_W": 0.00016489227684704275, "hk_minus_input_W": 2.296880146925983e-06},
+    {"level": "L2", "case": "A", "frequency_Hz": 50.0, "dof": 18170, "solve_wall_s": 0.24873574699813616, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.00636172512351933, "q_total_m3_s": -8.673617379884035e-19, "axis_pressure_1m_Pa": {"real": 0.013570970976399657, "imag": 0.08430508348496045}, "axis_rms_spl_dB": 69.5972798637184, "axis_phase_deg": 80.85528879095736, "input_power_W": 0.0009779949220951678, "input_power_rhs_W": 0.0009779949220951678, "boundary_rhs_error_W": 0.0, "hk_outward_power_W": 0.0009903652273023987, "discrete_pml_absorption_W": 0.0009779949220951655, "hk_minus_input_W": 1.2370305207230845e-05},
+    {"level": "L2", "case": "B", "frequency_Hz": 50.0, "dof": 17864, "solve_wall_s": 0.2069972669996787, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.00636172512351933, "q_total_m3_s": -8.673617379884035e-19, "axis_pressure_1m_Pa": {"real": 0.15817153713196813, "imag": 0.14239745755593688}, "axis_rms_spl_dB": 77.52962876117321, "axis_phase_deg": 41.99583182568373, "input_power_W": 0.0004326568445522682, "input_power_rhs_W": 0.0004326568445522683, "boundary_rhs_error_W": -1.0842021724855044e-19, "hk_outward_power_W": 0.00043868256809855846, "discrete_pml_absorption_W": 0.00043265684455226787, "hk_minus_input_W": 6.025723546290262e-06},
+    {"level": "L2", "case": "A", "frequency_Hz": 100.0, "dof": 18170, "solve_wall_s": 0.2368866729993897, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.00636172512351933, "q_total_m3_s": -8.673617379884035e-19, "axis_pressure_1m_Pa": {"real": 0.17548757141461963, "imag": 0.22144208459667036}, "axis_rms_spl_dB": 79.99089658629154, "axis_phase_deg": 51.60401465839374, "input_power_W": 0.0028219361887995057, "input_power_rhs_W": 0.002821936188799506, "boundary_rhs_error_W": -4.336808689942018e-19, "hk_outward_power_W": 0.0028572814510947706, "discrete_pml_absorption_W": 0.002821936188799512, "hk_minus_input_W": 3.534526229526493e-05},
+    {"level": "L2", "case": "B", "frequency_Hz": 100.0, "dof": 17864, "solve_wall_s": 0.2552793789982388, "alpha": 4.0, "q_front_m3_s": -0.0063617251235193305, "q_back_m3_s": 0.00636172512351933, "q_total_m3_s": -8.673617379884035e-19, "axis_pressure_1m_Pa": {"real": 0.4267198665928851, "imag": -0.043998085100730035}, "axis_rms_spl_dB": 83.61788434840896, "axis_phase_deg": -5.886830986702923, "input_power_W": 0.0010295723520816974, "input_power_rhs_W": 0.0010295723520816976, "boundary_rhs_error_W": -2.168404344971009e-19, "hk_outward_power_W": 0.001043902955554543, "discrete_pml_absorption_W": 0.0010295723520816963, "hk_minus_input_W": 1.4330606037384268e-05}
+  ],
+  "a_vs_b_low_frequency": {
+    "L1": [
+      {"frequency_Hz": 20.0, "ratio": 0.3167331912757602, "spl_difference_dB": -9.986128468425196},
+      {"frequency_Hz": 50.0, "ratio": 0.4009012054620648, "spl_difference_dB": -7.939252757517091},
+      {"frequency_Hz": 100.0, "ratio": 0.6568551858786633, "spl_difference_dB": -3.650607339582291}
+    ],
+    "L2": [
+      {"frequency_Hz": 20.0, "ratio": 0.3165727354538132, "spl_difference_dB": -9.990529821806607},
+      {"frequency_Hz": 50.0, "ratio": 0.40121998294928685, "spl_difference_dB": -7.932348897454831},
+      {"frequency_Hz": 100.0, "ratio": 0.6586438058409124, "spl_difference_dB": -3.6269877621174103}
+    ],
+    "interpretation": "A is lower than B at all three points and the ratio increases monotonically with frequency; the measured 20-to-100 Hz L1 slope is 9.06 dB/decade, below the ideal far-field dipole 20 dB/decade. This is recorded as a finite-1-m/3B2 asymptotic limitation, not hidden by a relaxed threshold."
+  },
+  "verification": {
+    "target_tests": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_enclosure_acoustics_core.py tests/test_enclosure_open_back_acoustics.py",
+      "result": "13 passed"
+    },
+    "b_core_regression": "included in target command; 9 passed",
+    "alpha4_scan": "A/B L1/L2 at 20/50/100 Hz; all input, HK, and discrete PML powers positive",
+    "input_power_cross_check": "boundary integral and Im(p^H b)/(2 omega) agree within 1.1e-19 W in the recorded scan",
+    "py_compile": "pass after implementation checks",
+    "full_pytest": {
+      "result": "65 passed in 68.55s",
+      "external_wall_time_s": 69.67,
+      "peak_rss_kb": 275304
+    },
+    "self_test": "SELF_TEST: PASS (11299 nodes, 22141 triangles)",
+    "json_parse": "pass",
+    "git_diff_check": "pass after final staged diff",
+    "git_show_check": "pending final commit"
+  },
+  "remaining_or_pending": {
+    "target_nepers": "unresolved on current L1 low-frequency mesh; remains opt-in and rejected on non-positive passivity",
+    "hk_power_balance": "positive but HK-minus-input is approximately 1e-6 to 7e-5 W; no strict 3B1 threshold, refine in 3B2",
+    "dipole_asymptotic": "20 dB/decade ideal is not reached at 1 m over 20-100 Hz; 3B2 must establish distance/frequency and mesh convergence",
+    "production_interface": "pending real moving partition/normal/velocity mapping; final_production_interface_ready=false",
+    "A_scans": "only prescribed reference points 20/50/100 Hz; no broad parameter sweep",
+    "production_and_legacy": "no production mesh, CLI, old fem_solver, production solve, or sweep modified/run"
+  },
+  "prohibitions_observed": [
+    "no production coupling",
+    "no CLI modification",
+    "no old FEM solver modification",
+    "no production mesh modification",
+    "no push"
+  ]
+}
