@@ -1,0 +1,144 @@
+{
+  "schema": "luna.enclosure_phase3b2_handoff.v1",
+  "title": "Stage 3B2 reference A/B validation only",
+  "status": "pass_reference_validation_only",
+  "scope": "reference A open-back plus B sealed; no production, thermal, port, or PR coupling",
+  "parent_commit": "7128d2d1e6867ce991c2c5486799920624f24fd2",
+  "expected_commit": {
+    "message": "test: validate open and sealed acoustic convergence",
+    "final_commit": "pending; do not self-reference the final SHA here"
+  },
+  "identity": {
+    "source": "reference planar piston",
+    "prescribed_velocity": "global v_z = +1 m/s",
+    "time_convention": "exp(+i omega t)",
+    "mirror": false,
+    "final_production_interface_ready": false,
+    "product_spl_claim": false
+  },
+  "implementation": {
+    "acoustics_module": "src/loudspeaker_axisym_fem/enclosure_acoustics.py",
+    "validation_module": "src/loudspeaker_axisym_fem/enclosure_validation.py",
+    "comparison_tool": "tools/enclosure_compare_cases.py",
+    "finite_element": "scikit-fem P1",
+    "supported_cases": ["A", "B"],
+    "actual_1m": "closed-HK pressure at physical observation point; 5-20 Hz marked near_field and excluded from dipole asymptote",
+    "far_field": "closed HK exact kernel at R_eval with kR>=20 and R_eval>HK; p_ff_1m is a phase-normalized far-field quantity, not actual 1 m pressure",
+    "normalization": "p_ff_1m=p(R_eval)*R_eval*exp(+i*k*(R_eval-1 m)) for exp(+i omega t) outgoing exp(-i*kR)/R"
+  },
+  "inputs": {
+    "formal_configs_untouched": true,
+    "configs": {
+      "A": {
+        "path": "configs/enclosures/open_back.json",
+        "sha256": "01886d376e56ff364d78aca7cfb5714f2d5d98db3c7168014e8171a2fe98defd"
+      },
+      "B": {
+        "path": "configs/enclosures/sealed_lossless.json",
+        "sha256": "5cd19bda24736a7aebfd7fd17040431f04443b49a02319d832546d7f3fe4cedd"
+      }
+    },
+    "temporary_scan_root": "/tmp/luna_enclosure_stage3b2_scan",
+    "scan_bundle": "/tmp/luna_enclosure_stage3b2_scan/scan_bundle.json"
+  },
+  "base_scan": {
+    "cases": ["A", "B"],
+    "levels": ["L0", "L1", "L2"],
+    "frequencies_Hz": [10.0, 20.0, 50.0, 100.0],
+    "explicit_alpha": 4.0,
+    "solve_count": 24,
+    "mesh_manifest": {
+      "A/L0": {"sha256": "03f5c0ea1d81aaf20493bcb18818d1a71bba9f28262e90aeffc3747842b6356a", "pressure_dofs": 1350, "pressure_triangles": 2508, "cavity_volume_m3": 0.0061},
+      "A/L1": {"sha256": "cdd76ebc1f9ef5d3b2b6f13a0ec08d8d6a09ed0d265aaa0a3602f81dcbd2a307", "pressure_dofs": 4786, "pressure_triangles": 9201, "cavity_volume_m3": 0.0061},
+      "A/L2": {"sha256": "b53db7bd92acf176f3bd8ce45fb5fd98d6fc0523d17b87877fb25c6ff63bf823", "pressure_dofs": 18170, "pressure_triangles": 35606, "cavity_volume_m3": 0.0061},
+      "B/L0": {"sha256": "70a01466ae767e940ef1eb5a55bd2c83531b88ba8dbb956414482cd1cbcaac48", "pressure_dofs": 1290, "pressure_triangles": 2382, "cavity_volume_m3": 0.0061},
+      "B/L1": {"sha256": "9de071d7ba9491838e3055054827a0f5bd069f73aec858fcd85e8c7afa1b8468", "pressure_dofs": 4696, "pressure_triangles": 9009, "cavity_volume_m3": 0.0061},
+      "B/L2": {"sha256": "b7bb153d2b92f2756a78868bdfed956895b7447c4ca531aaf640e1d221a0ef8a", "pressure_dofs": 17864, "pressure_triangles": 34971, "cavity_volume_m3": 0.0061}
+    },
+    "l1_to_l2_gate": {"amplitude_limit_dB": 0.3, "phase_limit_deg": 3.0, "status": "pass"},
+    "l2_power_balance_relative": {"A": [0.012687, 0.012683, 0.012649, 0.012525], "B": [0.013930, 0.013930, 0.013927, 0.013919], "limit": 0.02, "status": "pass"},
+    "volume_velocity_error_relative": 0.0,
+    "l0_is_final_conclusion": false
+  },
+  "far_field_dipole": {
+    "test_frequencies_Hz": [5.0, 10.0, 20.0],
+    "R_eval_contract": "kR>=20 and R_eval>HK",
+    "low_three_point_slope_dB_per_decade": 20.0710840542,
+    "full_5_to_80_Hz_slope_dB_per_decade": 20.3597789639,
+    "gate": "18-22 dB/decade",
+    "status": "pass",
+    "actual_1m_low_three_point_slope_dB_per_decade": 0.7711048064,
+    "actual_1m_interpretation": "near field; not tested against dipole asymptote"
+  },
+  "alpha_scan": {
+    "case": "A",
+    "level": "L1",
+    "frequencies_Hz": [20.0, 50.0, 100.0],
+    "alphas": [2.0, 4.0, 8.0, 12.0],
+    "solve_count": 12,
+    "all_discrete_passive": true,
+    "max_relative_to_alpha4_dB": 0.140903,
+    "max_relative_to_alpha4_phase_deg": 0.434752,
+    "status": "pass"
+  },
+  "geometry_variants": {
+    "case": "A",
+    "level": "L1",
+    "frequencies_Hz": [20.0, 50.0, 100.0],
+    "variants": ["R0_0.35", "R0_0.50", "R0_0.70", "t_0.1", "t_0.2", "t_0.3"],
+    "solve_count": 18,
+    "formal_configs_modified": false,
+    "all_topology_audits_pass": true,
+    "max_relative_to_base_dB": 0.1103,
+    "max_relative_to_base_phase_deg": 1.6868,
+    "gate": "<0.2 dB/<2 deg",
+    "status": "pass"
+  },
+  "power_interpretation": {
+    "input_power": "boundary integral cross-checked against Im(p^H b)/(2 omega)",
+    "phk": "closed-HK outward flux",
+    "pml_absorption": "Im(p^H A_pml p)/(2 omega), numerical coordinate-stretch absorption, not physical material dissipation",
+    "strict_zero_residual_claim": false
+  },
+  "target_nepers8": {
+    "status": "unresolved/fail carried from Stage 3B1",
+    "action": "not re-solved in this scan; remains opt-in and rejected on non-positive passivity",
+    "evidence_source": "docs/enclosure_phase3b1_handoff.json"
+  },
+  "production_risk": {
+    "wet_trace": "production moving partition, normal, velocity, and front/rear mapping remain pending",
+    "identity": "reference planar piston is not production interface",
+    "final_production_interface_ready": false
+  },
+  "verification": {
+    "target_tests": {
+      "independent_recheck": "18 passed in 19.39s",
+      "local_final_run": "18 passed in 19.69s"
+    },
+    "scan_wall_time_s": 16.88,
+    "scan_peak_rss_kb": 233120,
+    "full_pytest": {
+      "result": "70 passed in 83.96s",
+      "external_wall_time_s": 89.45,
+      "peak_rss_kb": 295276
+    },
+    "self_test": "SELF_TEST: PASS (11299 nodes, 22141 triangles)",
+    "py_compile": "pass for all added/modified Python files",
+    "json_parse": "pass",
+    "diff_check": "pass before final commit",
+    "git_show_check": "to be run against final commit after commit; no self-reference"
+  },
+  "stage4_minimum_entry": [
+    "map real production moving wet partitions, normals, and velocities",
+    "retain A/B reference regression and near/far field distinction",
+    "perform further HK/PML power and distance/mesh convergence",
+    "do not claim production interface or product SPL before those checks"
+  ],
+  "prohibitions_observed": [
+    "no production coupling",
+    "no thermal, port, or PR implementation",
+    "no CLI or legacy solver modification",
+    "no production mesh modification",
+    "no push"
+  ]
+}

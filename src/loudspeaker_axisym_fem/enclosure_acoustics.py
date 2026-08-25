@@ -1,7 +1,8 @@
 r"""Reference-only axisymmetric acoustics for the A/B enclosure demonstrators.
 
-This module is the deliberately scoped ``Stage 3B1 reference A/B open-back
-and sealed compatibility core``; it is not a complete Stage 3 implementation.
+This module is the deliberately scoped ``Stage 3B2 reference A/B validation
+layer`` on top of the Stage 3B1 open-back and sealed compatibility core; it is
+not a complete Stage 3 implementation.
 It loads the audited reference mesh, keeps only ``air_*`` triangles in the pressure space,
 and assembles the P1 weak form
 
@@ -78,6 +79,8 @@ SUPPORTED_ACOUSTIC_CASES = frozenset(("A", "B"))
 PML_RADIUS_TOLERANCE_M = 2.0e-10
 PML_GEOMETRY_TOLERANCE_M = 2.0e-8
 CAVITY_VOLUME_RELATIVE_TOLERANCE = 5.0e-3
+FAR_FIELD_MIN_KR = 20.0
+FAR_FIELD_REFERENCE_DISTANCE_M = 1.0
 
 
 def sha256_file(path: str | Path) -> str:
@@ -318,6 +321,35 @@ def pml_alpha_for_frequency(
         raise ValueError("PML target attenuation must be positive and exponent >= 1")
     wavenumber = 2.0 * math.pi * frequency / c0
     return float(target * (order + 1) / (wavenumber * thickness))
+
+
+def far_field_evaluation_radius(
+    frequency_Hz: float,
+    c0_m_s: float,
+    hk_radius_m: float,
+    *,
+    minimum_kR: float = FAR_FIELD_MIN_KR,
+    strict_margin: float = 1.0e-6,
+) -> float:
+    """Choose an axis observation radius outside HK with ``k R >= minimum_kR``.
+
+    The returned radius is an evaluation point for the closed HK kernel, not
+    a physical 1 m microphone location.  The small strict margin keeps the
+    point outside HK even when the minimum ``kR`` radius happens to coincide
+    with the configured HK radius.
+    """
+
+    frequency = float(frequency_Hz)
+    c0 = float(c0_m_s)
+    hk_radius = float(hk_radius_m)
+    min_kr = float(minimum_kR)
+    margin = float(strict_margin)
+    if frequency <= 0.0 or c0 <= 0.0 or hk_radius <= 0.0:
+        raise ValueError("frequency, sound speed, and HK radius must be positive")
+    if min_kr <= 0.0 or margin <= 0.0:
+        raise ValueError("minimum_kR and strict margin must be positive")
+    wavenumber = 2.0 * math.pi * frequency / c0
+    return float(max(min_kr / wavenumber, hk_radius * (1.0 + margin)))
 
 
 def pml_operator_coefficients(
@@ -1712,28 +1744,55 @@ class ReferencePrescribedVelocityAcoustics:
             force_radial_normals=True,
         )
         rs, zs, nr, nz, ds_w, p_boundary, dpdn_boundary = samples
-        axis_pressure = complex(
-            np.asarray(
-                hk_pressure_from_samples(
-                    frequency_Hz,
-                    self.parameters.c0_m_s,
-                    rs,
-                    zs,
-                    nr,
-                    nz,
-                    ds_w,
-                    p_boundary,
-                    dpdn_boundary,
-                    obs_r=0.0,
-                    obs_z=1.0,
-                    nphi=64,
-                    mirror=False,
-                    sign=-1,
-                )
-            ).reshape(-1)[0]
+        frequency = float(frequency_Hz)
+        wavenumber = 2.0 * math.pi * frequency / self.parameters.c0_m_s
+        hk_radius = float(self.parameters.pml_inner_radius_m)
+
+        def axis_pressure_at(z_observation_m: float) -> complex:
+            return complex(
+                np.asarray(
+                    hk_pressure_from_samples(
+                        frequency,
+                        self.parameters.c0_m_s,
+                        rs,
+                        zs,
+                        nr,
+                        nz,
+                        ds_w,
+                        p_boundary,
+                        dpdn_boundary,
+                        obs_r=0.0,
+                        obs_z=float(z_observation_m),
+                        nphi=64,
+                        mirror=False,
+                        sign=-1,
+                    )
+                ).reshape(-1)[0]
+            )
+
+        # This is the actual closed-HK reconstruction at the requested 1 m
+        # point.  At the low frequencies used by the dipole check it is a
+        # near-field point (kR << 20), so it is intentionally not used for a
+        # far-field 20 dB/decade asymptotic assertion.
+        actual_pressure_1m = axis_pressure_at(FAR_FIELD_REFERENCE_DISTANCE_M)
+        r_eval = far_field_evaluation_radius(
+            frequency,
+            self.parameters.c0_m_s,
+            hk_radius,
+            minimum_kR=FAR_FIELD_MIN_KR,
         )
+        pressure_at_r_eval = axis_pressure_at(r_eval)
+        # With exp(+i omega t), an outgoing wave is exp(-i k R)/R.  Removing
+        # propagation from R_eval to 1 m therefore multiplies by
+        # exp(+i*k*(R_eval-1 m)); this is a far-field normalization, not an
+        # assertion that the normalized pressure occurs physically at 1 m.
+        far_field_phase_factor = np.exp(
+            1j * wavenumber * (r_eval - FAR_FIELD_REFERENCE_DISTANCE_M)
+        )
+        far_field_pressure_1m = pressure_at_r_eval * r_eval * far_field_phase_factor
+        axis_pressure = actual_pressure_1m
         hk_power = intensity_power_from_samples(
-            frequency_Hz,
+            frequency,
             self.parameters.rho0_kg_m3,
             rs,
             ds_w,
@@ -1743,6 +1802,10 @@ class ReferencePrescribedVelocityAcoustics:
         p_ref = float(self.mesh_data.config.raw["air"]["p_ref_Pa"])
         peak = abs(axis_pressure)
         rms = peak / math.sqrt(2.0)
+        far_peak = abs(far_field_pressure_1m)
+        far_rms = far_peak / math.sqrt(2.0)
+        actual_kR = wavenumber * FAR_FIELD_REFERENCE_DISTANCE_M
+        actual_is_far_field = bool(actual_kR >= FAR_FIELD_MIN_KR)
         return {
             "mirror": False,
             "surface": "hk_front + hk_rear complete closed spherical surface",
@@ -1754,6 +1817,11 @@ class ReferencePrescribedVelocityAcoustics:
             "rear_facet_count": int(len(self.mesh_data.line_facets["hk_rear"])),
             "axis_observation_r_m": 0.0,
             "axis_observation_z_m": 1.0,
+            "actual_pressure_1m_field_regime": (
+                "far_field" if actual_is_far_field else "near_field"
+            ),
+            "actual_pressure_1m_asymptote_eligible": actual_is_far_field,
+            "actual_pressure_1m_kR": float(actual_kR),
             "axis_pressure_1m_Pa": {
                 "real": float(np.real(axis_pressure)),
                 "imag": float(np.imag(axis_pressure)),
@@ -1763,6 +1831,56 @@ class ReferencePrescribedVelocityAcoustics:
             "axis_peak_spl_dB": float(20.0 * math.log10(max(peak / p_ref, 1.0e-300))),
             "axis_rms_spl_dB": float(20.0 * math.log10(max(rms / p_ref, 1.0e-300))),
             "axis_phase_deg": float(np.angle(axis_pressure, deg=True)),
+            "actual_pressure_1m": {
+                "pressure_Pa": {
+                    "real": float(np.real(actual_pressure_1m)),
+                    "imag": float(np.imag(actual_pressure_1m)),
+                },
+                "rms_spl_dB": float(
+                    20.0 * math.log10(max(rms / p_ref, 1.0e-300))
+                ),
+                "phase_deg": float(np.angle(actual_pressure_1m, deg=True)),
+                "kR": float(actual_kR),
+                "field_regime": (
+                    "far_field" if actual_is_far_field else "near_field"
+                ),
+                "asymptote_eligible": actual_is_far_field,
+                "asymptote_note": (
+                    "At 5-20 Hz this is a near-field 1 m pressure and must not "
+                    "be used for a dipole asymptote fit."
+                ),
+            },
+            "far_field_normalized_to_1m": {
+                "kernel": "closed HK exact kernel",
+                "mirror": False,
+                "normalization": (
+                    "p_ff_1m = p(R_eval)*R_eval*exp(+i*k*(R_eval-1 m)) "
+                    "for exp(+i omega t) and outgoing exp(-i*k*R)/R"
+                ),
+                "reference_distance_m": FAR_FIELD_REFERENCE_DISTANCE_M,
+                "R_eval_m": float(r_eval),
+                "R_eval_over_hk_radius": float(r_eval / hk_radius),
+                "kR_eval": float(wavenumber * r_eval),
+                "minimum_kR": FAR_FIELD_MIN_KR,
+                "outside_hk": bool(r_eval > hk_radius),
+                "pressure_R_eval_Pa": {
+                    "real": float(np.real(pressure_at_r_eval)),
+                    "imag": float(np.imag(pressure_at_r_eval)),
+                },
+                "phase_factor": {
+                    "real": float(np.real(far_field_phase_factor)),
+                    "imag": float(np.imag(far_field_phase_factor)),
+                },
+                "pressure_ff_1m_Pa": {
+                    "real": float(np.real(far_field_pressure_1m)),
+                    "imag": float(np.imag(far_field_pressure_1m)),
+                },
+                "rms_spl_dB": float(
+                    20.0 * math.log10(max(far_rms / p_ref, 1.0e-300))
+                ),
+                "phase_deg": float(np.angle(far_field_pressure_1m, deg=True)),
+                "is_actual_1m_pressure": False,
+            },
             "hk_flux_power_W": float(hk_power),
             "geometry_contract": self.mesh_data.hk_geometry_report,
         }
@@ -2020,6 +2138,8 @@ __all__ = [
     "DEFAULT_PML_MODE",
     "DEFAULT_PML_TARGET_ATTENUATION_NEPERS",
     "EXPLICIT_PML_MODE",
+    "FAR_FIELD_MIN_KR",
+    "FAR_FIELD_REFERENCE_DISTANCE_M",
     "TARGET_PML_MODE",
     "ReferencePrescribedVelocityAcoustics",
     "ReferencePressureMesh",
@@ -2030,6 +2150,7 @@ __all__ = [
     "assemble_axisymmetric_operators",
     "axisymmetric_triangle_volumes",
     "axisymmetric_volume",
+    "far_field_evaluation_radius",
     "load_pressure_mesh",
     "load_reference_pressure_mesh",
     "pml_coefficients",
