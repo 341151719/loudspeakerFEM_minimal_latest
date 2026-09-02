@@ -1,0 +1,137 @@
+{
+  "schema": "stage34-directivity-15khz-v1",
+  "benchmark_policy": {
+    "COMSOL_role": "independent benchmark only",
+    "COMSOL_values_used_by_native_runtime": false,
+    "best_complex_scale_used_by_native_runtime": false,
+    "high_frequency_benchmark": "COMSOL fmax=22.5 kHz, moving structure hmax=0.5 mm",
+    "official_range_benchmark": "original COMSOL Study 2 complex pext matrix, 1-8000 Hz"
+  },
+  "production_routing": {
+    "at_or_below_3000_Hz": "configs/fast_p1.json",
+    "above_3000_through_8000_Hz": "configs/best_model.json mapped center-split mesh",
+    "above_8000_Hz": "configs/stage34_structure_refined2.json",
+    "upper_structure_free_dofs": 59342,
+    "upper_structure_triangles": 14464
+  },
+  "consistency": {
+    "1_to_8000_Hz_126_points": {
+      "frequency_count": 126,
+      "relative_RMSE_dB_mean": 0.04749783456772494,
+      "relative_RMSE_dB_max": 2.076619307222633,
+      "relative_RMSE_worst_frequency_Hz": 2120.0,
+      "main_ge_minus20dB_RMSE_dB_mean": 0.029537979605990396,
+      "main_ge_minus20dB_RMSE_dB_max": 0.2875967377792288,
+      "main_ge_minus20dB_worst_frequency_Hz": 8000.0,
+      "shape_NRMSE_pct_mean": 0.22146291804377682,
+      "shape_NRMSE_pct_max": 3.201675988626176,
+      "shape_NRMSE_worst_frequency_Hz": 6700.0,
+      "raw_complex_NRMSE_pct_mean": 1.6644873851947481,
+      "axis_amplitude_error_dB_RMSE": 0.1277999167375539,
+      "axis_phase_error_deg_RMSE": 0.7589820146894979
+    },
+    "8500_to_15000_Hz_14_points": {
+      "frequency_count": 14,
+      "relative_RMSE_dB_mean": 1.0646613959418756,
+      "relative_RMSE_dB_max": 3.651619605716248,
+      "relative_RMSE_worst_frequency_Hz": 13500.0,
+      "main_ge_minus20dB_RMSE_dB_mean": 0.6115171745035914,
+      "main_ge_minus20dB_RMSE_dB_max": 2.0117500345138217,
+      "main_ge_minus20dB_worst_frequency_Hz": 12000.0,
+      "shape_NRMSE_pct_mean": 4.41532781300426,
+      "shape_NRMSE_pct_max": 12.32223841597315,
+      "shape_NRMSE_worst_frequency_Hz": 12000.0,
+      "raw_complex_NRMSE_pct_mean": 5.858511151150396,
+      "axis_amplitude_error_dB_RMSE": 0.5254651447052051,
+      "axis_phase_error_deg_RMSE": 2.205548196918429
+    },
+    "combined_1_to_15000_Hz_140_points": {
+      "frequency_count": 140,
+      "relative_RMSE_dB_mean": 0.14921419070514,
+      "relative_RMSE_dB_max": 3.651619605716248,
+      "relative_RMSE_worst_frequency_Hz": 13500.0,
+      "main_ge_minus20dB_RMSE_dB_mean": 0.0877358990957505,
+      "main_ge_minus20dB_RMSE_dB_max": 2.0117500345138217,
+      "main_ge_minus20dB_worst_frequency_Hz": 12000.0,
+      "shape_NRMSE_pct_mean": 0.640849407539825,
+      "shape_NRMSE_pct_max": 12.32223841597315,
+      "shape_NRMSE_worst_frequency_Hz": 12000.0,
+      "raw_complex_NRMSE_pct_mean": 2.0838897617903127,
+      "axis_amplitude_error_dB_RMSE": 0.2056961318944023,
+      "axis_phase_error_deg_RMSE": 1.0024433219154734
+    }
+  },
+  "COMSOL_convergence_1mm_to_0p5mm": {
+    "frequency_count": 15,
+    "relative_RMSE_dB_mean": 0.4143188488622692,
+    "relative_RMSE_dB_max": 1.1583401208174984,
+    "relative_RMSE_worst_frequency_Hz": 15000.0,
+    "main_ge_minus20dB_RMSE_dB_mean": 0.2568327392697627,
+    "main_ge_minus20dB_RMSE_dB_max": 1.1583401208174984,
+    "main_ge_minus20dB_worst_frequency_Hz": 15000.0,
+    "shape_NRMSE_pct_mean": 1.733438886702746,
+    "shape_NRMSE_pct_max": 6.610731101814923,
+    "shape_NRMSE_worst_frequency_Hz": 15000.0,
+    "raw_complex_NRMSE_pct_mean": 2.646962892342662,
+    "axis_amplitude_error_dB_RMSE": 0.24907310188846968,
+    "axis_phase_error_deg_RMSE": 1.6244890114006285
+  },
+  "no_NRA_cavity_mode": {
+    "COMSOL_domain8_and_22_peak_frequency_Hz": 605.0,
+    "COMSOL_domain8_peak_mean_abs_pressure_Pa": 5963.990946944573,
+    "COMSOL_domain22_peak_mean_abs_pressure_Pa": 3304.1804866815432,
+    "native_P1": {
+      "domain8_peak_frequency_Hz": 612.0,
+      "domain8_peak_mean_abs_pressure_Pa": 5692.636287606501,
+      "domain22_peak_frequency_Hz": 612.0,
+      "domain22_peak_mean_abs_pressure_Pa": 3139.1040344153453,
+      "axis_SPL_peak_frequency_Hz": 614.0,
+      "axis_SPL_peak_dB_RMS": 93.99673425004188
+    },
+    "native_physical_P2": {
+      "domain8_peak_frequency_Hz": 606.0,
+      "domain8_peak_mean_abs_pressure_Pa": 5845.072139896823,
+      "domain22_peak_frequency_Hz": 606.0,
+      "domain22_peak_mean_abs_pressure_Pa": 3233.1090979338514,
+      "axis_SPL_peak_frequency_Hz": 607.0,
+      "axis_SPL_peak_dB_RMS": 94.0330366181874
+    }
+  },
+  "performance": {
+    "native_high15_jobs8": {
+      "frequency_count": 15,
+      "jobs": 8,
+      "blas_threads": 1,
+      "elapsed_seconds": 35.501362235983834,
+      "config": "configs/stage34_structure_refined2.json",
+      "hybrid_low_config": null,
+      "hybrid_crossover_Hz": null,
+      "comsol_runtime_data_consumed": false,
+      "nra_enabled": true
+    },
+    "native_high15_observed_wall_seconds": 48.43,
+    "native_high15_estimated_aggregate_peak_RSS_GiB": 6.809814453125,
+    "COMSOL_high15_np12": {
+      "case": "acoustic_22p5k_structure_0p5mm",
+      "acoustic_refined": "true",
+      "structure_refined": "true",
+      "frequency_count": "15",
+      "frequency_list_Hz": "8000[Hz] 8500[Hz] 9000[Hz] 9500[Hz] 10000[Hz] 10500[Hz] 11000[Hz] 11500[Hz] 12000[Hz] 12500[Hz] 13000[Hz] 13500[Hz] 14000[Hz] 14500[Hz] 15000[Hz]",
+      "fmax_parameter": "22.5[kHz]",
+      "structure_domain_hmax": "0.5[mm]",
+      "mesh_seconds": "18.3418583000000",
+      "solve_seconds": "38.7203518000000",
+      "export_seconds": "6.87617590000000",
+      "total_seconds": "63.9383860000000",
+      "comsol_role": "independent_benchmark_only",
+      "native_runtime_consumes_exports": "false"
+    },
+    "COMSOL_high15_peak_memory_GB_from_log": 1.87
+  },
+  "attribution": [
+    "Above 8 kHz, the dominant discrepancy is structural breakup under-resolution; two native topology refinements reduce mean relative-directivity RMSE from 4.437 dB to 1.006 dB against the converged benchmark.",
+    "COMSOL acoustic fmax 15 to 22.5 kHz at fixed 1 mm structure changes mean directivity by only 0.054 dB, so acoustics/PML/HK are secondary after refinement.",
+    "The no-NRA 605 Hz cavity discrepancy is physical-acoustic order: all-physical-domain P2 moves the native peak from 612 to 606 Hz without changing material or sound speed.",
+    "The 2120 Hz full-angle dB outlier is a deep-null location sensitivity; its main-field RMSE is 0.103 dB and complex shape NRMSE is 1.011%."
+  ]
+}

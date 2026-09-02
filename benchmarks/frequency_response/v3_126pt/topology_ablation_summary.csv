@@ -1,0 +1,5 @@
+variant,raw_csv,frequency_band_Hz,complex_nrmse_percent,amplitude_rmse_dB,phase_rmse_deg,raw_data_status
+center_split,high_frequency_center_split.csv,4000-8000,3.476,0.228,1.139,available
+main_diagonal,,4000-8000,4.255,0.389,2.730,summary_only
+anti_diagonal,high_frequency_anti_diagonal.csv,4000-8000,11.937,1.180,7.325,available
+alternating,high_frequency_alternating.csv,4000-8000,7.597,0.699,5.026,available
