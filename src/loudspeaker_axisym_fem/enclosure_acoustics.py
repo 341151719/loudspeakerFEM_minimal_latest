@@ -1,4 +1,4 @@
-r"""Reference-only axisymmetric acoustics for the A/B enclosure demonstrators.
+r"""Reference-only axisymmetric acoustics for the A/B/C enclosure demonstrators.
 
 This module is the deliberately scoped ``Stage 3B2 reference A/B validation
 layer`` on top of the Stage 3B1 open-back and sealed compatibility core; it is
@@ -33,7 +33,8 @@ applied by physical domain name, never by a scalar sponge or by radius alone.
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import dataclass, replace
 import hashlib
 import math
 from pathlib import Path
@@ -43,16 +44,32 @@ import meshio
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
-from skfem import Basis, BilinearForm, ElementTriP1, FacetBasis, LinearForm, MeshTri, asm
+from skfem import (
+    Basis,
+    BilinearForm,
+    ElementTriP1,
+    ElementTriP2,
+    FacetBasis,
+    LinearForm,
+    MeshTri,
+    asm,
+)
 from skfem.helpers import grad
 
 from .enclosure_geometry import (
+    BOUNDARY_PHYSICAL_TAGS,
     DOMAIN_PHYSICAL_TAGS,
     case_id_for_config,
     expected_domain_names,
 )
 from .enclosure_schema import EnclosureConfig, load_enclosure_config
 from .enclosure_topology import audit_mesh
+from .thermoviscous_boundaries import (
+    ThermoviscousAirProperties,
+    assess_bli_applicability,
+    bli_bilinear_coefficients,
+    bli_dissipation,
+)
 from .exterior_field import (
     facet_samples_from_fe,
     hk_pressure_from_samples,
@@ -75,7 +92,7 @@ EXPLICIT_PML_MODE = "explicit_alpha"
 TARGET_PML_MODE = "target_nepers"
 DEFAULT_PML_MODE = EXPLICIT_PML_MODE
 SUPPORTED_PML_MODES = frozenset((TARGET_PML_MODE, EXPLICIT_PML_MODE))
-SUPPORTED_ACOUSTIC_CASES = frozenset(("A", "B"))
+SUPPORTED_ACOUSTIC_CASES = frozenset(("A", "B", "C"))
 PML_RADIUS_TOLERANCE_M = 2.0e-10
 PML_GEOMETRY_TOLERANCE_M = 2.0e-8
 CAVITY_VOLUME_RELATIVE_TOLERANCE = 5.0e-3
@@ -642,6 +659,10 @@ class AcousticPhysicalParameters:
     pml_target_attenuation_nepers: float = DEFAULT_PML_TARGET_ATTENUATION_NEPERS
     pml_alpha: float | None = None
     pml_exponent: int = DEFAULT_PML_EXPONENT
+    thermoviscous_loss_scale: float = 0.0
+    viscous_loss_scale: float = 1.0
+    thermal_loss_scale: float = 1.0
+    pressure_element_order: int = 1
 
 
 @dataclass
@@ -677,6 +698,11 @@ class ReferencePressureMesh:
     pml_geometry_report: dict[str, Any]
     hk_geometry_report: dict[str, Any]
     trace_metrics: dict[str, dict[str, Any]]
+    cavity_bli_facets: np.ndarray
+    cavity_bli_group_facets: dict[str, np.ndarray]
+    cavity_bli_boundary_report: dict[str, Any]
+    pressure_uniform_refinement_levels: int = 0
+    pressure_boundary_local_refinement_levels: int = 0
 
     @property
     def pressure_dof_count(self) -> int:
@@ -699,6 +725,11 @@ class AcousticAssemblyResult:
     omega_rad_s: float
     matrix: csr_matrix
     pml_matrix: csr_matrix
+    bli_matrix: csr_matrix
+    bli_viscous_matrix: csr_matrix
+    bli_thermal_matrix: csr_matrix
+    bli_tangential_gradient_matrix: csr_matrix
+    bli_boundary_mass_matrix: csr_matrix
     rhs: np.ndarray
     rhs_front: np.ndarray
     rhs_back: np.ndarray
@@ -707,6 +738,7 @@ class AcousticAssemblyResult:
     dof_component: np.ndarray
     component_dofs: dict[int, np.ndarray]
     pml_diagnostics: dict[str, Any]
+    thermoviscous_diagnostics: dict[str, Any]
     matrix_symmetry_error: float
 
 
@@ -774,6 +806,7 @@ class AcousticSolveResult:
     input_power_boundary_cross_error_W: float
     hk_diagnostics: dict[str, Any]
     pml_diagnostics: dict[str, Any]
+    thermoviscous_diagnostics: dict[str, Any]
 
     @property
     def matrix(self) -> csr_matrix:
@@ -797,6 +830,13 @@ class AcousticSolveResult:
             "final_production_interface_ready": False,
             "pressure_dof_count": int(len(self.pressure)),
             "pressure_triangle_count": int(self.mesh.pressure_triangle_count),
+            "pressure_element_order": int(self.parameters.pressure_element_order),
+            "pressure_uniform_refinement_levels": int(
+                self.mesh.pressure_uniform_refinement_levels
+            ),
+            "pressure_boundary_local_refinement_levels": int(
+                self.mesh.pressure_boundary_local_refinement_levels
+            ),
             "cavity_volume_m3": float(self.mesh.cavity_volume_m3),
             "cavity_mean_pressure_Pa": {
                 "real": float(self.cavity_mean_pressure_Pa.real),
@@ -838,6 +878,7 @@ class AcousticSolveResult:
             "front_back_traces": self.front_back_traces,
             "hk_diagnostics": self.hk_diagnostics,
             "pml_diagnostics": self.pml_diagnostics,
+            "thermoviscous_diagnostics": self.thermoviscous_diagnostics,
         }
 
 
@@ -1065,6 +1106,199 @@ def _trace_map(
     )
 
 
+def _select_cavity_bli_facets(
+    meshio_mesh: meshio.Mesh,
+    pressure_mesh: MeshTri,
+    original_point_indices: np.ndarray,
+    triangle_domain_names: tuple[str, ...],
+    field_data: Mapping[str, tuple[int, int]],
+) -> tuple[np.ndarray, dict[str, np.ndarray], dict[str, Any]]:
+    """Select C BLI facets from exact full-mesh edge/domain adjacency.
+
+    A physical name is not sufficient because a cabinet physical group can
+    contain separate cavity- and exterior-facing segments.  Each selected
+    pressure facet must instead have exactly one pressure neighbor and that
+    neighbor must be ``air_cavity``; its full-mesh geometric edge must have
+    exactly one physical line owner and no second pressure-domain neighbor.
+    """
+
+    lines, line_tags = _meshio_cells(meshio_mesh, "line", 2)
+    triangles, triangle_tags = _meshio_cells(meshio_mesh, "triangle", 3)
+    domain_name_by_tag = {
+        int(tag): name
+        for name, (tag, dimension) in field_data.items()
+        if int(dimension) == 2
+    }
+    boundary_name_by_tag = {
+        int(tag): name
+        for name, (tag, dimension) in field_data.items()
+        if int(dimension) == 1
+    }
+    full_edge_triangles: dict[tuple[int, int], list[int]] = defaultdict(list)
+    for triangle_index, triangle in enumerate(triangles):
+        a, b, c = (int(value) for value in triangle)
+        for first, second in ((a, b), (b, c), (c, a)):
+            full_edge_triangles[_edge_key(first, second)].append(int(triangle_index))
+    full_edge_owners: dict[tuple[int, int], list[tuple[str, int]]] = defaultdict(list)
+    for line, raw_tag in zip(lines, line_tags, strict=True):
+        tag = int(raw_tag)
+        if tag not in boundary_name_by_tag:
+            raise ValueError(f"line edge has unknown physical tag {tag}")
+        name = boundary_name_by_tag[tag]
+        if int(BOUNDARY_PHYSICAL_TAGS.get(name, -1)) != tag:
+            raise ValueError(f"line group {name!r} does not own its exact physical tag")
+        full_edge_owners[_edge_key(int(line[0]), int(line[1]))].append((name, tag))
+
+    pressure_adjacency = _facet_adjacency(pressure_mesh)
+    selected_by_group: dict[str, list[int]] = defaultdict(list)
+    group_rows: dict[str, dict[str, Any]] = {}
+    excluded = {
+        "axis": {"facet_count": 0, "axisymmetric_area_m2": 0.0},
+        "pressure_pressure": {"facet_count": 0, "axisymmetric_area_m2": 0.0},
+        "non_cavity": {"facet_count": 0, "axisymmetric_area_m2": 0.0},
+    }
+    forbidden_groups = {
+        OUTER_PML_BOUNDARY,
+        *HK_BOUNDARIES,
+        "pml_mid_interface",
+        "freefield_front_side_interface",
+        "freefield_rear_side_interface",
+        REFERENCE_PLANAR_PISTON_FRONT,
+    }
+    candidate_cavity_facets = 0
+    selected_facets: list[int] = []
+    for facet, adjacent_pressure in sorted(pressure_adjacency.items()):
+        edge = pressure_mesh.facets[:, int(facet)]
+        p0 = pressure_mesh.p[:, int(edge[0])]
+        p1 = pressure_mesh.p[:, int(edge[1])]
+        length = float(np.linalg.norm(p1 - p0))
+        area = 2.0 * math.pi * float(0.5 * (p0[0] + p1[0])) * length
+        if len(adjacent_pressure) != 1:
+            continue
+        pressure_domain = triangle_domain_names[int(adjacent_pressure[0])]
+        if pressure_domain != "air_cavity":
+            excluded["non_cavity"]["facet_count"] += 1
+            excluded["non_cavity"]["axisymmetric_area_m2"] += area
+            continue
+        candidate_cavity_facets += 1
+        old_edge = _edge_key(
+            int(original_point_indices[int(edge[0])]),
+            int(original_point_indices[int(edge[1])]),
+        )
+        owners = full_edge_owners.get(old_edge, [])
+        if len(owners) != 1:
+            raise ValueError(
+                f"cavity BLI edge {old_edge} must have exactly one line physical owner; "
+                f"found {owners}"
+            )
+        owner, physical_tag = owners[0]
+        adjacent_full = full_edge_triangles.get(old_edge, [])
+        adjacent_domains = tuple(
+            sorted(
+                {
+                    domain_name_by_tag.get(int(triangle_tags[index]), f"tag_{int(triangle_tags[index])}")
+                    for index in adjacent_full
+                }
+            )
+        )
+        if "air_cavity" not in adjacent_domains:
+            raise ValueError(
+                f"pressure cavity facet {facet} owner {owner!r} has no full-mesh air_cavity adjacency"
+            )
+        other_pressure = [
+            name for name in adjacent_domains if name.startswith("air_") and name != "air_cavity"
+        ]
+        if other_pressure:
+            excluded["pressure_pressure"]["facet_count"] += 1
+            excluded["pressure_pressure"]["axisymmetric_area_m2"] += area
+            continue
+        if owner == "axis":
+            excluded["axis"]["facet_count"] += 1
+            excluded["axis"]["axisymmetric_area_m2"] += area
+            continue
+        if owner in forbidden_groups:
+            raise ValueError(
+                f"forbidden exterior/interface group {owner!r} unexpectedly borders air_cavity"
+            )
+        unexpected_domains = [
+            name
+            for name in adjacent_domains
+            if name != "air_cavity" and not name.startswith("rigid_")
+        ]
+        if unexpected_domains:
+            raise ValueError(
+                f"cavity BLI facet {facet} has non-rigid ownership {unexpected_domains}"
+            )
+        selected_facets.append(int(facet))
+        selected_by_group[owner].append(int(facet))
+        row = group_rows.setdefault(
+            owner,
+            {
+                "physical_tag": physical_tag,
+                "physical_dimension": 1,
+                "facet_count": 0,
+                "meridian_length_m": 0.0,
+                "axisymmetric_area_m2": 0.0,
+                "adjacent_domain_sets": set(),
+                "wall_condition": "isothermal_no_slip_BLI",
+            },
+        )
+        row["facet_count"] += 1
+        row["meridian_length_m"] += length
+        row["axisymmetric_area_m2"] += area
+        row["adjacent_domain_sets"].add(adjacent_domains)
+
+    if not selected_facets:
+        raise ValueError("sealed C cavity has no automatically selected BLI wall facets")
+    if "reference_planar_piston_back" not in selected_by_group:
+        raise ValueError("sealed C BLI selection must include reference planar piston back")
+    if len(selected_facets) != len(set(selected_facets)):
+        raise ValueError("sealed C BLI selection contains duplicate pressure facets")
+    selected_set = set(selected_facets)
+    for name, facets in selected_by_group.items():
+        if len(facets) != len(set(facets)) or not set(facets) <= selected_set:
+            raise ValueError(f"BLI group {name!r} has duplicate or foreign facets")
+
+    serial_groups: dict[str, dict[str, Any]] = {}
+    for name, row in sorted(group_rows.items()):
+        serial_groups[name] = {
+            **{key: value for key, value in row.items() if key != "adjacent_domain_sets"},
+            "adjacent_domain_sets": [
+                list(values) for values in sorted(row["adjacent_domain_sets"])
+            ],
+        }
+    total_area = float(
+        sum(float(row["axisymmetric_area_m2"]) for row in serial_groups.values())
+    )
+    report = {
+        "status": "pass",
+        "selection_rule": (
+            "unique physical line owner; exactly one pressure neighbor air_cavity; "
+            "no second air_* neighbor; axis and exterior/PML/HK interfaces excluded"
+        ),
+        "wall_condition": "fixed/isothermal/no-slip BLI with prescribed normal piston source retained",
+        "physical_groups": serial_groups,
+        "selected_group_names": sorted(serial_groups),
+        "selected_facet_count": int(len(selected_facets)),
+        "candidate_cavity_boundary_facet_count": int(candidate_cavity_facets),
+        "selected_axisymmetric_area_m2": total_area,
+        "excluded": excluded,
+        "duplicate_selected_facet_count": 0,
+        "reference_planar_piston_back_included": True,
+        "axis_excluded": True,
+        "pressure_pressure_excluded": True,
+        "pml_hk_exterior_excluded": True,
+    }
+    return (
+        np.asarray(sorted(selected_facets), dtype=np.int64),
+        {
+            name: np.asarray(sorted(facets), dtype=np.int64)
+            for name, facets in sorted(selected_by_group.items())
+        },
+        report,
+    )
+
+
 def load_reference_pressure_mesh(
     mesh_path: str | Path,
     config_path: str | Path,
@@ -1072,12 +1306,13 @@ def load_reference_pressure_mesh(
     case_id: str | None = None,
     reference_velocity_m_s: float = DEFAULT_REFERENCE_VELOCITY_M_S,
 ) -> ReferencePressureMesh:
-    """Load an audited reference A/B mesh and build a pressure-only P1 map.
+    """Load an audited reference A/B/C mesh and build a pressure-only P1 map.
 
     The case is inferred from the validated config unless an explicit case is
     supplied for a consistency check.  A is one connected pressure component
-    through its rear opening; B is deliberately two pressure components.  A
-    rear opening is never converted into a pressure-release boundary.
+    through its rear opening; sealed B/C deliberately have two pressure
+    components.  A rear opening is never converted into a pressure-release
+    boundary.
     """
 
     path = Path(mesh_path)
@@ -1086,13 +1321,13 @@ def load_reference_pressure_mesh(
     inferred_case = case_id_for_config(config.case)
     if inferred_case not in SUPPORTED_ACOUSTIC_CASES:
         raise ValueError(
-            f"reference open/sealed core supports cases A/B, not config {config.case!r}"
+            f"reference open/sealed/thermoviscous core supports cases A/B/C, not config {config.case!r}"
         )
     requested_case = inferred_case if case_id is None else str(case_id).upper()
     if requested_case != inferred_case:
         raise ValueError(
             f"case mismatch: config case {config.case!r} maps to {inferred_case}; "
-            f"sealed case B only for this sealed mesh, not requested {requested_case}"
+            f"sealed case {inferred_case} only for this config, not requested {requested_case}"
         )
     audit = audit_mesh(path, case_id=requested_case, config_path=config_file)
     if audit["status"] != "pass":
@@ -1245,9 +1480,9 @@ def load_reference_pressure_mesh(
             raise ValueError("open A pressure mesh must connect cavity and exterior in one component")
     else:
         if component_domains[cavity_component] != ("air_cavity",):
-            raise ValueError("sealed B air_cavity is not pressure-disconnected from exterior")
+            raise ValueError("sealed B/C air_cavity is not pressure-disconnected from exterior")
         if len(exterior_components) != 1 or exterior_components[0] == cavity_component:
-            raise ValueError("sealed B exterior pressure field must be one connected component")
+            raise ValueError("sealed B/C exterior pressure field must be one connected component")
 
     cavity_triangle_indices = np.asarray(
         [index for index, name in enumerate(pressure_names) if name == "air_cavity"],
@@ -1271,7 +1506,29 @@ def load_reference_pressure_mesh(
         rel_tol=CAVITY_VOLUME_RELATIVE_TOLERANCE,
         abs_tol=1.0e-12,
     ):
-        raise ValueError("pressure-only cavity volume fails the A/B volume contract")
+        raise ValueError("pressure-only cavity volume fails the A/B/C volume contract")
+
+    if requested_case in {"B", "C"}:
+        if requested_case == "C" and not bool(config.raw["thermoviscous"]["enabled"]):
+            raise ValueError("case C requires enabled thermoviscous configuration")
+        cavity_bli_facets, cavity_bli_group_facets, cavity_bli_boundary_report = (
+            _select_cavity_bli_facets(
+                meshio_mesh,
+                pressure_mesh,
+                original_point_indices,
+                tuple(pressure_names),
+                field_data,
+            )
+        )
+    else:
+        cavity_bli_facets = np.empty((0,), dtype=np.int64)
+        cavity_bli_group_facets = {}
+        cavity_bli_boundary_report = {
+            "status": "not_applicable",
+            "case": requested_case,
+            "selected_facet_count": 0,
+            "selected_axisymmetric_area_m2": 0.0,
+        }
 
     dof_component = np.full(pressure_mesh.p.shape[1], -1, dtype=np.int64)
     for component, dofs in component_dofs.items():
@@ -1309,7 +1566,623 @@ def load_reference_pressure_mesh(
         pml_geometry_report=pml_geometry_report,
         hk_geometry_report=hk_geometry_report,
         trace_metrics=trace_metrics,
+        cavity_bli_facets=cavity_bli_facets,
+        cavity_bli_group_facets=cavity_bli_group_facets,
+        cavity_bli_boundary_report=cavity_bli_boundary_report,
     )
+
+
+def _refined_trace_metrics(
+    mesh: MeshTri,
+    facets: np.ndarray,
+    name: str,
+    velocity_m_s: float,
+    *,
+    require_boundary: bool,
+) -> tuple[tuple[tuple[int, int], ...], np.ndarray, dict[str, Any]]:
+    adjacency = _facet_adjacency(mesh)
+    edges: list[tuple[int, int]] = []
+    normals: list[np.ndarray] = []
+    segments: list[dict[str, Any]] = []
+    q_out = 0.0
+    for facet in np.asarray(facets, dtype=np.int64):
+        edge = mesh.facets[:, int(facet)]
+        edge_key = _edge_key(int(edge[0]), int(edge[1]))
+        p0 = mesh.p[:, int(edge[0])]
+        p1 = mesh.p[:, int(edge[1])]
+        length = float(np.linalg.norm(p1 - p0))
+        r_mid = float(0.5 * (p0[0] + p1[0]))
+        if require_boundary:
+            normal = _facet_outward_normal(mesh, int(facet), adjacency[int(facet)])
+            contribution = (
+                2.0
+                * math.pi
+                * r_mid
+                * length
+                * float(velocity_m_s)
+                * float(normal[1])
+            )
+        else:
+            if len(adjacency[int(facet)]) != 2:
+                raise ValueError(f"refined internal trace {name!r} is not pressure-pressure")
+            normal = np.asarray([np.nan, np.nan], dtype=float)
+            contribution = 0.0
+        edges.append(edge_key)
+        normals.append(normal)
+        q_out += contribution
+        segments.append(
+            {
+                "facet": int(facet),
+                "edge": [int(edge_key[0]), int(edge_key[1])],
+                "length_m": length,
+                "r_mid_m": r_mid,
+                "normal_r": float(normal[0]),
+                "normal_z": float(normal[1]),
+                "q_out_contribution_m3_s": contribution,
+            }
+        )
+    normals_array = np.asarray(normals, dtype=float)
+    node_indices = sorted({node for edge in edges for node in edge})
+    metrics = {
+        "name": name,
+        "identity": REFERENCE_PLANAR_PISTON_IDENTITY,
+        "facet_count": int(len(facets)),
+        "node_count": int(len(node_indices)),
+        "node_indices": node_indices,
+        "q_out_m3_s": float(q_out),
+        "q_into_m3_s": float(-q_out),
+        "velocity_z_m_s": float(velocity_m_s),
+        "normal_z_range": (
+            [
+                float(np.min(normals_array[:, 1])),
+                float(np.max(normals_array[:, 1])),
+            ]
+            if require_boundary
+            else [None, None]
+        ),
+        "segments": segments,
+    }
+    return tuple(sorted(edges)), normals_array, metrics
+
+
+def uniformly_refine_reference_pressure_mesh(
+    pressure_mesh: ReferencePressureMesh,
+    levels: int = 1,
+) -> ReferencePressureMesh:
+    """Deterministically refine every pressure triangle and tagged facet.
+
+    This is an in-memory pressure-discretization operation.  It neither edits
+    nor rewrites the audited phase-2 source ``.msh``.  Every parent triangle
+    produces four children with the same physical domain tag, and every named
+    parent facet produces two named child facets.
+    """
+
+    count = int(levels)
+    if count < 0:
+        raise ValueError("pressure uniform refinement levels must be nonnegative")
+    result = pressure_mesh
+    for _ in range(count):
+        old_mesh = result.mesh
+        old_points = old_mesh.p.T
+        old_triangles = old_mesh.t.T
+        old_edges = sorted(
+            _edge_key(int(edge[0]), int(edge[1])) for edge in old_mesh.facets.T
+        )
+        hk_edge_set = {
+            _edge_key(int(edge[0]), int(edge[1]))
+            for name in HK_BOUNDARIES
+            for edge in result.facet_edges[name]
+        }
+        outer_edge_set = {
+            _edge_key(int(edge[0]), int(edge[1]))
+            for edge in result.facet_edges[OUTER_PML_BOUNDARY]
+        }
+        pml_inner_radius = float(
+            result.config.raw["geometry"]["pml_inner_radius_m"]
+        )
+        pml_outer_radius = pml_inner_radius + float(
+            result.config.raw["geometry"]["pml_thickness_m"]
+        )
+        midpoint_by_edge: dict[tuple[int, int], int] = {}
+        new_points = [np.asarray(point, dtype=float) for point in old_points]
+        for edge in old_edges:
+            midpoint_by_edge[edge] = len(new_points)
+            midpoint = 0.5 * (old_points[edge[0]] + old_points[edge[1]])
+            target_radius = (
+                pml_inner_radius
+                if edge in hk_edge_set
+                else pml_outer_radius
+                if edge in outer_edge_set
+                else None
+            )
+            if target_radius is not None:
+                radius = float(np.linalg.norm(midpoint))
+                if radius <= 0.0:
+                    raise ValueError("cannot project a circular boundary midpoint at R=0")
+                midpoint = midpoint * (target_radius / radius)
+            new_points.append(midpoint)
+        new_triangles: list[tuple[int, int, int]] = []
+        for triangle in old_triangles:
+            a, b, c = (int(value) for value in triangle)
+            ab = midpoint_by_edge[_edge_key(a, b)]
+            bc = midpoint_by_edge[_edge_key(b, c)]
+            ca = midpoint_by_edge[_edge_key(c, a)]
+            new_triangles.extend(
+                ((a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca))
+            )
+        refined_mesh = MeshTri(
+            np.asarray(new_points, dtype=float).T,
+            np.asarray(new_triangles, dtype=np.int64).T,
+            sort_t=False,
+            validate=True,
+        )
+        if refined_mesh.t.shape[1] != 4 * old_mesh.t.shape[1]:
+            raise ValueError("uniform refinement did not create four child triangles")
+        refined_edge_to_facet = {
+            _edge_key(int(edge[0]), int(edge[1])): int(index)
+            for index, edge in enumerate(refined_mesh.facets.T)
+        }
+
+        def child_facets(parent_facets: np.ndarray) -> np.ndarray:
+            children: list[int] = []
+            for parent in np.asarray(parent_facets, dtype=np.int64):
+                edge = old_mesh.facets[:, int(parent)]
+                key = _edge_key(int(edge[0]), int(edge[1]))
+                middle = midpoint_by_edge[key]
+                for child_edge in (
+                    _edge_key(key[0], middle),
+                    _edge_key(middle, key[1]),
+                ):
+                    if child_edge not in refined_edge_to_facet:
+                        raise ValueError("refined physical facet child is missing")
+                    children.append(refined_edge_to_facet[child_edge])
+            if len(children) != 2 * len(parent_facets) or len(children) != len(
+                set(children)
+            ):
+                raise ValueError("refined physical facet propagation is not one-to-two")
+            return np.asarray(sorted(children), dtype=np.int64)
+
+        refined_line_facets = {
+            name: child_facets(facets)
+            for name, facets in result.line_facets.items()
+        }
+        refined_facet_edges: dict[str, tuple[tuple[int, int], ...]] = {}
+        refined_normals: dict[str, np.ndarray] = {}
+        refined_trace_metrics: dict[str, dict[str, Any]] = {}
+        for name, facets in refined_line_facets.items():
+            require_boundary = name not in HK_BOUNDARIES
+            velocity = (
+                float(result.trace_metrics[name]["velocity_z_m_s"])
+                if name in result.trace_metrics
+                else 0.0
+            )
+            edges, normals, metrics = _refined_trace_metrics(
+                refined_mesh,
+                facets,
+                name,
+                velocity,
+                require_boundary=require_boundary,
+            )
+            refined_facet_edges[name] = edges
+            refined_normals[name] = normals
+            if name in result.trace_metrics:
+                refined_trace_metrics[name] = metrics
+
+        refined_bli_group_facets = {
+            name: child_facets(facets)
+            for name, facets in result.cavity_bli_group_facets.items()
+        }
+        refined_bli_facets = (
+            np.asarray(
+                sorted(
+                    int(facet)
+                    for facets in refined_bli_group_facets.values()
+                    for facet in facets
+                ),
+                dtype=np.int64,
+            )
+            if refined_bli_group_facets
+            else np.empty((0,), dtype=np.int64)
+        )
+        if len(refined_bli_facets) != len(set(refined_bli_facets.tolist())):
+            raise ValueError("refined BLI physical groups share child facets")
+
+        names = tuple(
+            name for name in result.triangle_domain_names for _ in range(4)
+        )
+        tags = np.repeat(result.triangle_domain_tags, 4).astype(np.int64)
+        component_by_triangle, component_triangles, component_dofs, component_domains = (
+            _connected_components(refined_mesh, names)
+        )
+        cavity_components = [
+            component
+            for component, domains in component_domains.items()
+            if "air_cavity" in domains
+        ]
+        if len(cavity_components) != 1:
+            raise ValueError("refined pressure mesh lost unique cavity component")
+        cavity_component = int(cavity_components[0])
+        exterior_names = {
+            "air_front_free",
+            "air_side_free",
+            "air_rear_free",
+            "air_pml_front",
+            "air_pml_rear",
+        }
+        exterior_components = tuple(
+            sorted(
+                component
+                for component, domains in component_domains.items()
+                if set(domains) & exterior_names
+            )
+        )
+        cavity_triangles = np.asarray(
+            [index for index, name in enumerate(names) if name == "air_cavity"],
+            dtype=np.int64,
+        )
+        pml_triangles = np.asarray(
+            [index for index, name in enumerate(names) if name in PML_DOMAINS],
+            dtype=np.int64,
+        )
+        non_pml_triangles = np.asarray(
+            [index for index, name in enumerate(names) if name not in PML_DOMAINS],
+            dtype=np.int64,
+        )
+        outer_facets = refined_line_facets[OUTER_PML_BOUNDARY]
+        outer_dofs = np.unique(
+            refined_mesh.facets[:, outer_facets].reshape(-1)
+        ).astype(np.int64)
+        cavity_volume = axisymmetric_volume(
+            refined_mesh.p.T,
+            refined_mesh.t[:, cavity_triangles].T,
+        )
+        if not math.isclose(
+            cavity_volume,
+            result.cavity_volume_m3,
+            rel_tol=2.0e-13,
+            abs_tol=1.0e-14,
+        ):
+            raise ValueError("uniform refinement changed axisymmetric cavity volume")
+        pml_report = validate_pml_geometry(
+            refined_mesh.p.T,
+            refined_mesh.t.T,
+            names,
+            {
+                name: refined_facet_edges[name]
+                for name in (*HK_BOUNDARIES, OUTER_PML_BOUNDARY)
+            },
+            float(result.config.raw["geometry"]["pml_inner_radius_m"]),
+            float(result.config.raw["geometry"]["pml_thickness_m"]),
+        )
+        hk_report = validate_closed_hk_geometry(
+            refined_mesh.p.T,
+            refined_facet_edges,
+            float(result.config.raw["geometry"]["pml_inner_radius_m"]),
+        )
+        bli_report = deepcopy(result.cavity_bli_boundary_report)
+        if refined_bli_group_facets:
+            for name, facets in refined_bli_group_facets.items():
+                bli_report["physical_groups"][name]["facet_count"] = int(len(facets))
+            bli_report["selected_facet_count"] = int(len(refined_bli_facets))
+            bli_report["candidate_cavity_boundary_facet_count"] = int(
+                2 * result.cavity_bli_boundary_report[
+                    "candidate_cavity_boundary_facet_count"
+                ]
+            )
+            for row in bli_report["excluded"].values():
+                row["facet_count"] = int(2 * row["facet_count"])
+            bli_report["pressure_uniform_refinement_levels"] = int(
+                result.pressure_uniform_refinement_levels + 1
+            )
+            bli_report["tag_propagation"] = (
+                "each parent triangle kept its domain tag; each named parent "
+                "facet produced two child facets"
+            )
+        original_indices = np.concatenate(
+            (
+                result.original_point_indices,
+                np.full(len(new_points) - len(old_points), -1, dtype=np.int64),
+            )
+        )
+        result = replace(
+            result,
+            mesh=refined_mesh,
+            points_rz=refined_mesh.p.T,
+            triangle_domain_names=names,
+            triangle_domain_tags=tags,
+            original_point_indices=original_indices,
+            line_facets=refined_line_facets,
+            facet_edges=refined_facet_edges,
+            facet_normals_rz=refined_normals,
+            component_by_triangle=component_by_triangle,
+            component_triangles=component_triangles,
+            component_dofs=component_dofs,
+            component_domains=component_domains,
+            cavity_component=cavity_component,
+            exterior_components=exterior_components,
+            cavity_triangle_indices=cavity_triangles,
+            pml_triangle_indices=pml_triangles,
+            non_pml_triangle_indices=non_pml_triangles,
+            outer_dirichlet_dofs=outer_dofs,
+            cavity_volume_m3=cavity_volume,
+            pml_geometry_report=pml_report,
+            hk_geometry_report=hk_report,
+            trace_metrics=refined_trace_metrics,
+            cavity_bli_facets=refined_bli_facets,
+            cavity_bli_group_facets=refined_bli_group_facets,
+            cavity_bli_boundary_report=bli_report,
+            pressure_uniform_refinement_levels=result.pressure_uniform_refinement_levels
+            + 1,
+        )
+    return result
+
+
+def locally_refine_cavity_wall_pressure_mesh(
+    pressure_mesh: ReferencePressureMesh,
+    levels: int = 1,
+) -> ReferencePressureMesh:
+    """Conformingly refine only triangles touching audited cavity wall facets.
+
+    The source phase-2 mesh is not changed.  scikit-fem's deterministic
+    red/green/blue adaptive refinement supplies conformity.  Parent physical
+    domains are propagated through named subdomains; every named physical
+    facet is then required to survive either one-to-one or split one-to-two.
+    This operation is defined identically for sealed B and C so that setting
+    C's loss scale to zero leaves the two discrete pressure fields identical.
+    """
+
+    count = int(levels)
+    if count < 0:
+        raise ValueError("pressure boundary-local refinement levels must be nonnegative")
+    if count and pressure_mesh.case_id not in {"B", "C"}:
+        raise ValueError("cavity-wall local refinement supports sealed B/C only")
+    result = pressure_mesh
+    for _ in range(count):
+        old_mesh = result.mesh
+        if not len(result.cavity_bli_facets):
+            raise ValueError("cavity-wall local refinement has no audited wall facets")
+        adjacency = _facet_adjacency(old_mesh)
+        marked = np.asarray(
+            sorted(
+                {
+                    int(adjacency[int(facet)][0])
+                    for facet in result.cavity_bli_facets
+                    if len(adjacency[int(facet)]) == 1
+                }
+            ),
+            dtype=np.int64,
+        )
+        if len(marked) != len(result.cavity_bli_facets):
+            raise ValueError("each audited cavity wall facet must have one pressure neighbor")
+
+        subdomains = {
+            name: np.asarray(
+                [
+                    index
+                    for index, domain_name in enumerate(result.triangle_domain_names)
+                    if domain_name == name
+                ],
+                dtype=np.int64,
+            )
+            for name in sorted(set(result.triangle_domain_names))
+        }
+        tagged_old_mesh = old_mesh.with_subdomains(subdomains)
+        sorted_old_mesh = replace(
+            tagged_old_mesh,
+            t=tagged_old_mesh._adaptive_sort_mesh(tagged_old_mesh.p, tagged_old_mesh.t),
+            sort_t=False,
+        )
+        split_flags = tagged_old_mesh._adaptive_find_facets(sorted_old_mesh, marked)
+        split_parent_facets = np.flatnonzero(split_flags == 1).astype(np.int64)
+        refined_mesh = tagged_old_mesh.refined(marked)
+        midpoint_by_edge: dict[tuple[int, int], int] = {}
+        old_node_count = old_mesh.p.shape[1]
+        for offset, parent_facet in enumerate(split_parent_facets):
+            edge = sorted_old_mesh.facets[:, int(parent_facet)]
+            key = _edge_key(int(edge[0]), int(edge[1]))
+            midpoint = old_node_count + int(offset)
+            expected = 0.5 * (old_mesh.p[:, key[0]] + old_mesh.p[:, key[1]])
+            if not np.array_equal(refined_mesh.p[:, midpoint], expected):
+                raise ValueError("adaptive midpoint ordering is not deterministic")
+            midpoint_by_edge[key] = midpoint
+        refined_edge_to_facet = {
+            _edge_key(int(edge[0]), int(edge[1])): int(index)
+            for index, edge in enumerate(refined_mesh.facets.T)
+        }
+
+        def propagated_facets(parent_facets: np.ndarray) -> np.ndarray:
+            children: list[int] = []
+            for parent in np.asarray(parent_facets, dtype=np.int64):
+                edge = old_mesh.facets[:, int(parent)]
+                key = _edge_key(int(edge[0]), int(edge[1]))
+                if key in midpoint_by_edge:
+                    middle = midpoint_by_edge[key]
+                    child_edges = (
+                        _edge_key(key[0], middle),
+                        _edge_key(middle, key[1]),
+                    )
+                else:
+                    child_edges = (key,)
+                for child_edge in child_edges:
+                    if child_edge not in refined_edge_to_facet:
+                        raise ValueError(
+                            f"adaptive physical facet child {child_edge} is missing"
+                        )
+                    children.append(refined_edge_to_facet[child_edge])
+            if len(children) != len(set(children)):
+                raise ValueError("adaptive physical facet propagation duplicated a facet")
+            return np.asarray(sorted(children), dtype=np.int64)
+
+        refined_line_facets = {
+            name: propagated_facets(facets)
+            for name, facets in result.line_facets.items()
+        }
+        refined_facet_edges: dict[str, tuple[tuple[int, int], ...]] = {}
+        refined_normals: dict[str, np.ndarray] = {}
+        refined_trace_metrics: dict[str, dict[str, Any]] = {}
+        for name, facets in refined_line_facets.items():
+            require_boundary = name not in HK_BOUNDARIES
+            velocity = (
+                float(result.trace_metrics[name]["velocity_z_m_s"])
+                if name in result.trace_metrics
+                else 0.0
+            )
+            edges, normals, metrics = _refined_trace_metrics(
+                refined_mesh,
+                facets,
+                name,
+                velocity,
+                require_boundary=require_boundary,
+            )
+            refined_facet_edges[name] = edges
+            refined_normals[name] = normals
+            if name in result.trace_metrics:
+                refined_trace_metrics[name] = metrics
+
+        refined_bli_group_facets = {
+            name: propagated_facets(facets)
+            for name, facets in result.cavity_bli_group_facets.items()
+        }
+        refined_bli_facets = np.asarray(
+            sorted(
+                int(facet)
+                for facets in refined_bli_group_facets.values()
+                for facet in facets
+            ),
+            dtype=np.int64,
+        )
+        if len(refined_bli_facets) != len(set(refined_bli_facets.tolist())):
+            raise ValueError("locally refined BLI physical groups share facets")
+
+        names_by_triangle = np.empty(refined_mesh.t.shape[1], dtype=object)
+        assignment_count = np.zeros(refined_mesh.t.shape[1], dtype=np.int8)
+        for name, indices in refined_mesh.subdomains.items():
+            names_by_triangle[np.asarray(indices, dtype=np.int64)] = name
+            assignment_count[np.asarray(indices, dtype=np.int64)] += 1
+        if np.any(assignment_count != 1):
+            raise ValueError("adaptive triangle physical-domain propagation is not exact")
+        names = tuple(str(value) for value in names_by_triangle.tolist())
+        tags = np.asarray([DOMAIN_PHYSICAL_TAGS[name] for name in names], dtype=np.int64)
+        component_by_triangle, component_triangles, component_dofs, component_domains = (
+            _connected_components(refined_mesh, names)
+        )
+        cavity_components = [
+            component
+            for component, domains in component_domains.items()
+            if "air_cavity" in domains
+        ]
+        if len(cavity_components) != 1:
+            raise ValueError("local refinement lost the unique cavity component")
+        cavity_component = int(cavity_components[0])
+        exterior_names = {
+            "air_front_free",
+            "air_side_free",
+            "air_rear_free",
+            "air_pml_front",
+            "air_pml_rear",
+        }
+        exterior_components = tuple(
+            sorted(
+                component
+                for component, domains in component_domains.items()
+                if set(domains) & exterior_names
+            )
+        )
+        cavity_triangles = np.asarray(
+            [index for index, name in enumerate(names) if name == "air_cavity"],
+            dtype=np.int64,
+        )
+        pml_triangles = np.asarray(
+            [index for index, name in enumerate(names) if name in PML_DOMAINS],
+            dtype=np.int64,
+        )
+        non_pml_triangles = np.asarray(
+            [index for index, name in enumerate(names) if name not in PML_DOMAINS],
+            dtype=np.int64,
+        )
+        outer_dofs = np.unique(
+            refined_mesh.facets[:, refined_line_facets[OUTER_PML_BOUNDARY]].reshape(-1)
+        ).astype(np.int64)
+        cavity_volume = axisymmetric_volume(
+            refined_mesh.p.T,
+            refined_mesh.t[:, cavity_triangles].T,
+        )
+        if not math.isclose(
+            cavity_volume,
+            result.cavity_volume_m3,
+            rel_tol=2.0e-13,
+            abs_tol=1.0e-14,
+        ):
+            raise ValueError("local cavity-wall refinement changed cavity volume")
+        pml_report = validate_pml_geometry(
+            refined_mesh.p.T,
+            refined_mesh.t.T,
+            names,
+            {
+                name: refined_facet_edges[name]
+                for name in (*HK_BOUNDARIES, OUTER_PML_BOUNDARY)
+            },
+            float(result.config.raw["geometry"]["pml_inner_radius_m"]),
+            float(result.config.raw["geometry"]["pml_thickness_m"]),
+        )
+        hk_report = validate_closed_hk_geometry(
+            refined_mesh.p.T,
+            refined_facet_edges,
+            float(result.config.raw["geometry"]["pml_inner_radius_m"]),
+        )
+        bli_report = deepcopy(result.cavity_bli_boundary_report)
+        for name, facets in refined_bli_group_facets.items():
+            bli_report["physical_groups"][name]["facet_count"] = int(len(facets))
+        bli_report["selected_facet_count"] = int(len(refined_bli_facets))
+        bli_report["pressure_boundary_local_refinement_levels"] = int(
+            result.pressure_boundary_local_refinement_levels + 1
+        )
+        bli_report["tag_propagation"] = (
+            "parent physical domains propagated by conforming subdomains; named "
+            "facets required to survive one-to-one or split one-to-two"
+        )
+        original_indices = np.concatenate(
+            (
+                result.original_point_indices,
+                np.full(
+                    refined_mesh.p.shape[1] - old_node_count,
+                    -1,
+                    dtype=np.int64,
+                ),
+            )
+        )
+        result = replace(
+            result,
+            mesh=refined_mesh,
+            points_rz=refined_mesh.p.T,
+            triangle_domain_names=names,
+            triangle_domain_tags=tags,
+            original_point_indices=original_indices,
+            line_facets=refined_line_facets,
+            facet_edges=refined_facet_edges,
+            facet_normals_rz=refined_normals,
+            component_by_triangle=component_by_triangle,
+            component_triangles=component_triangles,
+            component_dofs=component_dofs,
+            component_domains=component_domains,
+            cavity_component=cavity_component,
+            exterior_components=exterior_components,
+            cavity_triangle_indices=cavity_triangles,
+            pml_triangle_indices=pml_triangles,
+            non_pml_triangle_indices=non_pml_triangles,
+            outer_dirichlet_dofs=outer_dofs,
+            cavity_volume_m3=cavity_volume,
+            pml_geometry_report=pml_report,
+            hk_geometry_report=hk_report,
+            trace_metrics=refined_trace_metrics,
+            cavity_bli_facets=refined_bli_facets,
+            cavity_bli_group_facets=refined_bli_group_facets,
+            cavity_bli_boundary_report=bli_report,
+            pressure_boundary_local_refinement_levels=(
+                result.pressure_boundary_local_refinement_levels + 1
+            ),
+        )
+    return result
 
 
 def sealed_b_analytic_limit(
@@ -1346,7 +2219,7 @@ def sealed_b_analytic_limit(
 
 
 class ReferencePrescribedVelocityAcoustics:
-    """P1 axisymmetric reference solver for open A and sealed B only."""
+    """P1 axisymmetric reference solver for open A and sealed B/C."""
 
     def __init__(
         self,
@@ -1358,9 +2231,13 @@ class ReferencePrescribedVelocityAcoustics:
         pml_alpha: float | None = None,
         pml_exponent: int = DEFAULT_PML_EXPONENT,
         pml_attenuation_mode: str | None = None,
+        loss_scale: float | None = None,
+        viscous_loss_scale: float = 1.0,
+        thermal_loss_scale: float = 1.0,
+        pressure_element_order: int = 1,
     ) -> None:
         if pressure_mesh.case_id not in SUPPORTED_ACOUSTIC_CASES:
-            raise ValueError("reference acoustic solver supports cases A and B only")
+            raise ValueError("reference acoustic solver supports cases A, B, and C only")
         if pml_attenuation_mode is not None:
             if pml_mode != DEFAULT_PML_MODE and pml_mode != str(pml_attenuation_mode):
                 raise ValueError("pml_mode and pml_attenuation_mode disagree")
@@ -1380,11 +2257,29 @@ class ReferencePrescribedVelocityAcoustics:
                 raise ValueError("explicit_alpha mode requires positive pml_alpha")
         elif pml_alpha is not None:
             raise ValueError("fixed pml_alpha cannot be mixed with target_nepers mode")
+        resolved_loss_scale = (
+            (1.0 if pressure_mesh.case_id == "C" else 0.0)
+            if loss_scale is None
+            else float(loss_scale)
+        )
+        component_scales = {
+            "loss_scale": resolved_loss_scale,
+            "viscous_loss_scale": float(viscous_loss_scale),
+            "thermal_loss_scale": float(thermal_loss_scale),
+        }
+        for name, value in component_scales.items():
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} must be finite and in [0, 1]")
+        if pressure_mesh.case_id != "C" and resolved_loss_scale != 0.0:
+            raise ValueError("thermoviscous loss_scale is available only for case C")
+        element_order = int(pressure_element_order)
+        if element_order not in (1, 2):
+            raise ValueError("pressure_element_order must be 1 or 2")
         air = pressure_mesh.config.raw["air"]
         geometry = pressure_mesh.config.raw["geometry"]
         self.mesh_data = pressure_mesh
-        self.element = ElementTriP1()
-        self.basis = Basis(pressure_mesh.mesh, self.element, intorder=4)
+        self.element = ElementTriP1() if element_order == 1 else ElementTriP2()
+        self.basis = Basis(pressure_mesh.mesh, self.element, intorder=6)
         self.parameters = AcousticPhysicalParameters(
             rho0_kg_m3=float(air["rho0_kg_m3"]),
             c0_m_s=float(air["c0_m_s"]),
@@ -1396,15 +2291,35 @@ class ReferencePrescribedVelocityAcoustics:
             pml_target_attenuation_nepers=target,
             pml_alpha=None if pml_alpha is None else float(pml_alpha),
             pml_exponent=int(pml_exponent),
+            thermoviscous_loss_scale=resolved_loss_scale,
+            viscous_loss_scale=component_scales["viscous_loss_scale"],
+            thermal_loss_scale=component_scales["thermal_loss_scale"],
+            pressure_element_order=element_order,
         )
         self._dof_component = np.full(self.basis.N, -1, dtype=np.int64)
-        for component, dofs in pressure_mesh.component_dofs.items():
+        self._component_dofs: dict[int, np.ndarray] = {}
+        for component, triangles in pressure_mesh.component_triangles.items():
+            dofs = np.asarray(
+                self.basis.get_dofs(elements=triangles).all(),
+                dtype=np.int64,
+            )
+            self._component_dofs[int(component)] = dofs
+            occupied = self._dof_component[dofs]
+            if np.any((occupied >= 0) & (occupied != int(component))):
+                raise ValueError("pressure FE DOF is shared by disconnected components")
             self._dof_component[dofs] = int(component)
         if np.any(self._dof_component < 0):
-            raise ValueError("scikit-fem P1 pressure DOFs are not component-mapped")
-        self._free_dofs = np.setdiff1d(
-            np.arange(self.basis.N, dtype=np.int64), pressure_mesh.outer_dirichlet_dofs
+            raise ValueError("scikit-fem pressure DOFs are not component-mapped")
+        outer_dofs = np.asarray(
+            self.basis.get_dofs(
+                facets=pressure_mesh.line_facets[OUTER_PML_BOUNDARY]
+            ).all(),
+            dtype=np.int64,
         )
+        self._free_dofs = np.setdiff1d(
+            np.arange(self.basis.N, dtype=np.int64), outer_dofs
+        )
+        self._outer_dirichlet_dofs = outer_dofs
 
     @classmethod
     def from_files(
@@ -1419,12 +2334,26 @@ class ReferencePrescribedVelocityAcoustics:
         pml_alpha: float | None = None,
         pml_exponent: int = DEFAULT_PML_EXPONENT,
         pml_attenuation_mode: str | None = None,
+        loss_scale: float | None = None,
+        viscous_loss_scale: float = 1.0,
+        thermal_loss_scale: float = 1.0,
+        pressure_uniform_refinements: int = 0,
+        pressure_boundary_local_refinements: int = 0,
+        pressure_element_order: int = 1,
     ) -> "ReferencePrescribedVelocityAcoustics":
         mesh_data = load_reference_pressure_mesh(
             mesh_path,
             config_path,
             case_id=case_id,
             reference_velocity_m_s=reference_velocity_m_s,
+        )
+        mesh_data = uniformly_refine_reference_pressure_mesh(
+            mesh_data,
+            levels=pressure_uniform_refinements,
+        )
+        mesh_data = locally_refine_cavity_wall_pressure_mesh(
+            mesh_data,
+            levels=pressure_boundary_local_refinements,
         )
         return cls(
             mesh_data,
@@ -1434,6 +2363,10 @@ class ReferencePrescribedVelocityAcoustics:
             pml_alpha=pml_alpha,
             pml_exponent=pml_exponent,
             pml_attenuation_mode=pml_attenuation_mode,
+            loss_scale=loss_scale,
+            viscous_loss_scale=viscous_loss_scale,
+            thermal_loss_scale=thermal_loss_scale,
+            pressure_element_order=pressure_element_order,
         )
 
     @property
@@ -1467,6 +2400,28 @@ class ReferencePrescribedVelocityAcoustics:
             )
 
         return form
+
+    def _pressure_volume_integral(
+        self,
+        pressure: np.ndarray,
+        triangle_indices: np.ndarray,
+    ) -> complex:
+        """Integrate a P1/P2 pressure field with the exact ``2*pi*r`` weight."""
+
+        @LinearForm
+        def volume_load(v, w):
+            return 2.0 * math.pi * w.x[0] * v
+
+        load = np.asarray(
+            asm(
+                volume_load,
+                self.basis.with_elements(
+                    np.asarray(triangle_indices, dtype=np.int64)
+                ),
+            ),
+            dtype=float,
+        )
+        return complex(np.dot(load, pressure))
 
     def _pml_form(self, omega: float, alpha: float):
         rho = self.parameters.rho0_kg_m3
@@ -1671,6 +2626,159 @@ class ReferencePrescribedVelocityAcoustics:
             "geometry_contract": self.mesh_data.pml_geometry_report,
         }
         return matrix.tocsr(), pml_matrix, pml_diagnostics
+
+    def _assemble_bli_form(
+        self,
+        frequency_Hz: float,
+    ) -> tuple[
+        csr_matrix,
+        csr_matrix,
+        csr_matrix,
+        csr_matrix,
+        csr_matrix,
+        dict[str, Any],
+    ]:
+        """Assemble C cavity-wall BLI matrices on selected FacetBasis facets."""
+
+        shape = (self.basis.N, self.basis.N)
+        zero = csr_matrix(shape, dtype=np.complex128)
+        zero_real = csr_matrix(shape, dtype=float)
+        if self.mesh_data.case_id != "C":
+            return (
+                zero,
+                zero,
+                zero,
+                zero_real,
+                zero_real,
+                {
+                    "status": "not_applicable",
+                    "case": self.mesh_data.case_id,
+                    "physical_wall_loss": False,
+                    "loss_scale": 0.0,
+                    "boundary_selection": self.mesh_data.cavity_bli_boundary_report,
+                },
+            )
+
+        frequency = float(frequency_Hz)
+        applicability = assess_bli_applicability(
+            self.mesh_data.config,
+            (frequency,),
+        )
+        scale = self.parameters.thermoviscous_loss_scale
+        if scale > 0.0 and applicability["route"] != "BLI":
+            raise ValueError(
+                f"case C BLI is not applicable at {frequency:g} Hz: "
+                f"route={applicability['route']}"
+            )
+        air = ThermoviscousAirProperties.from_config(self.mesh_data.config)
+        coefficients = bli_bilinear_coefficients(
+            air,
+            frequency,
+            loss_scale=scale,
+        )
+        facets = self.mesh_data.cavity_bli_facets
+        if not len(facets):
+            raise ValueError("case C has no selected cavity BLI facets")
+        facet_basis = FacetBasis(
+            self.mesh_data.mesh,
+            self.element,
+            facets=facets,
+            intorder=6,
+        )
+
+        @BilinearForm
+        def tangential_gradient(u, v, w):
+            gu = grad(u)
+            gv = grad(v)
+            normal_gu = gu[0] * w.n[0] + gu[1] * w.n[1]
+            normal_gv = gv[0] * w.n[0] + gv[1] * w.n[1]
+            tangent_product = (
+                gu[0] * gv[0] + gu[1] * gv[1] - normal_gu * normal_gv
+            )
+            return 2.0 * math.pi * w.x[0] * tangent_product
+
+        @BilinearForm
+        def boundary_mass(u, v, w):
+            return 2.0 * math.pi * w.x[0] * u * v
+
+        @LinearForm
+        def boundary_area(v, w):
+            return 2.0 * math.pi * w.x[0] * v
+
+        gradient_geometry = asm(tangential_gradient, facet_basis).tocsr()
+        mass_geometry = asm(boundary_mass, facet_basis).tocsr()
+        viscous_geometry = (
+            self.parameters.viscous_loss_scale * gradient_geometry
+        ).tocsr()
+        thermal_geometry = (
+            self.parameters.thermal_loss_scale * mass_geometry
+        ).tocsr()
+        viscous_matrix = (
+            coefficients.viscous_tangential_gradient_m4_kg * viscous_geometry
+        ).astype(np.complex128).tocsr()
+        thermal_matrix = (
+            coefficients.thermal_pressure_m2_kg * thermal_geometry
+        ).astype(np.complex128).tocsr()
+        matrix = (viscous_matrix + thermal_matrix).tocsr()
+        area_facetbasis = float(np.sum(asm(boundary_area, facet_basis)))
+        area_reported = float(
+            self.mesh_data.cavity_bli_boundary_report[
+                "selected_axisymmetric_area_m2"
+            ]
+        )
+        area_error = abs(area_facetbasis - area_reported)
+        if area_error > 1.0e-11 * max(1.0, area_reported):
+            raise ValueError(
+                "C BLI FacetBasis area disagrees with edge-geometry selection report"
+            )
+        group_area_crosscheck: dict[str, dict[str, float]] = {}
+        for name, group_facets in self.mesh_data.cavity_bli_group_facets.items():
+            group_basis = FacetBasis(
+                self.mesh_data.mesh,
+                self.element,
+                facets=group_facets,
+                intorder=6,
+            )
+            integrated = float(np.sum(asm(boundary_area, group_basis)))
+            geometric = float(
+                self.mesh_data.cavity_bli_boundary_report["physical_groups"][name][
+                    "axisymmetric_area_m2"
+                ]
+            )
+            group_area_crosscheck[name] = {
+                "edge_geometry_area_m2": geometric,
+                "facetbasis_integrated_area_m2": integrated,
+                "absolute_error_m2": abs(integrated - geometric),
+            }
+        diagnostics = {
+            "status": "assembled",
+            "case": "C",
+            "model": "fixed_isothermal_no_slip_BLI",
+            "harmonic_convention": "exp(+i*omega*t)",
+            "physical_wall_loss": True,
+            "loss_scale": float(scale),
+            "viscous_loss_scale": float(self.parameters.viscous_loss_scale),
+            "thermal_loss_scale": float(self.parameters.thermal_loss_scale),
+            "coefficient_source": "thermoviscous_boundaries.bli_bilinear_coefficients",
+            "coefficients": coefficients.to_dict(),
+            "axisymmetric_weight": "2*pi*r in FacetBasis forms",
+            "viscous_operator": "tangential pressure gradient only",
+            "thermal_operator": "boundary pressure mass/compliance",
+            "boundary_selection": self.mesh_data.cavity_bli_boundary_report,
+            "facetbasis_area_m2": area_facetbasis,
+            "edge_area_crosscheck_absolute_error_m2": area_error,
+            "physical_group_area_crosscheck": group_area_crosscheck,
+            "applicability": applicability,
+            "final_production_interface_ready": False,
+        }
+        return (
+            matrix,
+            viscous_matrix,
+            thermal_matrix,
+            viscous_geometry,
+            thermal_geometry,
+            diagnostics,
+        )
 
     def _assemble_trace_rhs(self, frequency_Hz: float, trace_name: str) -> np.ndarray:
         omega = 2.0 * math.pi * float(frequency_Hz)
@@ -1892,6 +3000,15 @@ class ReferencePrescribedVelocityAcoustics:
         if frequency <= 0.0:
             raise ValueError("frequency must be positive")
         matrix, pml_matrix, pml_diagnostics = self._assemble_domain_form(frequency)
+        (
+            bli_matrix,
+            bli_viscous_matrix,
+            bli_thermal_matrix,
+            bli_tangential_gradient_matrix,
+            bli_boundary_mass_matrix,
+            thermoviscous_diagnostics,
+        ) = self._assemble_bli_form(frequency)
+        matrix = (matrix + bli_matrix).tocsr()
         rhs_front = self._assemble_trace_rhs(frequency, REFERENCE_PLANAR_PISTON_FRONT)
         rhs_back = self._assemble_trace_rhs(frequency, REFERENCE_PLANAR_PISTON_BACK)
         rhs = rhs_front + rhs_back
@@ -1902,14 +3019,20 @@ class ReferencePrescribedVelocityAcoustics:
             omega_rad_s=2.0 * math.pi * frequency,
             matrix=matrix,
             pml_matrix=pml_matrix,
+            bli_matrix=bli_matrix,
+            bli_viscous_matrix=bli_viscous_matrix,
+            bli_thermal_matrix=bli_thermal_matrix,
+            bli_tangential_gradient_matrix=bli_tangential_gradient_matrix,
+            bli_boundary_mass_matrix=bli_boundary_mass_matrix,
             rhs=rhs,
             rhs_front=rhs_front,
             rhs_back=rhs_back,
-            dirichlet_dofs=self.mesh_data.outer_dirichlet_dofs.copy(),
+            dirichlet_dofs=self._outer_dirichlet_dofs.copy(),
             free_dofs=self._free_dofs.copy(),
             dof_component=self._dof_component.copy(),
-            component_dofs={key: value.copy() for key, value in self.mesh_data.component_dofs.items()},
+            component_dofs={key: value.copy() for key, value in self._component_dofs.items()},
             pml_diagnostics=pml_diagnostics,
+            thermoviscous_diagnostics=thermoviscous_diagnostics,
             matrix_symmetry_error=symmetry_error,
         )
 
@@ -1948,22 +3071,51 @@ class ReferencePrescribedVelocityAcoustics:
         pml_discrete_absorption = float(
             np.imag(pml_quadratic_form) / (2.0 * omega)
         )
+        bli_quadratic_form = complex(
+            np.vdot(pressure, assembly.bli_matrix.dot(pressure))
+        )
+        bli_viscous_quadratic_form = complex(
+            np.vdot(pressure, assembly.bli_viscous_matrix.dot(pressure))
+        )
+        bli_thermal_quadratic_form = complex(
+            np.vdot(pressure, assembly.bli_thermal_matrix.dot(pressure))
+        )
+        bli_power_matrix = float(np.imag(bli_quadratic_form) / (2.0 * omega))
+        bli_viscous_power_matrix = float(
+            np.imag(bli_viscous_quadratic_form) / (2.0 * omega)
+        )
+        bli_thermal_power_matrix = float(
+            np.imag(bli_thermal_quadratic_form) / (2.0 * omega)
+        )
+        if self.mesh_data.case_id == "C":
+            low_level_coefficients = bli_bilinear_coefficients(
+                ThermoviscousAirProperties.from_config(self.mesh_data.config),
+                frequency_Hz,
+                loss_scale=self.parameters.thermoviscous_loss_scale,
+            )
+            independent_bli_power = bli_dissipation(
+                pressure,
+                assembly.bli_tangential_gradient_matrix,
+                assembly.bli_boundary_mass_matrix,
+                low_level_coefficients,
+            )
+            bli_power_cross_error = float(
+                bli_power_matrix - independent_bli_power.P_total_W
+            )
+        else:
+            independent_bli_power = None
+            bli_power_cross_error = 0.0
 
         means: dict[int, complex] = {}
         for component, triangle_indices in self.mesh_data.component_triangles.items():
             triangles = self.mesh_data.mesh.t[:, triangle_indices].T
             volume = axisymmetric_volume(self.mesh_data.points_rz, triangles)
-            integral = _integral_r_times_linear_field(
-                self.mesh_data.points_rz,
-                triangles,
-                pressure,
-            )
+            integral = self._pressure_volume_integral(pressure, triangle_indices)
             means[int(component)] = integral / volume
         cavity_triangles = self.mesh_data.mesh.t[:, self.mesh_data.cavity_triangle_indices].T
-        cavity_integral = _integral_r_times_linear_field(
-            self.mesh_data.points_rz,
-            cavity_triangles,
+        cavity_integral = self._pressure_volume_integral(
             pressure,
+            self.mesh_data.cavity_triangle_indices,
         )
         cavity_mean = cavity_integral / self.mesh_data.cavity_volume_m3
         back_trace = self.mesh_data.trace_metrics[REFERENCE_PLANAR_PISTON_BACK]
@@ -1987,7 +3139,7 @@ class ReferencePrescribedVelocityAcoustics:
         )
         real_ratio = (
             float(abs(np.real(z_box)) / max(abs(z_box), 1.0e-30))
-            if analytic is not None
+            if analytic is not None or self.mesh_data.case_id == "C"
             else None
         )
         front_trace = self.mesh_data.trace_metrics[REFERENCE_PLANAR_PISTON_FRONT]
@@ -2022,6 +3174,15 @@ class ReferencePrescribedVelocityAcoustics:
             abs(hk_diagnostics["power_balance_residual_W"])
             / max(abs(drive_power["total"]), 1.0e-30)
         )
+        hk_diagnostics["power_balance_with_bli_residual_W"] = float(
+            drive_power["total"]
+            - hk_diagnostics["hk_flux_power_W"]
+            - bli_power_matrix
+        )
+        hk_diagnostics["power_balance_with_bli_relative_to_input"] = float(
+            abs(hk_diagnostics["power_balance_with_bli_residual_W"])
+            / max(abs(drive_power["total"]), 1.0e-30)
+        )
         pml_diagnostics = dict(assembly.pml_diagnostics)
         pml_diagnostics.update(
             {
@@ -2039,6 +3200,60 @@ class ReferencePrescribedVelocityAcoustics:
                 "input_power_boundary_rhs_error_W": boundary_input_cross_error,
             }
         )
+        input_power_closure_residual = float(
+            rhs_input_power - pml_discrete_absorption - bli_power_matrix
+        )
+        input_power_closure_relative = float(
+            abs(input_power_closure_residual)
+            / max(abs(rhs_input_power), 1.0e-30)
+        )
+        thermoviscous_diagnostics = dict(assembly.thermoviscous_diagnostics)
+        thermoviscous_diagnostics.update(
+            {
+                "dissipation_definition": (
+                    "physical fixed-wall BLI loss; distinct from numerical PML absorption"
+                ),
+                "P_visc_W": bli_viscous_power_matrix,
+                "P_thermal_W": bli_thermal_power_matrix,
+                "P_total_W": bli_power_matrix,
+                "matrix_quadratic_form": {
+                    "real": float(np.real(bli_quadratic_form)),
+                    "imag": float(np.imag(bli_quadratic_form)),
+                },
+                "independent_quadratic": (
+                    independent_bli_power.to_dict()
+                    if independent_bli_power is not None
+                    else {
+                        "P_visc_W": 0.0,
+                        "P_thermal_W": 0.0,
+                        "P_total_W": 0.0,
+                        "passive": True,
+                    }
+                ),
+                "matrix_independent_power_cross_error_W": bli_power_cross_error,
+                "input_power_closure": {
+                    "identity": "P_input = PML numerical absorption + physical BLI loss",
+                    "input_power_W": rhs_input_power,
+                    "pml_numerical_absorption_W": pml_discrete_absorption,
+                    "bli_physical_loss_W": bli_power_matrix,
+                    "residual_W": input_power_closure_residual,
+                    "relative_to_input": input_power_closure_relative,
+                },
+                "hk_crosscheck": {
+                    "identity": "P_input approximately HK outward flux + physical BLI loss",
+                    "hk_outward_flux_W": float(hk_diagnostics["hk_flux_power_W"]),
+                    "residual_W": float(
+                        hk_diagnostics["power_balance_with_bli_residual_W"]
+                    ),
+                    "relative_to_input": float(
+                        hk_diagnostics[
+                            "power_balance_with_bli_relative_to_input"
+                        ]
+                    ),
+                    "is_primary_closure": False,
+                },
+            }
+        )
         passivity_failures = []
         if drive_power["total"] <= 0.0:
             passivity_failures.append("non_positive_input_power")
@@ -2046,6 +3261,57 @@ class ReferencePrescribedVelocityAcoustics:
             passivity_failures.append("non_positive_hk_outward_power")
         if pml_discrete_absorption <= 0.0:
             passivity_failures.append("non_positive_discrete_pml_absorption")
+        bli_tolerance = 1.0e-13 * max(abs(rhs_input_power), 1.0)
+        if bli_viscous_power_matrix < -bli_tolerance:
+            passivity_failures.append("negative_physical_bli_viscous_loss")
+        if bli_thermal_power_matrix < -bli_tolerance:
+            passivity_failures.append("negative_physical_bli_thermal_loss")
+        if bli_power_matrix < -bli_tolerance:
+            passivity_failures.append("negative_physical_bli_total_loss")
+        # This cross-check compares two algebraically equivalent evaluations
+        # of the same assembled BLI quadratic.  Large low-frequency pressures
+        # make their floating-point cancellation error dimensional and
+        # scale-dependent; this tolerance does not enter either physical
+        # power value or the L1/L2 convergence gate.
+        bli_cross_absolute_tolerance_W = 5.0e-9
+        bli_cross_relative_tolerance = 1.0e-6
+        bli_cross_scale_W = max(
+            abs(bli_power_matrix),
+            abs(rhs_input_power),
+            abs(pml_discrete_absorption),
+            (
+                abs(independent_bli_power.P_total_W)
+                if independent_bli_power is not None
+                else 0.0
+            ),
+        )
+        bli_cross_tolerance = (
+            bli_cross_absolute_tolerance_W
+            + bli_cross_relative_tolerance * bli_cross_scale_W
+        )
+        thermoviscous_diagnostics.update(
+            {
+                "matrix_independent_power_cross_absolute_tolerance_W": (
+                    bli_cross_absolute_tolerance_W
+                ),
+                "matrix_independent_power_cross_relative_tolerance": (
+                    bli_cross_relative_tolerance
+                ),
+                "matrix_independent_power_cross_scale_W": bli_cross_scale_W,
+            }
+        )
+        thermoviscous_diagnostics["matrix_independent_power_cross_tolerance_W"] = (
+            bli_cross_tolerance
+        )
+        if abs(bli_power_cross_error) > bli_cross_tolerance:
+            passivity_failures.append("bli_matrix_independent_power_mismatch")
+        if input_power_closure_relative > 2.0e-2 and abs(
+            input_power_closure_residual
+        ) > 1.0e-10:
+            passivity_failures.append("input_pml_bli_power_closure")
+        thermoviscous_diagnostics["passivity_status"] = (
+            "pass" if not any("bli" in item for item in passivity_failures) else "fail"
+        )
         pml_diagnostics["passivity_status"] = "pass" if not passivity_failures else "unresolved"
         pml_diagnostics["passivity_failures"] = passivity_failures
         if passivity_failures and not allow_unresolved_pml:
@@ -2055,6 +3321,8 @@ class ReferencePrescribedVelocityAcoustics:
                 + f"; input={drive_power['total']:.6e}, "
                 + f"hk={hk_diagnostics['hk_flux_power_W']:.6e}, "
                 + f"pml={pml_discrete_absorption:.6e}"
+                + f", bli={bli_power_matrix:.6e}, "
+                + f"closure={input_power_closure_residual:.6e}"
             )
         return AcousticSolveResult(
             frequency_Hz=float(frequency_Hz),
@@ -2083,6 +3351,7 @@ class ReferencePrescribedVelocityAcoustics:
             input_power_boundary_cross_error_W=boundary_input_cross_error,
             hk_diagnostics=hk_diagnostics,
             pml_diagnostics=pml_diagnostics,
+            thermoviscous_diagnostics=thermoviscous_diagnostics,
         )
 
 

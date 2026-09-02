@@ -253,12 +253,25 @@ class BLIDissipation:
 
 def _real_quadratic(vector: np.ndarray, matrix: Any, name: str) -> float:
     values = np.asarray(vector, dtype=np.complex128).reshape(-1)
+    if hasattr(matrix, "getH"):
+        skew = matrix - matrix.getH()
+        skew_max = float(np.max(np.abs(skew.data))) if skew.nnz else 0.0
+        matrix_max = float(np.max(np.abs(matrix.data))) if matrix.nnz else 0.0
+    else:
+        dense = np.asarray(matrix)
+        skew_max = float(np.max(np.abs(dense - dense.conj().T)))
+        matrix_max = float(np.max(np.abs(dense))) if dense.size else 0.0
+    hermitian_tolerance = 1.0e-12 * max(1.0, matrix_max)
+    if skew_max > hermitian_tolerance:
+        raise ValueError(f"{name} must be Hermitian for a physical quadratic form")
     product = matrix @ values
     result = complex(np.vdot(values, product))
-    tolerance = 1.0e-10 * max(1.0, abs(result.real))
+    roundoff_scale = float(np.linalg.norm(values) * np.linalg.norm(product))
+    tolerance = 1.0e-12 * max(1.0, roundoff_scale)
     if abs(result.imag) > tolerance:
         raise ValueError(f"{name} must be Hermitian for a physical quadratic form")
-    if result.real < -tolerance:
+    positivity_tolerance = 1.0e-12 * max(1.0, roundoff_scale, abs(result.real))
+    if result.real < -positivity_tolerance:
         raise ValueError(f"{name} quadratic form must be nonnegative")
     return float(max(result.real, 0.0))
 
