@@ -6,7 +6,7 @@
 
 完整的中文交接说明在 [`README_CN.md`](README_CN.md)。它记录了生产路由、固定物理合同、Stage29–Stage35 的合并状态、历史验证指标以及尚未闭环的频段和网格问题。版本冻结日期为 **2026-08-01**。
 
-这个仓库不包含历史扫频结果、图片、checkpoint、已求解 COMSOL MPH 文件或虚拟环境；`inputs/` 中保留的是 Python 主链必需的网格、几何和静磁偏置场输入。
+这个仓库不包含完整历史扫频归档、图片、checkpoint、已求解 COMSOL MPH 文件或虚拟环境；`inputs/` 中保留的是 Python 主链必需的网格、几何和静磁偏置场输入，`benchmarks/` 只保留经过筛选的紧凑机器可读快照。
 
 ## What this project contains
 
@@ -15,6 +15,7 @@
 - `configs/`：生产路由及 Stage34/35 诊断配置；当前生产入口为 `configs/best_model.json`；
 - `inputs/`：开箱运行所需的网格、几何和静磁场输入；
 - `comsol_exports/`：有 COMSOL 许可证时使用的离线 Java/Python benchmark 导出；
+- `benchmarks/`：精选的 native 扫频、收敛、耦合、损耗、模态和 PML 快照；
 - `tests/`、`self_test.py` 和 `tools/`：测试、验收、收敛诊断和报告工具。
 
 Python 主链不在运行时读取 COMSOL 扫频结果；COMSOL 只作为独立 benchmark。COMSOL 许可证和已求解模型不在仓库中。

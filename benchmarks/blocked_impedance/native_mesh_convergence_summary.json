@@ -1,0 +1,94 @@
+{
+  "schema": "loudspeaker-consistency-minimal-results-v1",
+  "date": "2026-07-17",
+  "default_runtime": {
+    "COMSOL_executable_required": false,
+    "COMSOL_result_table_required": false,
+    "blocked_runtime_mode": "native_field",
+    "blocked_reference_identified": false
+  },
+  "blocked_impedance_126": {
+    "frequency_range_Hz": [1.0, 8000.0],
+    "n_frequencies": 126,
+    "complex_NRMSE_percent": 0.42241566541957826,
+    "R_RMSE_ohm": 0.05195755844003653,
+    "X_RMSE_ohm": 0.03432717501295935,
+    "amplitude_RMSE_dB": 0.03618425219419413,
+    "phase_RMSE_deg": 0.11010734354015658,
+    "max_relative_complex_error_percent": 0.679181317672972,
+    "serial_seconds_126": 19.325460165007826,
+    "seconds_per_frequency": 0.15337666797625257,
+    "previous_mapped_mesh_complex_NRMSE_percent": 0.6036781805637641,
+    "previous_mapped_mesh_serial_seconds_126": 1.903027332999045,
+    "old_native_complex_NRMSE_percent": 65.41509019879423,
+    "attribution": [
+      "restrict native quadrilateral boundary layers to straight gap-facing iron walls so the 0.20 mm curved corners cannot collapse the offset layers",
+      "use 24 um first-layer height, 450 um total layer thickness and 48 um isotropic refinement on the four curved corners",
+      "replace scalar differential permeability with the full anisotropic tangent reluctivity tensor",
+      "recompute the nonlinear B_inverse static bias field on the same blocked-field mesh"
+    ]
+  },
+  "blocked_key_points": [
+    {
+      "freq_Hz": 50.0,
+      "native_Z_ohm": [5.630096708340111, 0.5236848930146353],
+      "COMSOL_Z_ohm": [5.62157309972956, 0.510576264861908],
+      "relative_complex_error_percent": 0.2770046287284759
+    },
+    {
+      "freq_Hz": 900.0,
+      "native_Z_ohm": [7.044841517699552, 6.874040959512264],
+      "COMSOL_Z_ohm": [6.99713739798341, 6.83435898327009],
+      "relative_complex_error_percent": 0.6344032893538503
+    },
+    {
+      "freq_Hz": 2000.0,
+      "native_Z_ohm": [9.093582438048912, 13.539705048710443],
+      "COMSOL_Z_ohm": [9.01271335056932, 13.4773829341693],
+      "relative_complex_error_percent": 0.6297158455312917
+    },
+    {
+      "freq_Hz": 5000.0,
+      "native_Z_ohm": [14.83449553068604, 28.301389593049983],
+      "COMSOL_Z_ohm": [14.7249347537373, 28.2651174375259],
+      "relative_complex_error_percent": 0.3621164140659477
+    },
+    {
+      "freq_Hz": 8000.0,
+      "native_Z_ohm": [20.402215437613613, 40.60824405672885],
+      "COMSOL_Z_ohm": [20.3369727399834, 40.5141839916468],
+      "relative_complex_error_percent": 0.2525197515899977
+    }
+  ],
+  "full_coupled_V3_pext": {
+    "complex_NRMSE_percent": 1.21917,
+    "amplitude_RMSE_dB": 0.1142,
+    "phase_RMSE_deg": 0.76893,
+    "complex_NRMSE_4_8kHz_percent": 3.4761,
+    "complex_NRMSE_6p3_8kHz_percent": 2.6439,
+    "max_amplitude_error_dB": 0.4508,
+    "max_phase_error_deg": 2.546,
+    "full126_seconds_12_workers": 85.22
+  },
+  "probe_validation": {
+    "Jphi_complex_shape_correlation_range_50_900Hz": [0.998216, 0.999057],
+    "Jphi_absolute_complex_NRMSE_percent_range_50_900Hz": [5.459529, 6.304312],
+    "Jphi_magnitude_NRMSE_percent_range_50_900Hz": [3.818320, 4.797465],
+    "domain_loss_typical_error_900_8000Hz_percent": [-3.65, 4.3]
+  },
+  "tests": {
+    "pytest_version": "8.4.2",
+    "result": "14 passed",
+    "compileall": "passed",
+    "self_test": "passed",
+    "single_frequency_voltage_coupled_smoke_900Hz": "passed",
+    "parallel_voltage_sweep_smoke_2_workers": "passed"
+  },
+  "remaining_issues": [
+    "The blocked production mesh is generated natively by Gmsh, but its geometry is reconstructed from the offline COMSOL mphtxt reference; runtime is self-contained while geometry provenance is not fully independent.",
+    "Local P1 Jphi peaks are less accurate than terminal impedance.",
+    "The dominant remaining full-model error is high-frequency structural breakup/eigenmode and local ASB boundary power, not blocked impedance.",
+    "The low-frequency fast profile still contains historically identified regional stiffness/loss parameters.",
+    "The optional COMSOL-identified blocked surrogate remains in the full configuration but is disabled by default."
+  ]
+}
