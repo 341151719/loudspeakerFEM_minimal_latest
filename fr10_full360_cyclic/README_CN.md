@@ -43,6 +43,15 @@ python cli.py fr10-full360 --freq 2000 --diagnostic-phases 1 2 3
 
 第一条执行 k=0 full-360 基线，第二条执行 k=1/2/3 非镜面对称 phase 诊断。结果不写入 Git；默认输出根目录为仓库同级 `runs/<checkout-name>_fr10_full360`，可用环境变量 `FR10_FULL360_OUTPUT_ROOT` 或 CLI 的 `--outdir` 覆盖。本次交接结果的 `final_baseline/` 与 `phase_diagnostics/` 位于项目外的 `runs/fr10_full360_feature_20260902/`。如需重建网格，可先运行 `fr10_full360_cyclic/prepare_meshes.sh`。
 
+已有结果还可生成 2000 Hz 的复场动画和 1 m 频响：
+
+```bash
+python cli.py fr10-animate --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 --frequency 2000 --frames 24 --fps 12
+python cli.py fr10-response --output /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/frequency_response_1m --reuse-summary /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/final_baseline/run_summary.json
+```
+
+动画输出到 `runs/fr10_full360_feature_20260902/animations/2000Hz/`，包含 k=1/m=1 摇摆、k=0 经向声源传播、k=0 3D 外场以及 k=0/k=1 外边界瞬时压力，共五个 GIF、每个 24 帧。频响输出为 `frequency_response_1m/frequency_response_1m.{png,csv,json}` 和 `frequency_response_1m_2p83Vrms.png`，覆盖 50--2000 Hz 的 18 个 1/3 倍频程附近频点；驱动主列为 1 V peak（0.707 Vrms），2.83 Vrms 列仅线性归一化。1 m 数值由 0.3 m Sommerfeld 球面出射波外推，不是 PML。
+
 ## 当前数学模型
 
 结构 cyclic condition：

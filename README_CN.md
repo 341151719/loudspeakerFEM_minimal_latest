@@ -14,7 +14,7 @@ configs/best_model.json
 
 ### FR10 full-360 三维功能分支
 
-[`fr10_full360_cyclic/`](fr10_full360_cyclic/) 的 `feature/fr10-full360-cyclic-3d` 分支提供四扇区 cyclic/Bloch full-360 三维 P2/local-ASB 结构与前/后 Helmholtz 声场，并导出 full-360 VTU、3D PNG 和周向阶次诊断。运行：`python cli.py fr10-full360 --freq 90 500 1000 2000`；详细结果见 [`docs/FR10_FULL360_STATUS_CN.md`](docs/FR10_FULL360_STATUS_CN.md)。其外边界是一阶 Sommerfeld Robin（不是 PML），电磁仍为 `Bl/Rdc/Le` 等效（不是完整 3D MQS），内部尺寸含工程假设，不能称厂家 CAD。
+[`fr10_full360_cyclic/`](fr10_full360_cyclic/) 的 `feature/fr10-full360-cyclic-3d` 分支提供四扇区 cyclic/Bloch full-360 三维 P2/local-ASB 结构与前/后 Helmholtz 声场，并导出 full-360 VTU、3D PNG 和周向阶次诊断。运行：`python cli.py fr10-full360 --freq 90 500 1000 2000`；动画和 1 m 频响分别运行 `python cli.py fr10-animate --results-root <results-root> --frequency 2000 --frames 24 --fps 12` 与 `python cli.py fr10-response --output <results-root>/frequency_response_1m --reuse-summary <results-root>/final_baseline/run_summary.json`。详细结果见 [`docs/FR10_FULL360_STATUS_CN.md`](docs/FR10_FULL360_STATUS_CN.md)。其外边界是一阶 Sommerfeld Robin（不是 PML），电磁仍为 `Bl/Rdc/Le` 等效（不是完整 3D MQS），内部尺寸含工程假设，不能称厂家 CAD。
 
 扫频按频率自动路由：低频使用 `configs/fast_p1.json`；3–8 kHz 使用主配置的 mapped 结构/P2 声学路线；8 kHz 以上使用 `configs/stage35_high_accuracy.json`。不得为了省时把所有频率强行统一到一个离散配置后仍称为生产结果。
 

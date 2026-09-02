@@ -432,6 +432,38 @@ def cmd_fr10_full360(args):
     return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
 
 
+def cmd_fr10_animate(args):
+    command = [
+        sys.executable,
+        str(ROOT / "fr10_full360_cyclic/animate_full360_results.py"),
+        "--results-root",
+        str(Path(args.results_root)),
+        "--frequency",
+        str(args.frequency),
+        "--frames",
+        str(args.frames),
+        "--fps",
+        str(args.fps),
+    ]
+    return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
+
+
+def cmd_fr10_response(args):
+    command = [
+        sys.executable,
+        str(ROOT / "fr10_full360_cyclic/frequency_response_1m.py"),
+    ]
+    if args.frequencies:
+        command.extend(("--frequencies", *(str(value) for value in args.frequencies)))
+    if args.output:
+        command.extend(("--output", str(Path(args.output))))
+    if args.reuse_summary:
+        command.extend(("--reuse-summary", str(Path(args.reuse_summary))))
+    if args.scale is not None:
+        command.extend(("--scale", str(args.scale)))
+    return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
+
+
 def build_parser():
     p = argparse.ArgumentParser(description="Best COMSOL loudspeaker reproduction project")
     sp = p.add_subparsers(dest="command", required=True)
@@ -489,6 +521,18 @@ def build_parser():
     f3.add_argument("--diagnostic-phases", type=int, nargs="+")
     f3.add_argument("--outdir")
     f3.set_defaults(func=cmd_fr10_full360)
+    f3a = sp.add_parser("fr10-animate", help="animate FR10 full-360 complex FEM fields")
+    f3a.add_argument("--results-root", required=True)
+    f3a.add_argument("--frequency", type=float, default=2000.0)
+    f3a.add_argument("--frames", type=int, default=24)
+    f3a.add_argument("--fps", type=int, default=12)
+    f3a.set_defaults(func=cmd_fr10_animate)
+    f3r = sp.add_parser("fr10-response", help="FR10 full-360 1 m frequency response")
+    f3r.add_argument("--frequencies", type=float, nargs="+")
+    f3r.add_argument("--output")
+    f3r.add_argument("--reuse-summary")
+    f3r.add_argument("--scale", type=float)
+    f3r.set_defaults(func=cmd_fr10_response)
     e = sp.add_parser("comsol-export-info"); e.set_defaults(func=cmd_export_info)
     return p
 
