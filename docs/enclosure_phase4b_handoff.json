@@ -1,0 +1,130 @@
+{
+  "schema": "luna.enclosure_phase4b_handoff.v1",
+  "title": "Stage 4B sealed C thermoviscous reference FEM",
+  "status": "pass_reference_only",
+  "scope": "sealed C reference-only BLI FEM with sealed B compatibility; no production coupling",
+  "parent_commit": "1276ce65d0119de315451f38daeba240fb8a3787",
+  "expected_commit": {
+    "message": "feat: couple thermoviscous losses to sealed enclosure",
+    "final_commit": "pending; final SHA must not self-reference this commit"
+  },
+  "identity": {
+    "geometry": "phase-2 audited B/C identical geometry",
+    "source": "reference planar piston, radius 0.045 m, global vz=+1 m/s",
+    "harmonic_convention": "exp(+i omega t)",
+    "demonstrator": true,
+    "product_prediction": false,
+    "final_production_interface_ready": false
+  },
+  "implementation": {
+    "solver_module": "src/loudspeaker_axisym_fem/enclosure_acoustics.py",
+    "low_level_module": "src/loudspeaker_axisym_fem/thermoviscous_boundaries.py",
+    "test": "tests/test_enclosure_thermoviscous_fem.py",
+    "pressure_element": "scikit-fem P1",
+    "bli_assembly": "axisymmetric 2*pi*r FacetBasis tangential-gradient plus thermal boundary mass",
+    "wall_selection": "unique physical owner and exactly one air_cavity pressure neighbor; axis, pressure-pressure, HK, PML and exterior excluded",
+    "selected_groups": [
+      "cabinet_front_wall",
+      "cabinet_side_wall",
+      "comparison_equalizer_face",
+      "driver_side_wall",
+      "reference_planar_piston_back"
+    ],
+    "formal_configs_modified": false,
+    "production_mesh_modified": false,
+    "cli_modified": false,
+    "legacy_solver_modified": false
+  },
+  "mesh_strategy": {
+    "selected": "three deterministic conforming cavity-wall-local refinement levels in memory",
+    "source_phase2_mesh_changed": false,
+    "tag_propagation": "parent pressure physical subdomains plus exact named facet 1-to-1 or 1-to-2 propagation",
+    "rejected_options": [
+      {"option": "pressure P2", "500_Hz_L1_L2_Ptotal_difference_percent": 5.29796},
+      {"option": "one global conforming refinement", "500_Hz_L1_L2_Ptotal_difference_percent": 6.01838},
+      {"option": "one cavity-wall-local refinement", "500_Hz_L1_L2_Ptotal_difference_percent": 6.19235},
+      {"option": "two cavity-wall-local refinements", "500_Hz_L1_L2_Ptotal_difference_percent": 5.27651}
+    ],
+    "levels": {
+      "L1": {"pressure_dofs": 6761, "triangles": 12519, "bli_facets": 704},
+      "L2": {"pressure_dofs": 22022, "triangles": 42065, "bli_facets": 1392}
+    },
+    "invariants": {
+      "cavity_volume_m3": 0.0061,
+      "bli_axisymmetric_area_m2": 0.1977207419606847,
+      "reference_piston_back_area_m2": 0.006361725123519331,
+      "front_q_out_m3_s": -0.0063617251235193305,
+      "back_q_out_m3_s": 0.0063617251235193305,
+      "tag_propagation": "pass",
+      "pml_geometry": "pass",
+      "closed_hk_geometry": "pass"
+    }
+  },
+  "raw_fem_results": {
+    "frequencies_Hz": [10.0, 100.0, 500.0, 1000.0],
+    "rows": [
+      {"frequency_Hz": 10.0, "L1_Pvisc_W": 0.00009661911299814994, "L1_Pthermal_W": 0.03953552094017807, "L1_Ptotal_W": 0.039632140068333016, "L2_Pvisc_W": 0.00010163825535135062, "L2_Pthermal_W": 0.039535525427409235, "L2_Ptotal_W": 0.039637166268551786, "Ptotal_difference_percent": 0.012680523589190506},
+      {"frequency_Hz": 100.0, "L1_Pvisc_W": 0.00027797267941488495, "L1_Pthermal_W": 0.0012575658403871162, "L1_Ptotal_W": 0.00153553851974559, "L2_Pvisc_W": 0.0003009751123448188, "L2_Pthermal_W": 0.0012575829080032094, "L2_Ptotal_W": 0.0015585580198731429, "Ptotal_difference_percent": 1.4769742180933698},
+      {"frequency_Hz": 500.0, "L1_Pvisc_W": 0.0006483291455118427, "L1_Pthermal_W": 0.00015598842345006933, "L1_Ptotal_W": 0.0008043175689610771, "L2_Pvisc_W": 0.0006890159212035264, "L2_Pthermal_W": 0.00015604140624297277, "L2_Ptotal_W": 0.0008450573274416666, "Ptotal_difference_percent": 4.820946124912666},
+      {"frequency_Hz": 1000.0, "L1_Pvisc_W": 0.0025760064143403147, "L1_Pthermal_W": 0.0014418887983980607, "L1_Ptotal_W": 0.004017895212738427, "L2_Pvisc_W": 0.002666887227835412, "L2_Pthermal_W": 0.0014374229337279873, "L2_Ptotal_W": 0.004104310161565229, "Ptotal_difference_percent": 2.105468286389116}
+    ],
+    "maximum_Ptotal_difference_percent": 4.820946124912666,
+    "maximum_impedance_magnitude_difference_dB": 0.0000014569575007112853,
+    "maximum_hk_axis_spl_difference_dB": 0.11890034703191077,
+    "maximum_B_C_loss0_complex_field_NRMSE": 0.0,
+    "maximum_primary_power_closure_relative": 2.0040337378533983e-8,
+    "all_input_pml_viscous_thermal_powers_positive": true
+  },
+  "power_contract": {
+    "primary": "P_input = PML numerical absorption + physical BLI loss",
+    "hk": "outward HK flux is an independent cross-check, not the primary closure",
+    "pml_is_material_loss": false,
+    "combined_independent_cross_tolerance": "abs(error) <= 5e-9 W + 1e-6*max(abs(Ptotal),abs(Pin),abs(Ppml),abs(Pindependent))",
+    "original_roundoff_evidence": {
+      "case": "C L2 10 Hz after three local refinements",
+      "cross_error_W": 2.5902981912184764e-9,
+      "primary_closure_relative": 2.0040337378533983e-8,
+      "note": "dimensional floating-point/quadrature cancellation only; raw powers and 5 percent convergence gate unchanged"
+    }
+  },
+  "first_cavity_mode": {
+    "scan_Hz": [873.0, 879.0, 0.25],
+    "B": {"peak_frequency_Hz": 876.5, "peak_pressure_Pa": 228338.41589267083, "sampled_bandwidth_Hz": 0.0, "Q": "unresolved/infinite on this sample grid"},
+    "C": {"peak_frequency_Hz": 876.0, "peak_pressure_Pa": 27080.92832718767, "sampled_bandwidth_Hz": 1.25, "sampled_Q": 700.8},
+    "interpretation": "BLI lowers and broadens the reference acoustic cavity peak; this is not a mechanical enclosure resonance or product Q"
+  },
+  "performance_checkpoint": {
+    "four_frequency_comparison_wall_s": 27.25,
+    "four_frequency_comparison_peak_rss_kb": 392032,
+    "C_solve_time_s_range": [0.088, 0.423],
+    "resource_limit_GB": 23,
+    "resource_limit_pass": true
+  },
+  "verification": {
+    "target_test": {
+      "result": "10 passed in 40.20s"
+    },
+    "full_pytest": {
+      "result": "106 passed in 102.04s",
+      "external_wall_time_s": 112.55,
+      "peak_rss_kb": 547516
+    },
+    "self_test": "SELF_TEST: PASS (11299 nodes, 22141 triangles)",
+    "py_compile": "pass",
+    "json_parse": "pass",
+    "git_diff_check": "pass before commit",
+    "git_show_check": "pending after commit"
+  },
+  "limits_and_next_steps": [
+    "BLI smooth-wall applicability does not resolve sharp-corner full-TV neighborhoods.",
+    "PML absorption is numerical and must not be reported as physical material dissipation.",
+    "No production moving wet-trace velocity/normal mapping is implemented; the production trace remains non-equivalent to the reference piston.",
+    "No open A, port D, PR E, structural coupling, formal-config change, legacy solve, or product prediction is included."
+  ],
+  "prohibitions_observed": [
+    "no production coupling",
+    "no CLI or legacy solver modification",
+    "no formal config or production mesh modification",
+    "no push"
+  ]
+}

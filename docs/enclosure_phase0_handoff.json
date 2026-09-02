@@ -1,0 +1,184 @@
+{
+  "phase": 0,
+  "status": "pass",
+  "generated_at": "2026-08-25T16:14:54+08:00",
+  "scope": {
+    "plan": "docs/LUNA_ENCLOSURE_FEM_PLAN_CN.md",
+    "executed_only": "phase 0",
+    "phase_1_started": false,
+    "frequencies_not_run_Hz": [
+      6300,
+      12000
+    ]
+  },
+  "git": {
+    "remote": "https://github.com/341151719/loudspeakerFEM_minimal_latest.git",
+    "branch": "feature/enclosure-axisym-fem",
+    "head_before": "99deff739cb977d85af1a202fcd9d37376ced803",
+    "head_after": "99deff739cb977d85af1a202fcd9d37376ced803",
+    "head_matches_fixed_baseline": true,
+    "initial_worktree_clean": true,
+    "protected_tracked_diff": [],
+    "push_performed": false,
+    "commit_created": false
+  },
+  "changed_files": [
+    "docs/enclosure_phase0_handoff.json"
+  ],
+  "environment": {
+    "python": {
+      "executable": ".venv/bin/python",
+      "version": "3.12.3",
+      "build": "main, Jun 19 2026 12:46:00",
+      "platform": "Linux 6.6.114.1-microsoft-standard-WSL2 x86_64 glibc 2.39"
+    },
+    "packages": {
+      "numpy": "2.5.2",
+      "scipy": "1.18.1",
+      "meshio": "5.3.5",
+      "scikit-fem": "12.0.2",
+      "gmsh": "4.15.2",
+      "threadpoolctl": "3.6.0",
+      "pytest": "8.4.2",
+      "pandas": "3.0.5",
+      "matplotlib": "3.11.1",
+      "pyamg": "5.3.0",
+      "rich": "15.0.0"
+    },
+    "blas_threadpool": {
+      "numpy": "scipy-openblas 0.3.34.0.0, pthreads, Haswell, 18 threads observed",
+      "scipy": "scipy-openblas 0.3.31.dev, pthreads, Haswell, 18 threads observed",
+      "solve_default_blas_threads": 1
+    },
+    "resources": {
+      "cpu_model": "Intel(R) Core(TM) i5-14600K",
+      "logical_cpus": 18,
+      "memory_total": "23 GiB",
+      "swap_total": "16 GiB",
+      "peak_rss_kib": {
+        "self_test": 119148,
+        "pytest": 255528,
+        "solve_50Hz": 401988
+      }
+    },
+    "native_runtime_dependency": {
+      "package": "libglu1-mesa",
+      "version": "9.0.2-1.1build1",
+      "reason": "gmsh import requires libGLU.so.1",
+      "install_scope": ".venv/native (ignored, user-local extraction; system apt install unavailable without root)",
+      "library_path": ".venv/native/root/usr/lib/x86_64-linux-gnu",
+      "required_environment": "LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu"
+    },
+    "installation": {
+      "command": ".venv/bin/python -m pip install -r requirements.txt 'pytest>=8.4,<9'",
+      "system_public_python_modified": false
+    }
+  },
+  "tests": [
+    {
+      "command": "/usr/bin/time -v env LD_LIBRARY_PATH=\"/mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/loudspeakerFEM_enclosure_work/.venv/native/root/usr/lib/x86_64-linux-gnu\" \"/mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/loudspeakerFEM_enclosure_work/.venv/bin/python\" cli.py self-test",
+      "result": "pass",
+      "exit_code": 0,
+      "elapsed_s": 9.59,
+      "self_test_summary": {
+        "nodes": 11299,
+        "triangles": 22141,
+        "python": "3.12.3"
+      }
+    },
+    {
+      "command": "/usr/bin/time -v env LD_LIBRARY_PATH=\"/mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/loudspeakerFEM_enclosure_work/.venv/native/root/usr/lib/x86_64-linux-gnu\" \"/mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/loudspeakerFEM_enclosure_work/.venv/bin/python\" -m pytest -q",
+      "result": "pass",
+      "exit_code": 0,
+      "elapsed_s": 53.51,
+      "pytest_reported": "14 passed in 49.95s"
+    },
+    {
+      "command": "/usr/bin/time -v env LD_LIBRARY_PATH=\"/mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/loudspeakerFEM_enclosure_work/.venv/native/root/usr/lib/x86_64-linux-gnu\" \"/mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/loudspeakerFEM_enclosure_work/.venv/bin/python\" cli.py solve --freq 50 --drive current --current 1 --outdir runs/enclosure_study/phase0_baseline_50Hz",
+      "result": "pass",
+      "exit_code": 0,
+      "elapsed_s": 13.89,
+      "output_dir": "runs/enclosure_study/phase0_baseline_50Hz"
+    }
+  ],
+  "key_input_sha256": {
+    "configs/best_model.json": "210991ba33b14b2cbd0b4a8dee626f1d256b563697c815fddb175693984a5783",
+    "configs/fast_p1.json": "f1be90adfa1157d1c3d30b5a19c41d9755a5f9a5ff65aa7511326f450358e3ff",
+    "inputs/meshes/comsol_geometry_polyline_coarse_2p5mm.msh": "07172d4acb374cbed2a947637decd5c9ddf67dea73553fb582bc99c6cf3d1157",
+    "inputs/comsol_reference/Untitled.mphtxt": "7784af07ee50d0761d4029b94a042c8cc0ac430646e3a3871cfa5fde351e0663",
+    "inputs/comsol_reference/magnetostatic_converged_55iter.vtu": "839489b2bfc80ecaa07a952c7a99670cb3c27ab39373a73eccf4e8b94f54105f",
+    "inputs/meshes/native_mqs_hybrid_bl_c48.msh": "080534bf9fd7f6b8fa898eae0920537571cf504e7fe86936e94a7ba4d377959b",
+    "inputs/native_reference/blocked_magnetostatic_native_hybrid_c48/magnetostatic_solution.vtu": "4b4cea5bf42cb97d6b0414908ed2081bffca9eb27fd011d9e83a80eb30af90e7"
+  },
+  "physics_gates": [
+    {
+      "name": "fixed HEAD and feature branch",
+      "value": 1,
+      "limit": "HEAD == 99deff739cb977d85af1a202fcd9d37376ced803 and branch == feature/enclosure-axisym-fem",
+      "result": "pass"
+    },
+    {
+      "name": "50 Hz current-drive FEM exit code",
+      "value": 0,
+      "limit": "== 0",
+      "result": "pass"
+    },
+    {
+      "name": "50 Hz emitted numeric arrays",
+      "value": 1,
+      "limit": "all checked NPZ numeric arrays finite",
+      "result": "pass"
+    },
+    {
+      "name": "protected project files",
+      "value": 0,
+      "limit": "no tracked diff in source, configs, inputs, or README",
+      "result": "pass"
+    }
+  ],
+  "baseline_50Hz": {
+    "command_drive": "current",
+    "current_A_peak": [
+      1.0,
+      0.0
+    ],
+    "freq_Hz": 50.0,
+    "axis_SPL_dB": 99.35644094697986,
+    "p_axis_1m_Pa_peak": [
+      1.8009666504497928,
+      1.911724907217661
+    ],
+    "motional_impedance_ohm": [
+      26.35133246761005,
+      3.842364348014326
+    ],
+    "total_impedance_ohm": [
+      31.98142917595016,
+      4.366049241028961
+    ],
+    "blocked_impedance_source": "native_voltage_constrained_reference_identified",
+    "nra_enabled": true,
+    "structural_dofs_total": 1128,
+    "structural_dofs_free": 1116,
+    "pressure_dofs_total": 15859,
+    "artifacts": {
+      "summary": "runs/enclosure_study/phase0_baseline_50Hz/summary_50Hz.json",
+      "solution": "runs/enclosure_study/phase0_baseline_50Hz/solution_50Hz.npz",
+      "solid": "runs/enclosure_study/phase0_baseline_50Hz/solid_50Hz.vtu",
+      "acoustic": "runs/enclosure_study/phase0_baseline_50Hz/acoustic_50Hz.vtu",
+      "directivity": "runs/enclosure_study/phase0_baseline_50Hz/directivity_50Hz.csv"
+    }
+  },
+  "known_risks": [
+    "gmsh 需要 .venv/native 中的用户态 libGLU，并要求运行命令设置 LD_LIBRARY_PATH；系统 apt 包未安装。",
+    "50 Hz 是固定生产链的原始基线，不是尚未提供箱体/导向管/被动辐射器实物参数的产品预测。",
+    "requirements.txt 使用下限约束而非完整锁文件；本次解析版本已记录，后续环境复现应固定这些版本。",
+    "本阶段未执行 6300/12000 Hz，也未开始任何 enclosure 物理扩展。"
+  ],
+  "next_files": [
+    "docs/LUNA_ENCLOSURE_FEM_PLAN_CN.md",
+    "docs/enclosure_phase0_handoff.json",
+    "README_CN.md",
+    "configs/best_model.json"
+  ]
+}

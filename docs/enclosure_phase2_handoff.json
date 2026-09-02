@@ -1,0 +1,189 @@
+{
+  "schema": "luna.enclosure_phase2_handoff.v1",
+  "status": "pass",
+  "phase": "2D production wet trace plus audited reference geometry closeout",
+  "commit_baseline": "c8f951854c5a8fc6d922923ae481afafefacaef8",
+  "phase2_previous_commit": "8c01b60dc5a196cd785570a760ac704b3bd96ee6",
+  "final_commit": "d4f4186c234fedfc8a62970fc28cd89b264f1ba2",
+  "phase2e": {
+    "parent_commit": "8c01b60dc5a196cd785570a760ac704b3bd96ee6",
+    "commit_message": "test: harden enclosure geometry audits",
+    "final_commit": "d4f4186c234fedfc8a62970fc28cd89b264f1ba2"
+  },
+  "final_production_interface_ready": false,
+  "reference_identity": "reference planar piston",
+  "solver_scope": {
+    "helmholtz_or_fem_solve_run": false,
+    "frequency_sweep_run": false,
+    "production_mesh_modified": false,
+    "meshgen_cli_best_model_modified": false
+  },
+  "verification": {
+    "initial_full_pytest": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q",
+      "result": "42 passed, 2 failed",
+      "failure_scope": "the two failures were caused only by stage-0/0P generated ignored runs artifacts; this first failure is intentionally retained in the handoff",
+      "runs_were_deleted": false,
+      "archive": {
+        "path": "/tmp/loudspeakerFEM_enclosure_work_runs_phase0_20260825",
+        "size": "66 MB",
+        "recoverable": true,
+        "operation": "migrated without deletion"
+      }
+    },
+    "post_archive_targeted_reverification": {
+      "scope": "clean/no-results/production-wet targeted tests",
+      "result": "4 passed in 47.15s",
+      "status": "pass"
+    },
+    "cli_self_test": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python cli.py self-test",
+      "result": "SELF_TEST: PASS",
+      "nodes": 11299,
+      "triangles": 22141,
+      "status": "pass"
+    },
+    "current_closeout": {
+      "full_pytest_after_archive": {
+        "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q",
+        "result": "44 passed in 74.39s",
+        "external_wall_time_s": 81.94,
+        "peak_rss_mb": 269.0234375,
+        "status": "pass"
+      },
+      "py_compile": {
+        "command": "env .venv/bin/python -m py_compile src/loudspeaker_axisym_fem/production_wet_trace.py tools/production_wet_trace_audit.py tests/test_production_wet_trace.py",
+        "result": "pass"
+      },
+      "json_parse": {
+        "command": "env .venv/bin/python -m json.tool docs/enclosure_phase2_handoff.json",
+        "result": "pass"
+      },
+      "git_diff_check": {
+        "command": "git diff --check",
+        "result": "pass"
+      }
+    }
+  },
+  "mesh_hierarchy": {
+    "temporary_mesh_dir": "/tmp/luna_2c_cli_mesh",
+    "levels": ["L0", "L1", "L2"],
+    "wall_time_s": 3.535726,
+    "peak_rss_mb": 92.22265625,
+    "assertions": {
+      "global_size_strictly_decreases_L0_to_L2": true,
+      "triangle_count_strictly_increases_L0_to_L2": true,
+      "B_C_geometry_signature_equal_at_each_level": true,
+      "all_status_pass": true,
+      "minimum_quality_threshold": 0.1,
+      "cavity_target_m3": 0.0061,
+      "cavity_relative_error_max": 2.843808977011159e-16
+    },
+    "connectivity_by_case": {
+      "A": ["air_cavity", "air_rear_opening", "air_rear_free"],
+      "B": null,
+      "C": null,
+      "D": ["air_cavity", "air_port", "air_rear_free"],
+      "E": null
+    },
+    "positive_excluded_air_or_rigid_volumes_L0_m3": {
+      "D.air_port": 0.00010178760197630925,
+      "A.rigid_comparison_equalizer": 0.00009999999999999941,
+      "B.rigid_comparison_equalizer": 0.00009999999999999987,
+      "D.rigid_comparison_equalizer": 0.00009796424796047435,
+      "E.rigid_pr_back_mechanism": 0.00013599999999999994
+    },
+    "meshes": [
+      {"case": "A", "level": "L0", "points": 1384, "triangles": 2576, "min_quality": 0.5305539035215727, "cavity_volume_m3": 0.0061, "volume_relative_error": 0.0, "mesh_sha256": "03f5c0ea1d81aaf20493bcb18818d1a71bba9f28262e90aeffc3747842b6356a", "geometry_signature_sha256": "54a990c6e0c60faafb7f0611c074af45880a56a1cb66a4237298a705cc5aa15f", "cavity_to_exterior_path": ["air_cavity", "air_rear_opening", "air_rear_free"], "elapsed_s": 0.223046, "status": "pass"},
+      {"case": "A", "level": "L1", "points": 4880, "triangles": 9389, "min_quality": 0.7586087416880227, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "cdd76ebc1f9ef5d3b2b6f13a0ec08d8d6a09ed0d265aaa0a3602f81dcbd2a307", "geometry_signature_sha256": "02419f5b18094ec27297d3738164f89481e1e317abbde4cafd75cedd436ae029", "cavity_to_exterior_path": ["air_cavity", "air_rear_opening", "air_rear_free"], "elapsed_s": 0.143743, "status": "pass"},
+      {"case": "A", "level": "L2", "points": 18484, "triangles": 36234, "min_quality": 0.7696363227611652, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "b53db7bd92acf176f3bd8ce45fb5fd98d6fc0523d17b87877fb25c6ff63bf823", "geometry_signature_sha256": "9088679daa05c25507ae69ea041c0704ba63ada17d779aad8e9488a07477ba48", "cavity_to_exterior_path": ["air_cavity", "air_rear_opening", "air_rear_free"], "elapsed_s": 0.530337, "status": "pass"},
+      {"case": "B", "level": "L0", "points": 1327, "triangles": 2454, "min_quality": 0.5006068198917234, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "70a01466ae767e940ef1eb5a55bd2c83531b88ba8dbb956414482cd1cbcaac48", "geometry_signature_sha256": "5fe10daeb6bf0cc1a0d5dc791556cbdd18f3141ef774a9cf91707f0fb68449b7", "cavity_to_exterior_path": null, "elapsed_s": 0.043921, "status": "pass"},
+      {"case": "B", "level": "L1", "points": 4815, "triangles": 9245, "min_quality": 0.6476156191251065, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "9de071d7ba9491838e3055054827a0f5bd069f73aec858fcd85e8c7afa1b8468", "geometry_signature_sha256": "e3f1651e9425ee198adfc19196f9e9bcd39bc1fba3e4ddb8eb670fa1ff1622ea", "cavity_to_exterior_path": null, "elapsed_s": 0.148203, "status": "pass"},
+      {"case": "B", "level": "L2", "points": 18226, "triangles": 35691, "min_quality": 0.7696363227611652, "cavity_volume_m3": 0.0061, "volume_relative_error": 0.0, "mesh_sha256": "b7bb153d2b92f2756a78868bdfed956895b7447c4ca531aaf640e1d221a0ef8a", "geometry_signature_sha256": "4acb1fc91c074cda1b506a8615d10781965796a8a76b32c28ba619c70bc5eeac", "cavity_to_exterior_path": null, "elapsed_s": 0.458147, "status": "pass"},
+      {"case": "C", "level": "L0", "points": 1327, "triangles": 2454, "min_quality": 0.5006068198917234, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "70a01466ae767e940ef1eb5a55bd2c83531b88ba8dbb956414482cd1cbcaac48", "geometry_signature_sha256": "5fe10daeb6bf0cc1a0d5dc791556cbdd18f3141ef774a9cf91707f0fb68449b7", "cavity_to_exterior_path": null, "elapsed_s": 0.040421, "status": "pass"},
+      {"case": "C", "level": "L1", "points": 4815, "triangles": 9245, "min_quality": 0.6476156191251065, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "9de071d7ba9491838e3055054827a0f5bd069f73aec858fcd85e8c7afa1b8468", "geometry_signature_sha256": "e3f1651e9425ee198adfc19196f9e9bcd39bc1fba3e4ddb8eb670fa1ff1622ea", "cavity_to_exterior_path": null, "elapsed_s": 0.12555, "status": "pass"},
+      {"case": "C", "level": "L2", "points": 18226, "triangles": 35691, "min_quality": 0.7696363227611652, "cavity_volume_m3": 0.0061, "volume_relative_error": 0.0, "mesh_sha256": "b7bb153d2b92f2756a78868bdfed956895b7447c4ca531aaf640e1d221a0ef8a", "geometry_signature_sha256": "4acb1fc91c074cda1b506a8615d10781965796a8a76b32c28ba619c70bc5eeac", "cavity_to_exterior_path": null, "elapsed_s": 0.457445, "status": "pass"},
+      {"case": "D", "level": "L0", "points": 1440, "triangles": 2673, "min_quality": 0.22832976206369185, "cavity_volume_m3": 0.006099999999999999, "volume_relative_error": 2.843808977011159e-16, "mesh_sha256": "25b3972c9ecc6901b4bde8b0d613888d7d84db84f9e328360ff8d64d0e0ad616", "geometry_signature_sha256": "be2d721359dc9b74fc8c9fd14f7d608c11253de0442a5102d913ab0f64fe39a4", "cavity_to_exterior_path": ["air_cavity", "air_port", "air_rear_free"], "elapsed_s": 0.047548, "status": "pass"},
+      {"case": "D", "level": "L1", "points": 5144, "triangles": 9890, "min_quality": 0.576269664883139, "cavity_volume_m3": 0.006099999999999999, "volume_relative_error": 2.843808977011159e-16, "mesh_sha256": "596ad6e167934403e8d994932c9f18d735544c4b65fbb8034d80adea8de40fbc", "geometry_signature_sha256": "00df5d4e56a261c10f44bf562ade5c90c8f5402b1f4616968d07b91054870de0", "cavity_to_exterior_path": ["air_cavity", "air_port", "air_rear_free"], "elapsed_s": 0.136112, "status": "pass"},
+      {"case": "D", "level": "L2", "points": 19354, "triangles": 37921, "min_quality": 0.7374792876368677, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "7525ddf424ab6c2b1677cb43f5f285c173127203866651515e35021fecd00164", "geometry_signature_sha256": "01b76d1e6fdc5e3a997d1443108927bf8177aecae195a892b60da7762d1466af", "cavity_to_exterior_path": ["air_cavity", "air_port", "air_rear_free"], "elapsed_s": 0.532553, "status": "pass"},
+      {"case": "E", "level": "L0", "points": 1388, "triangles": 2576, "min_quality": 0.7659890300449657, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "b2ab6e465551b8ad26b035ce3afe4c3b477477a552f7bc0886347bf8e9dddaad", "geometry_signature_sha256": "6f16a36a6898f5bdb4379bc93ab139fc7e7585ee5e24a1d560475d215b5c4afb", "cavity_to_exterior_path": null, "elapsed_s": 0.044254, "status": "pass"},
+      {"case": "E", "level": "L1", "points": 4949, "triangles": 9511, "min_quality": 0.7586087416880227, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "59e6541b326735a1e014ba650071133c1e7590efbe03d29ee3b3eaded633699e", "geometry_signature_sha256": "23b2ded22a74ef473059b65dd28b29163750a889960da2a58ca81441bc44420d", "cavity_to_exterior_path": null, "elapsed_s": 0.132872, "status": "pass"},
+      {"case": "E", "level": "L2", "points": 18816, "triangles": 36865, "min_quality": 0.7696363227611652, "cavity_volume_m3": 0.0060999999999999995, "volume_relative_error": 1.4219044885055794e-16, "mesh_sha256": "4eebc2fe8522f8c218f16f0c40040664c8158aff054e512f521bcfa15d44e486", "geometry_signature_sha256": "fdb2b2eee8966bf7d69bb9c8431e43a2c081e8079689fa72c653365551c088d3", "cavity_to_exterior_path": null, "elapsed_s": 0.470835, "status": "pass"}
+    ]
+  },
+  "production_wet_trace": {
+    "tool": "tools/production_wet_trace_audit.py",
+    "module": "src/loudspeaker_axisym_fem/production_wet_trace.py",
+    "mesh_path": "inputs/meshes/comsol_geometry_polyline_coarse_2p5mm.msh",
+    "mesh_sha256": "07172d4acb374cbed2a947637decd5c9ddf67dea73553fb582bc99c6cf3d1157",
+    "mphtxt_path": "inputs/comsol_reference/Untitled.mphtxt",
+    "mphtxt_sha256": "7784af07ee50d0761d4029b94a042c8cc0ac430646e3a3871cfa5fde351e0663",
+    "selection": {
+      "structural_domains": [3, 21, 25],
+      "front_acoustic_domain": 4,
+      "rear_acoustic_domain": 2,
+      "front_boundary_ids": [47, 92, 99, 102],
+      "rear_boundary_ids": [46, 91, 100, 101]
+    },
+    "front": {
+      "length_2d_m": 0.10679927370754082,
+      "rotational_surface_area_2pi_r_ds_m2": 0.02917893980700583,
+      "axisymmetric_projected_area_2pi_r_abs_dr_m2": 0.02110107254451349,
+      "r_range_m": [0.0, 0.08199999999999999],
+      "z_range_m": [-0.039, 0.008],
+      "entities": [
+        {"boundary_id": 47, "domain_pair": [21, 4], "length_2d_m": 0.061536655742735966, "surface_area_m2": 0.01631647011330368, "projected_area_m2": 0.01262115999023778, "r_range_m": [0.0184, 0.066], "z_range_m": [-0.039, 0.0], "stable_hash_sha256": "e2a3cead5f5de217ac59a920a8508775f18e205e7ace4b3acc047c3fb5bd4f62"},
+        {"boundary_id": 92, "domain_pair": [3, 4], "length_2d_m": 0.020201660660972565, "surface_area_m2": 0.001210234428751195, "projected_area_m2": 0.0010406211505750833, "r_range_m": [0.0, 0.0182], "z_range_m": [-0.039, -0.03124999999999998], "stable_hash_sha256": "f62fbc9524b5a79a1e1ed225346a111e1eeb346c41da60466d1ca4ef12880fe6"},
+        {"boundary_id": 99, "domain_pair": [25, 4], "length_2d_m": 0.01253047865191566, "surface_area_m2": 0.0054274366086342766, "projected_area_m2": 0.003518583772020565, "r_range_m": [0.066, 0.074], "z_range_m": [0.0, 0.008], "stable_hash_sha256": "88abf09944572f0f6770cb8045bb7ed6346c60c158bd66e3336c0a5ee655b156"},
+        {"boundary_id": 102, "domain_pair": [25, 4], "length_2d_m": 0.012530478651916624, "surface_area_m2": 0.00622479865631668, "projected_area_m2": 0.003920707631680058, "r_range_m": [0.074, 0.08199999999999999], "z_range_m": [0.0, 0.008], "stable_hash_sha256": "e426693b269ebc1f2db4c8f22063a2b9a537c9c43c2f9860cb5786bb0bb77fa6"}
+      ]
+    },
+    "rear": {
+      "length_2d_m": 0.10415385474379728,
+      "rotational_surface_area_2pi_r_ds_m2": 0.027810914365965018,
+      "axisymmetric_projected_area_2pi_r_abs_dr_m2": 0.02033530933520098,
+      "r_range_m": [0.0, 0.0805],
+      "z_range_m": [-0.04026, 0.006500000000000001],
+      "entities": [
+        {"boundary_id": 46, "domain_pair": [21, 2], "length_2d_m": 0.06349549275342305, "surface_area_m2": 0.01713507202968171, "projected_area_m2": 0.013250263919119137, "r_range_m": [0.0184, 0.0675], "z_range_m": [-0.04026, 0.0], "stable_hash_sha256": "c213f569383f4f55bd65959418dfa262bc9e0375b30cf313fd860ccb292748d6"},
+        {"boundary_id": 91, "domain_pair": [3, 2], "length_2d_m": 0.020322028243112352, "surface_area_m2": 0.0012203477844949602, "projected_area_m2": 0.0010406211505750833, "r_range_m": [0.0, 0.0182], "z_range_m": [-0.04026, -0.03226000000000002], "stable_hash_sha256": "0290894a0617df87bab12f47ce42e393cbef9aa1f0034db5d055f9676e227b63"},
+        {"boundary_id": 100, "domain_pair": [25, 2], "length_2d_m": 0.010168166873630802, "surface_area_m2": 0.004465554804065173, "projected_area_m2": 0.002889479843139208, "r_range_m": [0.0675, 0.074], "z_range_m": [0.0, 0.006500000000000001], "stable_hash_sha256": "868aa5fdff52aa99228a3bf82939d2f64862ba6c95d5c329e8323bcfd3ee5000"},
+        {"boundary_id": 101, "domain_pair": [25, 2], "length_2d_m": 0.010168166873631075, "surface_area_m2": 0.004989939747723176, "projected_area_m2": 0.003154944422367552, "r_range_m": [0.074, 0.0805], "z_range_m": [0.0, 0.006500000000000001], "stable_hash_sha256": "ea33588205df91ea773b93607365de1b7ec2d0bb0bcbe71f21d2c57d1fe844b3"}
+      ]
+    },
+    "reference_planar_piston": {
+      "radius_m": 0.045,
+      "area_pi_r2_m2": 0.0063617251235193305
+    },
+    "mismatch": true,
+    "final_production_interface_ready": false,
+    "required_stage3_mapping": ["real moving partition", "local normal", "real displacement/velocity", "separate front/rear and PR-side pressure traces"]
+  },
+  "plots": {
+    "temporary_directory": "/tmp/luna_enclosure_phase2_plots",
+    "paths": [
+      "/tmp/luna_enclosure_phase2_plots/A_L0.png",
+      "/tmp/luna_enclosure_phase2_plots/B_L0.png",
+      "/tmp/luna_enclosure_phase2_plots/C_L0.png",
+      "/tmp/luna_enclosure_phase2_plots/D_L0.png",
+      "/tmp/luna_enclosure_phase2_plots/E_L0.png",
+      "/tmp/luna_enclosure_phase2_plots/production_wet_trace.png"
+    ],
+    "visual_check": "no obvious axis/PML/cavity/port/PR opening crossing in the generated previews"
+  },
+  "commands": {
+    "wet_trace_test": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_production_wet_trace.py",
+    "preview_audit": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python tools/production_wet_trace_audit.py --plot-dir /tmp/luna_enclosure_phase2_plots --reference-mesh-dir /tmp/luna_enclosure_phase2_reference_meshes --generate-reference --output /tmp/luna_production_wet_trace_audit.json",
+    "hierarchy_audit": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python tools/enclosure_mesh_audit.py --all --all-levels --generate --mesh-dir /tmp/luna_2c_cli_mesh --output /tmp/luna_2c_cli_audit.json",
+    "plots_and_audit_result": "pass",
+    "wet_trace_test_result": "2 passed",
+    "remaining_verification": []
+  },
+  "remaining_verification": [],
+  "risks_and_stage3_entry": [
+    "The production candidate is a real shared-edge extraction, but it is not a validated moving partition.",
+    "The requested 0.0211011/0.0203353 numbers are radial projected areas; the true 2*pi*r*ds areas are also recorded and are larger.",
+    "Stage 3 must map real moving regions, normals, velocities, nonconformal coupling, and separate pressure traces before any solve.",
+    "Do not claim production interface readiness or a solved FEM model."
+  ]
+}

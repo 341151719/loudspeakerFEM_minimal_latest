@@ -1,0 +1,156 @@
+{
+  "phase": 1,
+  "status": "pass",
+  "generated_at": "2026-08-25T17:30:00+08:00",
+  "scope": {
+    "plan": "docs/LUNA_ENCLOSURE_FEM_PLAN_CN.md",
+    "executed_only": "phase 1",
+    "phase_2_started": false,
+    "gmsh_geometry_generated": false,
+    "fem_or_cli_connected": false,
+    "bli_or_circular_pipe_lrf_pde_implemented": false,
+    "large_sweep_run": false
+  },
+  "git": {
+    "branch": "feature/enclosure-axisym-fem",
+    "upstream_commit": "99deff739cb977d85af1a202fcd9d37376ced803",
+    "phase1_implementation_commit": "f18c06167d79686258511f4dd211a8f6cae9d8d5",
+    "phase1_fix_commit": "225eea35660431c23d8eb38d227881925ff72e02",
+    "commit_message": "fix: close enclosure reference contracts",
+    "push_performed": false,
+    "initial_worktree_clean": true
+  },
+  "changed_files": [
+    "src/loudspeaker_axisym_fem/enclosure_models.py",
+    "src/loudspeaker_axisym_fem/enclosure_schema.py",
+    "configs/enclosures/base_axisym.json",
+    "configs/enclosures/open_back.json",
+    "configs/enclosures/sealed_lossless.json",
+    "configs/enclosures/sealed_thermoviscous.json",
+    "configs/enclosures/vented_rear_coaxial.json",
+    "configs/enclosures/passive_radiator_rear_coaxial.json",
+    "tests/test_enclosure_schema.py",
+    "tests/test_enclosure_lumped_limits.py",
+    "docs/ENCLOSURE_PHYSICS_CONTRACT_CN.md",
+    "docs/enclosure_phase1_handoff.json"
+  ],
+  "formulas": {
+    "sealed_compliance": "C_ab = V_b/(rho0*c0^2)",
+    "sealed_impedance": "Z_box = 1/(i*omega*C_ab)",
+    "vented_mass": "M_ap = rho0*L_eff/S_port",
+    "vented_frequency": "f_b = 1/(2*pi*sqrt(M_ap*C_ab))",
+    "pr_equation": "(-omega^2*Mms + i*omega*Rms + 1/Cms)*x_pr = F_cavity - F_exterior",
+    "pr_box_air_spring": "K_box = rho0*c0^2*Sd^2/V_b",
+    "pr_box_coupled_frequency": "f_pr,box = sqrt((1/Cms + K_box)/Mms)/(2*pi)",
+    "port_intrusion_occupancy": "V_port,in = S_port*port_penetration_into_box",
+    "pr_rear_occupancy": "V_pr,rear = Sd*rear_clearance",
+    "impedance_conversion": "Za = Zm/Sd^2 and Zm = Za*Sd^2",
+    "average_power": "P_avg = 0.5*Re(p*conj(U)) = 0.5*Re(F*conj(v))"
+  },
+  "demonstrator_features": {
+    "net_volume_target_B_C_D_E_m3": 0.0061,
+    "sealed_air_compliance_m3_Pa": 4.300165662119771e-08,
+    "sealed_air_spring_per_Sd2_Pa_m": 23254918.03278688,
+    "vented_helmholtz_Hz": 63.292732456951356,
+    "port_open_open_first_mode_Hz": 1380.7675494561804,
+    "port_closed_open_explicit_mode_Hz": 690.3837747280902,
+    "pr_free_resonance_Hz": 77.65966028675014,
+    "pr_box_air_spring_N_m": 209.294262295082,
+    "pr_box_coupled_resonance_Hz": 80.4537960708729,
+    "port_intrusion_occupancy_m3": 2.03575203952619e-06,
+    "port_fair_comparison_equalization_m3": 9.79642479604738e-05,
+    "pr_rear_occupancy_m3": 9.99999999999999e-05,
+    "port_end_correction_used_only_by_lumped_reference": true,
+    "fem_radiation_reuse_end_correction": false,
+    "fem_radiation_reuse_radiation_mass": false,
+    "pr_mms_rms_include_fem_radiation": false
+  },
+  "physics_gates": [
+    {
+      "name": "schema validation for base and A/B/C/D/E",
+      "value": 6,
+      "limit": "all six JSON demonstrators load and validate",
+      "result": "pass"
+    },
+    {
+      "name": "provenance identity",
+      "value": "upstream 99deff739cb977d85af1a202fcd9d37376ced803",
+      "limit": "40 lowercase hex characters and exact phase-0 upstream",
+      "result": "pass"
+    },
+    {
+      "name": "port longitudinal-mode cross-check",
+      "value": 1380.7675494561804,
+      "limit": "c0/(2*(L + end_correction_factor*radius)) for open-open",
+      "result": "pass"
+    },
+    {
+      "name": "PR box coupling trends",
+      "value": "Mms/Cms/V changes move coupled tuning down; f_box > f_free",
+      "limit": "independent hand formula",
+      "result": "pass"
+    },
+    {
+      "name": "physical rear occupancy",
+      "value": "D=S*2 mm; E=Sd*rear_clearance; B/C/D/E net=0.0061 m^3",
+      "limit": "schema geometry cross-check",
+      "result": "pass"
+    },
+    {
+      "name": "B/C/D/E equal net volume",
+      "value": 0.0061,
+      "limit": "all four targets equal and occupancy equation closes",
+      "result": "pass"
+    },
+    {
+      "name": "lossless and positive-damping limits",
+      "value": "reactive at zero loss; nonnegative average loss with R > 0",
+      "limit": "independent hand-calculation tests",
+      "result": "pass"
+    },
+    {
+      "name": "explicit FEM radiation bookkeeping",
+      "value": "false reuse flags for end correction, radiation mass and resistance",
+      "limit": "no double counting",
+      "result": "pass"
+    }
+  ],
+  "tests": [
+    {
+      "command": ".venv/bin/python -m pytest -q tests/test_enclosure_schema.py tests/test_enclosure_lumped_limits.py",
+      "result": "pass",
+      "summary": "26 passed"
+    },
+    {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu .venv/bin/python -m pytest -q",
+      "result": "pass",
+      "summary": "40 passed; pre-existing ignored runs/ was moved to a recoverable temp directory and restored unchanged"
+    },
+    {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu .venv/bin/python cli.py self-test",
+      "result": "pass",
+      "summary": "SELF_TEST PASS; 11299 nodes and 22141 triangles"
+    }
+  ],
+  "known_risks": [
+    "All enclosure, port and PR numbers are demonstrator assumptions and are not product predictions.",
+    "C and D select thermoviscous applicability models in schema only; BLI/LRF PDE and FEM radiation are phase-2-or-later work.",
+    "A needs a complete connected exterior field with HK/PML validation; it must not use pressure-release or mirror shortcuts.",
+    "The legacy ClosedBox.loss_resistance_Pa_s_m3 keyword remains accepted but means leakage conductance, never sealed thermal loss.",
+    "The ignored phase-0 run artifacts remain outside the tracked change set and were preserved; a clean-source pytest run must isolate them."
+  ],
+  "phase_2_minimum_context": [
+    "docs/LUNA_ENCLOSURE_FEM_PLAN_CN.md (phase 2, 3.2-3.8 and 9)",
+    "docs/enclosure_phase1_handoff.json",
+    "docs/ENCLOSURE_PHYSICS_CONTRACT_CN.md",
+    "src/loudspeaker_axisym_fem/enclosure_schema.py",
+    "src/loudspeaker_axisym_fem/enclosure_models.py",
+    "configs/enclosures/base_axisym.json",
+    "configs/enclosures/open_back.json",
+    "configs/enclosures/sealed_lossless.json",
+    "configs/enclosures/sealed_thermoviscous.json",
+    "configs/enclosures/vented_rear_coaxial.json",
+    "configs/enclosures/passive_radiator_rear_coaxial.json",
+    "src/loudspeaker_axisym_fem/meshgen.py"
+  ]
+}

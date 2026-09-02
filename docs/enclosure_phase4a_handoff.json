@@ -1,0 +1,159 @@
+{
+  "schema": "luna.enclosure_phase4a_handoff.v1",
+  "title": "Stage 4A passive thermoviscous boundary reference only",
+  "status": "pass_low_level_reference_only",
+  "scope": "BLI low-level physics, applicability, analytic circular-duct passivity; no enclosure C solve",
+  "parent_commit": "29c745a11b7463c5e435eb1f1fb15fc14d0a22f6",
+  "expected_commit": {
+    "message": "feat: add passive thermoviscous boundary model",
+    "final_commit": "pending; do not self-reference the final SHA in this commit"
+  },
+  "identity": {
+    "model": "fixed isothermal no-slip thermoviscous boundary-layer impedance",
+    "harmonic_convention": "exp(+i omega t)",
+    "phasor_amplitude": "peak",
+    "geometry_case": "C sealed thermoviscous demonstrator",
+    "demonstrator": true,
+    "product_prediction": false,
+    "enclosure_solution_executed": false,
+    "final_production_interface_ready": false
+  },
+  "official_sources": [
+    {
+      "title": "COMSOL 6.4 Thermoviscous Boundary Layer Impedance",
+      "url": "https://doc.comsol.com/6.4/doc/com.comsol.help.aco/aco_ug_pressure.05.034.html",
+      "used_for": "inward-normal BLI equation, penetration depths, fixed/isothermal/no-slip assumptions, non-overlap and curvature applicability"
+    },
+    {
+      "title": "COMSOL 6.1 Acoustics Module User's Guide",
+      "url": "https://doc.comsol.com/6.1/doc/com.comsol.help.aco/AcousticsModuleUsersGuide.pdf",
+      "used_for": "exp(+i omega t), pressure weak convention, circular LRF Bessel field functions, Zwikker-Kosten/Stinson references"
+    }
+  ],
+  "derivation_exp_plus_iwt": {
+    "step_1_penetration_depths": "delta_v=sqrt(2*mu/(rho*omega)); delta_t=sqrt(2*kappa/(rho*Cp*omega))",
+    "step_2_official_inward_velocity": "-n dot v = -i*omega*(T_bnd-alpha_p*T*p/(rho*Cp))*delta_t*alpha_p/(1+i) - v_n + delta_v/(1+i)*(div_t(v0_t)+Delta_t(p)/(i*omega*rho))",
+    "step_3_fixed_wall": "set T_bnd=0, v_n=0 and v0_t=0; retain the tangential pressure Laplacian and isothermal thermal-compliance terms",
+    "step_4_ideal_gas_identity": "alpha_p^2*T/(rho*Cp)=(gamma-1)/K_s, K_s=rho*c^2",
+    "step_5_weak_residual": "after placing the pressure-dependent wall terms on the left and applying surface Green integration to Delta_t(p), add integral_Gamma 2*pi*r*[c_v*grad_t(p).grad_t(q)+c_t*p*q] ds",
+    "step_6_coefficients": {
+      "c_v": "-delta_v/[rho*(1+i)]",
+      "c_t": "-omega^2*(gamma-1)*delta_t/[K_s*(1+i)]",
+      "units": {
+        "c_v": "m^4/kg",
+        "c_t": "m^2/kg"
+      },
+      "axisymmetric_weight": "2*pi*r is assembled in boundary matrices, not hidden in scalar coefficients"
+    },
+    "step_7_passivity": "for exp(+i omega t), Im(c_v)>=0 and Im(c_t)>=0; P_visc=Im(c_v)*(p^H K_t p)/(2*omega), P_thermal=Im(c_t)*(p^H M_b p)/(2*omega), so both are nonnegative for positive-semidefinite axisymmetric boundary matrices",
+    "zero_loss": "loss_scale=0 gives exactly zero coefficients and zero BLI dissipation"
+  },
+  "implementation": {
+    "module": "src/loudspeaker_axisym_fem/thermoviscous_boundaries.py",
+    "tests": "tests/test_enclosure_thermoviscous.py",
+    "air_source": "configs/enclosures/sealed_thermoviscous.json through validated enclosure_schema loader",
+    "nra_separation": "circular reference is an independent Bessel solution and never calls the repository parallel-slit NRA",
+    "enclosure_acoustics_modified": false,
+    "formal_configs_modified": false,
+    "cli_modified": false,
+    "production_mesh_modified": false
+  },
+  "air": {
+    "rho0_kg_m3": 1.2043175745358388,
+    "c0_m_s": 343.2035820928282,
+    "temperature_K": 293.15,
+    "pressure_Pa": 101325.0,
+    "dynamic_viscosity_Pa_s": 1.8139686307339444e-05,
+    "heat_capacity_cp_J_kgK": 1005.4220711271306,
+    "thermal_conductivity_W_mK": 0.02576818523619657,
+    "gamma": 1.4,
+    "prandtl": 0.7077735901674092
+  },
+  "boundary_layers": [
+    {"frequency_Hz": 10.0, "delta_v_m": 0.000692419735707, "delta_t_m": 0.000823042498938},
+    {"frequency_Hz": 100.0, "delta_v_m": 0.000218962346169, "delta_t_m": 0.000260268890776},
+    {"frequency_Hz": 1000.0, "delta_v_m": 0.0000692419735707, "delta_t_m": 0.0000823042498938}
+  ],
+  "case_c_applicability": {
+    "frequency_band_Hz": [10.0, 1000.0],
+    "minimum_gap_m": 0.05,
+    "local_curvature_radii_m": {
+      "cabinet_inner_cylindrical_wall": 0.1,
+      "reference_piston_edge_cylindrical_wall": 0.045
+    },
+    "conservative_curvature_radius_m": 0.045,
+    "rows": [
+      {"frequency_Hz": 10.0, "max_delta_over_gap": 0.0164608499788, "two_max_delta_over_gap": 0.0329216999575, "max_delta_over_radius": 0.0182898333097, "overlap": false, "route": "BLI"},
+      {"frequency_Hz": 100.0, "max_delta_over_gap": 0.00520537781552, "two_max_delta_over_gap": 0.010410755631, "max_delta_over_radius": 0.00578375312836, "overlap": false, "route": "BLI"},
+      {"frequency_Hz": 1000.0, "max_delta_over_gap": 0.00164608499788, "two_max_delta_over_gap": 0.00329216999575, "max_delta_over_radius": 0.00182898333097, "overlap": false, "route": "BLI"}
+    ],
+    "status": "pass",
+    "route": "BLI",
+    "outside_declared_band_route": "reject",
+    "corner_risk": "BLI applies to smooth wall segments; unresolved sharp-corner neighborhoods remain a local full-TV risk rather than being assigned zero curvature"
+  },
+  "circular_duct_reference": {
+    "radius_m": 0.05,
+    "exact_model": "Zwikker-Kosten/Stinson circular Bessel LRF; Upsilon_j=-J2(k_j*a)/J0(k_j*a)",
+    "wide_model": "k/k0 approximately 1+(1-i)*(delta_v+(gamma-1)*delta_t)/(2*a)",
+    "outgoing_convention": "exp(-i*k*z), so passive attenuation requires Im(k)<=0 and attenuation=-Im(k)>=0",
+    "rows": [
+      {"frequency_Hz": 10.0, "exact_k_over_k0": {"real": 1.0102156606284267, "imag": -0.010320616450896151}, "wide_k_over_k0": {"real": 1.0102163673528235, "imag": -0.010216367352823535}, "exact_Im_k_1_m": -0.0018894425649603876, "relative_exact_wide_error": 0.00010319188029466437},
+      {"frequency_Hz": 100.0, "exact_k_over_k0": {"real": 1.003230676754063, "imag": -0.003241075853873761}, "wide_k_over_k0": {"real": 1.0032306990247908, "imag": -0.0032306990247907424}, "exact_Im_k_1_m": -0.005933586141593973, "relative_exact_wide_error": 0.000010343382704302782},
+      {"frequency_Hz": 1000.0, "exact_k_over_k0": {"real": 1.001021636031806, "imag": -0.0010226728978560908}, "wide_k_over_k0": {"real": 1.0010216367352824, "imag": -0.0010216367352823533}, "exact_Im_k_1_m": -0.018722541550053456, "relative_exact_wide_error": 0.000001035104771475314}
+    ],
+    "wide_limit": "relative exact/asymptotic error decreases as radius/boundary-layer thickness increases",
+    "parameter_trends": "increased mu increases viscous coefficient and circular attenuation; increased kappa increases thermal coefficient and circular attenuation"
+  },
+  "dissipation_checkpoint": {
+    "frequency_Hz": 100.0,
+    "test_pressure": ["1+2i", "2-i"],
+    "viscous_quadratic": 20.0,
+    "thermal_quadratic": 10.0,
+    "c_v": {"real": -0.00009090722862408635, "imag": 0.00009090722862408635},
+    "c_t": {"real": -0.00014486629247440432, "imag": 0.00014486629247440432},
+    "P_visc_W": 0.0000014468334798308382,
+    "P_thermal_W": 0.0000011528093267348843,
+    "P_total_W": 0.0000025996428065657224,
+    "passive": true,
+    "loss_scale_zero_P_total_W": 0.0
+  },
+  "verification": {
+    "target_test": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_enclosure_thermoviscous.py",
+      "initial_run": "23 passed, 2 failed: test-only zip(strict=True) length mismatch and unscaled scipy jv overflow at 1000 Hz; implementation values were unchanged",
+      "result": "26 passed in 2.78s",
+      "external_wall_time_s": 5.3,
+      "peak_rss_kb": 63396
+    },
+    "full_pytest": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python -m pytest -q",
+      "result": "96 passed in 91.56s",
+      "external_wall_time_s": 96.9,
+      "peak_rss_kb": 295292
+    },
+    "self_test": {
+      "command": "env LD_LIBRARY_PATH=.venv/native/root/usr/lib/x86_64-linux-gnu PYTHONPATH=src .venv/bin/python cli.py self-test",
+      "result": "SELF_TEST: PASS (11299 nodes, 22141 triangles)",
+      "external_wall_time_s": 8.91,
+      "peak_rss_kb": 118248
+    },
+    "py_compile": "pass for the added module and test",
+    "json_parse": "pass",
+    "git_diff_check": "pass before commit",
+    "git_show_check": "run after commit; final SHA intentionally not self-referenced"
+  },
+  "limits_and_next_steps": [
+    "No C enclosure FEM assembly or solve is implemented in Stage 4A.",
+    "No BLI treatment of corner neighborhoods is validated; local full thermoviscous resolution remains the conservative route where curvature or overlap gates fail.",
+    "No production moving wet-trace mapping or product SPL/loss claim is made.",
+    "A future stage must add BLI matrices to the audited C pressure boundaries and independently close mesh, power, and analytic convergence before solving C."
+  ],
+  "prohibitions_observed": [
+    "no enclosure C solve",
+    "no production coupling",
+    "no CLI or legacy solver modification",
+    "no formal config or production mesh modification",
+    "no push"
+  ]
+}

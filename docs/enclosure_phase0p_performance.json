@@ -1,0 +1,233 @@
+{
+  "phase": "0P",
+  "status": "pass",
+  "generated_at": "2026-08-25T16:32:44+08:00",
+  "scope": {
+    "phase_1_started": false,
+    "branch": "feature/enclosure-axisym-fem",
+    "head": "99deff739cb977d85af1a202fcd9d37376ced803",
+    "frequencies_Hz": [20.0, 31.5, 50.0, 80.0, 125.0, 200.0, 315.0, 500.0],
+    "drive": "current",
+    "current_A_peak": [1.0, 0.0],
+    "production_low_frequency_config": "configs/fast_p1.json",
+    "render": false,
+    "save_each": false,
+    "independent_outdirs": true,
+    "main_result_root": "/tmp/luna_enclosure_phase0p.NVWdJ7"
+  },
+  "git": {
+    "protected_tracked_diff": [],
+    "initial_untracked_allowed": ["docs/enclosure_phase0_handoff.json"],
+    "changed_files": ["docs/enclosure_phase0p_performance.json"],
+    "commit_created": false,
+    "push_performed": false,
+    "key_sha256_unchanged": {
+      "configs/best_model.json": "210991ba33b14b2cbd0b4a8dee626f1d256b563697c815fddb175693984a5783",
+      "configs/fast_p1.json": "f1be90adfa1157d1c3d30b5a19c41d9755a5f9a5ff65aa7511326f450358e3ff",
+      "inputs/meshes/comsol_geometry_polyline_coarse_2p5mm.msh": "07172d4acb374cbed2a947637decd5c9ddf67dea73553fb582bc99c6cf3d1157",
+      "best_model/coupled_solver.py": "8491232f598110f38f4e0b05c6efa16fcd904aaba73fd48538a9f3607ed0dc3b",
+      "cli.py": "2931a0d4ceab7c342911d1a7c2dc5507f2e103a433615b1234f441f1384302b2"
+    }
+  },
+  "hardware": {
+    "logical_cpus": 18,
+    "memory_total_kib": 24608316,
+    "swap_total_kib": 16777216,
+    "swap_initial_used_kib": 0,
+    "platform": "WSL2 Linux 6.6.114.1-microsoft-standard-WSL2 x86_64"
+  },
+  "sweep_benchmarks": [
+    {
+      "jobs": 1,
+      "blas_threads": 1,
+      "wall_clock_s": 30.090,
+      "speedup_vs_jobs1": 1.0,
+      "throughput_points_per_s": 0.265869,
+      "cpu_percent_observed_peak_one_logical_cpu_scale": 260.0,
+      "peak_total_memory_estimate_MiB": 1198.938,
+      "peak_process_tree_rss_MiB": 423.418,
+      "peak_available_percent": 95.011,
+      "swap_growth_kib": 0,
+      "return_code": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_jobs1"
+    },
+    {
+      "jobs": 2,
+      "blas_threads": 1,
+      "wall_clock_s": 22.240,
+      "speedup_vs_jobs1": 1.352968,
+      "throughput_points_per_s": 0.359712,
+      "cpu_percent_observed_peak_one_logical_cpu_scale": 532.3,
+      "peak_total_memory_estimate_MiB": 1539.129,
+      "peak_process_tree_rss_MiB": 864.445,
+      "peak_available_percent": 93.595,
+      "swap_growth_kib": 0,
+      "return_code": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_sweep_jobs2_blas1"
+    },
+    {
+      "jobs": 4,
+      "blas_threads": 1,
+      "wall_clock_s": 15.961,
+      "speedup_vs_jobs1": 1.885220,
+      "throughput_points_per_s": 0.501222,
+      "cpu_percent_observed_peak_one_logical_cpu_scale": 685.3,
+      "peak_total_memory_estimate_MiB": 2133.934,
+      "peak_process_tree_rss_MiB": 1590.023,
+      "peak_available_percent": 91.120,
+      "swap_growth_kib": 0,
+      "return_code": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_sweep_jobs4_blas1"
+    },
+    {
+      "jobs": 6,
+      "blas_threads": 1,
+      "wall_clock_s": 19.717,
+      "speedup_vs_jobs1": 1.526094,
+      "throughput_points_per_s": 0.405741,
+      "cpu_percent_observed_peak_one_logical_cpu_scale": 745.8,
+      "peak_total_memory_estimate_MiB": 2646.414,
+      "peak_process_tree_rss_MiB": 2214.656,
+      "peak_available_percent": 88.988,
+      "swap_growth_kib": 0,
+      "return_code": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_sweep_jobs6_blas1"
+    },
+    {
+      "jobs": 8,
+      "blas_threads": 1,
+      "wall_clock_s": 15.245,
+      "speedup_vs_jobs1": 1.973762,
+      "throughput_points_per_s": 0.524762,
+      "cpu_percent_observed_peak_one_logical_cpu_scale": 845.6,
+      "peak_total_memory_estimate_MiB": 3348.688,
+      "peak_process_tree_rss_MiB": 2759.047,
+      "peak_available_percent": 86.065,
+      "swap_growth_kib": 0,
+      "return_code": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_sweep_jobs8_blas1"
+    }
+  ],
+  "blas_single_50Hz": [
+    {
+      "blas_threads": 1,
+      "wall_clock_s": 13.512,
+      "speedup_vs_blas1": 1.0,
+      "peak_total_memory_estimate_MiB": 1161.914,
+      "peak_process_tree_rss_MiB": 382.090,
+      "swap_growth_kib": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_solve_50Hz_blas1"
+    },
+    {
+      "blas_threads": 2,
+      "wall_clock_s": 12.445,
+      "speedup_vs_blas1": 1.085737,
+      "peak_total_memory_estimate_MiB": 1168.984,
+      "peak_process_tree_rss_MiB": 387.043,
+      "swap_growth_kib": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_solve_50Hz_blas2"
+    },
+    {
+      "blas_threads": 4,
+      "wall_clock_s": 16.593,
+      "speedup_vs_blas1": 0.814319,
+      "peak_total_memory_estimate_MiB": 1157.383,
+      "peak_process_tree_rss_MiB": 380.398,
+      "swap_growth_kib": 0,
+      "outdir": "/tmp/luna_enclosure_phase0p.NVWdJ7/out_solve_50Hz_blas4"
+    }
+  ],
+  "numeric_consistency": {
+    "jobs_reference": "jobs=1, blas_threads=1",
+    "fields": ["axis_SPL_dB", "Zmot_real_ohm", "Zmot_imag_ohm", "Ztotal_real_ohm", "Ztotal_imag_ohm"],
+    "tolerance": {"rtol": 1e-08, "atol": 1e-10},
+    "jobs_blas1_all_frequencies_pass": true,
+    "jobs_blas1_max_abs_difference_by_field": {
+      "axis_SPL_dB": 0.0,
+      "Zmot_real_ohm": 0.0,
+      "Zmot_imag_ohm": 0.0,
+      "Ztotal_real_ohm": 0.0,
+      "Ztotal_imag_ohm": 0.0
+    },
+    "single_50Hz_blas_output_pass": true,
+    "single_50Hz_blas_max_abs_summary_difference": {
+      "blas_threads_2": {
+        "axis_SPL_dB": 1.2721557141048834e-10,
+        "Zmot_ohm": 2.367137152958776e-09,
+        "Ztotal_ohm": 2.3671375970479858e-09,
+        "p_axis_1m_Pa_peak": 2.0216139873241445e-10
+      },
+      "blas_threads_4": {
+        "axis_SPL_dB": 1.141842176366481e-10,
+        "Zmot_ohm": 2.090517092767641e-09,
+        "Ztotal_ohm": 2.090516204589221e-09,
+        "p_axis_1m_Pa_peak": 1.7889800751902385e-10
+      }
+    },
+    "handoff_50Hz_exact_values_match": true,
+    "handoff_50Hz": {
+      "axis_SPL_dB": 99.35644094697986,
+      "Zmot_ohm": [26.35133246761005, 3.842364348014326],
+      "Ztotal_ohm": [31.98142917595016, 4.366049241028961]
+    }
+  },
+  "scratch_io": {
+    "payload_bytes": 67108864,
+    "file_count": 64,
+    "test": "64 files x 1 MiB; fdatasync after each write, then read each file",
+    "mntc_9p": {
+      "write_fsync_s": 0.653261,
+      "read_s": 0.541466,
+      "total_s": 1.194727,
+      "directory": "/mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/loudspeakerFEM_enclosure_work/runs/phase0p_io_mntc.dA3tju"
+    },
+    "wsl_ext4_tmp": {
+      "write_fsync_s": 0.184918,
+      "read_s": 0.062602,
+      "total_s": 0.247520,
+      "directory": "/tmp/luna_enclosure_phase0p.NVWdJ7/io_ext4.U57gzs"
+    },
+    "mntc_over_ext4_total_ratio": 4.826790,
+    "conclusion": "scratch/output staging should prefer WSL ext4; source remains on the single Git worktree"
+  },
+  "solver_backend_readonly": {
+    "scipy": "1.18.1",
+    "splu": "scipy.sparse.linalg.splu; SciPy bundled SuperLU path",
+    "openblas": [
+      {"version": "0.3.34.0.0", "threading": "pthreads", "observed_max_threads": 18},
+      {"version": "0.3.31.dev", "threading": "pthreads", "observed_max_threads": 18}
+    ],
+    "optional_backend_imports": {
+      "mkl": false,
+      "mkl_service": false,
+      "pypardiso": false,
+      "pardiso": false,
+      "sksparse": false,
+      "petsc4py": false
+    },
+    "new_backend_installed_or_connected": false,
+    "future_independent_solver_backend_benchmark": {
+      "worthwhile": "conditional",
+      "now": "not justified for this low-frequency production profile",
+      "trigger": "run separately if later high-frequency LU fill-in, wall time, or memory becomes limiting"
+    }
+  },
+  "recommendations": {
+    "memory_gate_required_available_percent": 25.0,
+    "minimum_measured_available_percent": 86.065,
+    "low": {"band": "20-500 Hz measured", "jobs": 8, "blas_threads": 1, "reason": "fastest measured sweep: 15.245 s"},
+    "mid": {"band": "501-3000 Hz not run in 0P", "jobs": 4, "blas_threads": 1, "reason": "near-best measured throughput with more headroom"},
+    "high": {"band": ">3000 Hz not run in 0P", "jobs": 2, "blas_threads": 1, "reason": "conservative allowance for larger frequency-dependent LU fill-in"},
+    "blas_reason": "BLAS=2 improved one 50 Hz solve only 8.6%; BLAS=4 was 18.6% slower; keep one BLAS thread per worker"
+  },
+  "limitations": [
+    "CPU telemetry is an observed process-tree peak on a one-logical-CPU scale, not a lifecycle average; GNU time for the parent was not used as the worker aggregate",
+    "Only the requested 20-500 Hz low-frequency profile was benchmarked; mid/high jobs are conservative recommendations, not high-frequency measurements"
+  ],
+  "known_risks": [
+    "high-frequency memory was not measured; reduce jobs if observed available memory would fall below 25%",
+    "the two loaded OpenBLAS builds differ by package and can produce tiny floating-point roundoff changes",
+    "gmsh still requires the handoff LD_LIBRARY_PATH",
+    "all main benchmark results are temporary ignored or /tmp artifacts and are not committed"
+  ]
+}

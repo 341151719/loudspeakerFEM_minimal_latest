@@ -1,0 +1,172 @@
+{
+  "schema_version": "phase1-enclosure-v1",
+  "case": "sealed_lossless",
+  "model_id": "sealed_lossless",
+  "title_cn": "阶段1封闭无耗背腔演示参数，非产品预测",
+  "demonstrator": true,
+  "provenance": {
+    "upstream_commit": "99deff739cb977d85af1a202fcd9d37376ced803",
+    "implementation_baseline_commit": "f18c06167d79686258511f4dd211a8f6cae9d8d5",
+    "config_version": "phase1-demo-2026-08-25",
+    "generated_by": "phase1 physics-contract and lumped-reference task",
+    "parameter_source": "air values from configs/best_model.json; enclosure and transducer values are declared engineering assumptions",
+    "measured": false,
+    "assumptions": [
+      "The cavity wall is rigid and perfectly sealed in the lossless reference.",
+      "The pressure field is uniform only in the low-frequency kL limit; no cavity modal claim is made here.",
+      "The rear feature reserve makes the declared B/C/D/E net-volume target comparable."
+    ],
+    "section_sources": {
+      "air": "configs/best_model.json air block, COMSOL Air material provenance",
+      "geometry": "phase-1 demonstrator assumption; no measured enclosure supplied",
+      "volume": "phase-1 occupancy contract assumption, not CAD volume",
+      "port": "phase-1 analytic reference assumption; port is disabled in case B",
+      "passive_radiator": "phase-1 SDOF assumption; PR is disabled in case B",
+      "thermoviscous": "phase-1 applicability declaration only; disabled in case B"
+    }
+  },
+  "physics": {
+    "harmonic_convention": "exp(+i*omega*t)",
+    "phasor_amplitude": "peak",
+    "normal_convention": "acoustic_domain_to_structure",
+    "pressure_volume_velocity": "p_Pa_over_U_m3_s",
+    "mechanical_acoustic_conversion": "Zm_N_s_m_times_Sd_m2_squared",
+    "status": "reference_contract_only"
+  },
+  "geometry": {
+    "axisymmetric": true,
+    "shape": "cylindrical_demonstrator",
+    "inner_radius_m": 0.1,
+    "inner_depth_m": 0.203718327157626,
+    "wall_thickness_m": 0.012,
+    "outer_radius_m": 0.112,
+    "outer_depth_m": 0.227718327157626,
+    "driver_radius_m": 0.045,
+    "driver_projection_length_m": 0.02,
+    "port_penetration_into_box_m": 0.002,
+    "rear_mount_radius_m": 0.1,
+    "rear_opening_enabled": false,
+    "rear_opening_radius_m": null,
+    "rear_feature_coaxial": true,
+    "pml_inner_radius_m": 0.35,
+    "pml_thickness_m": 0.1
+  },
+  "net_volume_target_m3": 0.0061,
+  "volume_contract": {
+    "gross_internal_volume_m3": 0.0064,
+    "driver_displacement_m3": 0.0002,
+    "port_displacement_m3": 0.0,
+    "passive_radiator_back_displacement_m3": 0.0,
+    "reserved_rear_feature_m3": 0.0001,
+    "fair_comparison_equalization_m3": 0.0,
+    "occupancy_rule": "net = gross - driver - port - passive_radiator_back - reserved_rear_feature - fair_comparison_equalization"
+  },
+  "topology": {
+    "rear_boundary": "sealed_rigid",
+    "port_enabled": false,
+    "passive_radiator_enabled": false,
+    "sealed_air": true,
+    "free_field_connected": false
+  },
+  "air": {
+    "rho0_kg_m3": 1.2043175745358388,
+    "c0_m_s": 343.2035820928282,
+    "p_ref_Pa": 2e-05,
+    "temperature_K": 293.15,
+    "pressure_Pa": 101325.0,
+    "dynamic_viscosity_Pa_s": 1.8139686307339444e-05,
+    "heat_capacity_cp_J_kgK": 1005.4220711271306,
+    "thermal_conductivity_W_mK": 0.02576818523619657,
+    "prandtl": 0.7077735901674092,
+    "gamma": 1.4
+  },
+  "port": {
+    "enabled": false,
+    "model": "none",
+    "cross_section": "circular",
+    "radius_m": 0.018,
+    "length_m": 0.098,
+    "resistance_Pa_s_m3": 0.0,
+    "surface_roughness_m": 1e-06,
+    "terminal_condition": "open-open",
+    "loss_model": "none",
+    "lumped_reference": {
+      "end_correction_factor": 1.46,
+      "applies_to": "lumped_reference_only"
+    },
+    "explicit_fem": {
+      "enabled": false,
+      "implemented_in_phase1": false,
+      "radiation_model": "none",
+      "reuse_end_correction": false,
+      "reuse_radiation_mass": false,
+      "reuse_radiation_resistance": false
+    },
+    "applicability": {
+      "frequency_min_Hz": 10.0,
+      "frequency_max_Hz": 1000.0,
+      "first_longitudinal_mode_Hz": 1380.7675494561804,
+      "minimum_radius_for_reference_m": 0.018,
+      "boundary_layer_to_radius_max": 0.3,
+      "ka_max": 0.8
+    }
+  },
+  "passive_radiator": {
+    "enabled": false,
+    "model": "none",
+    "Sd_m2": 0.003,
+    "Mms_kg": 0.012,
+    "Cms_m_N": 0.00035,
+    "Rms_N_s_m": 0.45,
+    "rear_clearance_m": 0.0333333333333333,
+    "radiation_model": "none",
+    "Mms_includes_radiation": false,
+    "Rms_includes_radiation": false,
+    "applicability": {
+      "frequency_min_Hz": 10.0,
+      "frequency_max_Hz": 1000.0
+    }
+  },
+  "thermoviscous": {
+    "enabled": false,
+    "model": "none",
+    "implemented_in_phase1": false,
+    "cross_section_scope": "sealed_cavity_walls",
+    "applicability": {
+      "frequency_min_Hz": 10.0,
+      "frequency_max_Hz": 1000.0,
+      "minimum_gap_m": 0.05,
+      "boundary_layer_to_gap_max": 0.3,
+      "boundary_layer_to_radius_max": 0.3,
+      "boundary_layers_must_not_overlap": true
+    }
+  },
+  "mesh": {
+    "global_size_L0_m": 0.02,
+    "global_size_L1_m": 0.01,
+    "global_size_L2_m": 0.005,
+    "port_local_size_L0_m": 0.01,
+    "port_local_size_L1_m": 0.005,
+    "port_local_size_L2_m": 0.0025,
+    "element_order": 1,
+    "pml_enabled": true,
+    "pml_element_count": 8
+  },
+  "study": {
+    "drive_mode": "prescribed_velocity_reference",
+    "frequency_min_Hz": 10.0,
+    "frequency_max_Hz": 1000.0,
+    "frequency_count": 0,
+    "adaptive_peak_points": 3,
+    "reference_fraction": 0.05,
+    "sweep_executed_in_phase1": false
+  },
+  "limits": {
+    "max_linear_displacement_m": 0.001,
+    "max_port_velocity_m_s": 10.0,
+    "max_pr_velocity_m_s": 10.0,
+    "max_mach": 0.03,
+    "trusted_frequency_min_Hz": 10.0,
+    "trusted_frequency_max_Hz": 1000.0
+  }
+}
