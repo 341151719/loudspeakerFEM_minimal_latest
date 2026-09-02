@@ -1,0 +1,134 @@
+{
+  "model_name": "VISATON FR10 full-360 via four cyclic Bloch phase classes, P2 local ASB",
+  "version": "2026-09-02-full360-cyclic",
+  "phasor_convention": "exp(+i omega t)",
+  "drive_voltage_peak_V": 1.0,
+  "air": {
+    "rho_kg_m3": 1.2041,
+    "c_m_s": 343.0,
+    "p_ref_Pa": 2e-05
+  },
+  "electrical": {
+    "Bl_Tm": 4.6,
+    "Rdc_ohm": 7.2,
+    "Le_H": 0.0002
+  },
+  "targets": {
+    "Mms_kg": 0.0057,
+    "fs_Hz": 90.0,
+    "Qms": 2.29,
+    "Sd_m2": 0.005,
+    "Kms_N_m": 1823.0
+  },
+  "geometry": {
+    "quarter_symmetry": false,
+    "acoustic_radius_mm": 300.0,
+    "cone_inner_radius_mm": 10.3,
+    "cone_outer_radius_mm": 40.05,
+    "cone_inner_z_mm": -15.2,
+    "cone_outer_z_mm": -2.6,
+    "dustcap_inner_radius_mm": 1.2,
+    "dustcap_outer_radius_mm": 17.5,
+    "dustcap_apex_z_mm": -7.05,
+    "surround_outer_radius_mm": 49.75,
+    "surround_roll_height_mm": 1.8,
+    "spider_corrugation_amp_mm": 0.25,
+    "geometry_note": "Cone/dustcap dimensions follow the previous FR10 baseline assumptions; surround roll height and spider corrugation are explicit tunable assumptions because the product drawing does not expose these sections.",
+    "surround_outer_z_mm": -0.35,
+    "full_360_solution_space": true
+  },
+  "materials": {
+    "surround": {
+      "rho": 1100.0,
+      "E": 1000000.0,
+      "nu": 0.45,
+      "eta": 0.15
+    },
+    "cone": {
+      "rho": 700.0,
+      "E": 2500000000.0,
+      "nu": 0.3,
+      "eta": 0.03
+    },
+    "dustcap": {
+      "rho": 700.0,
+      "E": 2500000000.0,
+      "nu": 0.3,
+      "eta": 0.03
+    },
+    "spider": {
+      "rho": 600.0,
+      "E": 20000000.0,
+      "nu": 0.3,
+      "eta": 0.08
+    },
+    "former": {
+      "rho": 1420.0,
+      "E": 2500000000.0,
+      "nu": 0.34,
+      "eta": 0.02
+    },
+    "coil": {
+      "rho": 8960.0,
+      "E": 110000000000.0,
+      "nu": 0.34,
+      "eta": 0.003
+    },
+    "neck_glue": {
+      "rho": 1200.0,
+      "E": 1000000000.0,
+      "nu": 0.35,
+      "eta": 0.05
+    }
+  },
+  "numerics": {
+    "tie_penalty_N_m": 30000000.0,
+    "symmetry_tolerance_mm": 1e-06,
+    "structural_ntheta_quarter_base": 16,
+    "acoustic_mesh_near_mm": 3.0,
+    "acoustic_mesh_far_mm": 20.0,
+    "element_order_structure": 2,
+    "element_order_acoustics": 1,
+    "outer_boundary": "first-order spherical Sommerfeld Robin",
+    "gmres_rtol": 2e-09,
+    "gmres_restart": 80,
+    "gmres_maxiter": 300,
+    "condensation_block_rhs": 32,
+    "structural_meridional_refine": 1.0,
+    "trace_solver": "exact_condensation",
+    "trace_operator_match_tolerance": 1e-12,
+    "relative_residual_tolerance": 1e-6,
+    "backward_error_tolerance": 1e-10
+  },
+  "calibration": {
+    "p2_fs_scale_bracket": [
+      0.2,
+      8.0
+    ],
+    "note": "Suspension E scale is recalibrated using the full local front+rear curved-surface ASB so Im(Zmot)=0 at 90 Hz. M matrix is independently normalized to datasheet Mms=5.7 g.",
+    "p2_local_asb_suspension_scale": 14.5357,
+    "verified_90Hz_full360_cyclic_Zmot_ohm": [
+      15.942170167682338,
+      0.00014409395472950233
+    ]
+  },
+  "acoustics": {
+    "boundary_coupling": "local nonmatching P2(structure)-P1(acoustic) mortar-like surface quadrature; no rank-1 Sd coupling",
+    "radiating_parts": [
+      "cone",
+      "dustcap",
+      "surround"
+    ],
+    "Sd_usage": "validation/reference only; not used to shape or scale ASB coupling"
+  },
+  "diagnostic_nonaxisymmetry": {
+    "cone_E_sector_perturbation_fraction": 0.03
+  },
+  "visualization": {
+    "maximum_scatter_points": 18000,
+    "deformation_span_fraction": 0.08,
+    "full360_vtu": true,
+    "full360_png": true,
+    "circumferential_orders": 16
+  }
+}

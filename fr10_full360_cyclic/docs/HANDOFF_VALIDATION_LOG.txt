@@ -1,0 +1,42 @@
+Handoff smoke validation (2026-09-02)
+=====================================
+The corrected portable handoff was tested through mesh generation and cyclic transform construction.
+No full-frequency LU/Schur solve was claimed here.
+
+Structural mesh generation:
+  surround  nodes=272  tetra=672
+  cone      nodes=476  tetra=1248
+  dustcap   nodes=306  tetra=768
+  spider    nodes=374  tetra=960
+  former    nodes=442  tetra=1152
+  coil      nodes=357  tetra=1152
+  neck_glue nodes=136  tetra=288
+
+Periodic acoustic sector:
+  nodes = 8072
+  3-D elements = 41432
+  cyclic seam pairs = 761
+  seam maximum rotated-coordinate mismatch = 3.33e-17 m
+
+P2 structural model after build:
+  Nd vector DOF = 39699
+  physical-free DOF before cyclic reduction = 39105
+  cyclic structural reduced DOF = 37920
+
+Local ASB:
+  G shape = (39699, 8072)
+  G nnz = 31743
+  active acoustic trace DOF = 287
+  full projected coupled area = 0.00784191185 m^2
+  interface RMS mismatch = 0.206364 mm
+  interface max mismatch = 0.438981 mm
+
+Cyclic phase transforms:
+  k=0: acoustic reduced nodes 7311
+  k=1: acoustic reduced nodes 7273; nontrivial-axis pressure constrained to zero
+  k=2: acoustic reduced nodes 7273; nontrivial-axis pressure constrained to zero
+  k=3: acoustic reduced nodes 7273; nontrivial-axis pressure constrained to zero
+
+Python source compilation: PASS
+JSON configuration parse: PASS
+Mesh-generation-to-model-build startup chain: PASS

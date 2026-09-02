@@ -416,6 +416,22 @@ def cmd_eigen(args):
     return 0
 
 
+def cmd_fr10_full360(args):
+    command = [
+        sys.executable,
+        str(ROOT / "fr10_full360_cyclic/cyclic_full360_solver.py"),
+        "--freq",
+        *(str(value) for value in args.freq),
+    ]
+    if args.scale is not None:
+        command.extend(("--scale", str(args.scale)))
+    if args.outdir:
+        command.extend(("--out", str(Path(args.outdir))))
+    if args.diagnostic_phases is not None:
+        command.extend(("--diagnostic-phases", *(str(value) for value in args.diagnostic_phases)))
+    return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
+
+
 def build_parser():
     p = argparse.ArgumentParser(description="Best COMSOL loudspeaker reproduction project")
     sp = p.add_subparsers(dest="command", required=True)
@@ -464,6 +480,15 @@ def build_parser():
     pe.add_argument("--comsol-frequencies")
     pe.add_argument("--outdir")
     pe.set_defaults(func=cmd_eigen)
+    f3 = sp.add_parser(
+        "fr10-full360",
+        help="FR10 four-sector cyclic/Bloch 3-D P2/local-ASB FEM",
+    )
+    f3.add_argument("--freq", type=float, nargs="+", default=[90.0, 500.0, 1000.0, 2000.0])
+    f3.add_argument("--scale", type=float)
+    f3.add_argument("--diagnostic-phases", type=int, nargs="+")
+    f3.add_argument("--outdir")
+    f3.set_defaults(func=cmd_fr10_full360)
     e = sp.add_parser("comsol-export-info"); e.set_defaults(func=cmd_export_info)
     return p
 
