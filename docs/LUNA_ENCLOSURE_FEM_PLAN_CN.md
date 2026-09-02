@@ -1,11 +1,11 @@
 # 扬声器背腔、导向管与被动辐射器 FEM：Luna 分阶段实施规划
 
-文档状态：实施前规划，尚未授权修改生产模型  
-制定日期：2026-08-25  
-上游仓库：https://github.com/341151719/loudspeakerFEM_minimal_latest  
-上游基线：`main@99deff739cb977d85af1a202fcd9d37376ced803`  
-Luna 执行配置：所有阶段固定使用 `gpt-5.6-luna`，`reasoning_effort=max`  
-目标项目：二维轴对称、小信号、频域、电磁—结构—声学耦合 FEM  
+文档状态：实施前规划，尚未授权修改生产模型
+制定日期：2026-08-25
+上游仓库：https://github.com/341151719/loudspeakerFEM_minimal_latest
+上游基线：`main@99deff739cb977d85af1a202fcd9d37376ced803`
+Luna 执行配置：所有阶段固定使用 `gpt-5.6-luna`，`reasoning_effort=max`
+目标项目：二维轴对称、小信号、频域、电磁—结构—声学耦合 FEM
 相量约定：`exp(+i*omega*t)`；出射 Green 函数采用 `exp(-i*k*R)`
 
 ## 0. 文档用途与执行原则
@@ -99,7 +99,7 @@ Luna 执行配置：所有阶段固定使用 `gpt-5.6-luna`，`reasoning_effort=
 
 驱动结构保持现有生产式：
 
-`(K_complex - omega^2 M) u - G p = F_Lorentz`  
+`(K_complex - omega^2 M) u - G p = F_Lorentz`
 `A_ac p - rho0*omega^2 G^T u = 0`
 
 耦合矩阵 `G` 必须由同一物理界面上的边积分得到；法向统一由声学域指向结构域。每个湿表面只耦合一次，不允许因重合边界重复加载。
@@ -118,8 +118,8 @@ Luna 执行配置：所有阶段固定使用 `gpt-5.6-luna`，`reasoning_effort=
 
 壁面为刚性不透气边界。低频、腔内 `kL << 1` 时，FEM 应收敛到均匀压力空气弹簧：
 
-`C_ab = V_b/(rho0*c0^2)`，  
-`Z_box = 1/(i*omega*C_ab)`，  
+`C_ab = V_b/(rho0*c0^2)`，
+`Z_box = 1/(i*omega*C_ab)`，
 `K_box,mechanical = rho0*c0^2*S_d^2/V_b`。
 
 FEM 净容积必须通过轴对称积分计算，不能只用 CAD 标称值。腔内均匀压力极限、输入声阻抗和解析式应分别比较。
@@ -141,7 +141,7 @@ FEM 净容积必须通过轴对称积分计算，不能只用 CAD 标称值。�
 
 导向管是实际 FEM 空气域，包含管内驻波、入口/出口辐射和外场耦合。解析低频基准为：
 
-`M_ap = rho0*L_eff/S_port`，  
+`M_ap = rho0*L_eff/S_port`，
 `f_b = 1/(2*pi*sqrt(M_ap*C_ab)) = c0/(2*pi)*sqrt(S_port/(V_b*L_eff))`。
 
 集总基准可使用端部修正；真实 FEM 几何已经显式包含入口/出口和外部辐射时，不允许再次把相同端部修正加进 PDE，以免双重计数。
