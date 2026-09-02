@@ -61,20 +61,35 @@ def _membrane_boundary_triangles(mesh, part_ids=(0, 1, 2)):
         ((0, 2, 1), (0, 1, 3), (1, 2, 3), (2, 0, 3)), dtype=int
     )
     boundary_keys = []
-    render_faces = []
+    render_blocks = []
     cell_parts = mesh.cell_data.get("part_id")
     if cell_parts is None:
         raise KeyError("structure VTU does not contain cell part_id")
+    if len(cell_parts) != len(mesh.cells):
+        raise ValueError("cell part_id block count does not match mesh cell blocks")
+    # Full-360 reconstruction intentionally keeps separate nodes at cyclic
+    # sector seams. Canonical coordinate IDs make coincident seam faces cancel
+    # while the part ID prevents cancellation across tied material components.
+    _, canonical_point = np.unique(
+        np.round(np.asarray(mesh.points, float), 12), axis=0, return_inverse=True
+    )
     for block, block_parts in zip(mesh.cells, cell_parts):
         if block.type not in ("tetra", "tetra10"):
             continue
         cells = np.asarray(block.data, dtype=int)
-        selected = cells[np.isin(np.asarray(block_parts), part_ids), :4]
+        block_parts = np.asarray(block_parts)
+        if len(block_parts) != len(cells):
+            raise ValueError(f"cell part_id length mismatch for {block.type} block")
+        selected_mask = np.isin(block_parts, part_ids)
+        selected_parts = block_parts[selected_mask]
+        selected = cells[selected_mask, :4]
         if len(selected):
             corners = np.vstack([selected[:, pattern] for pattern in face_patterns])
-            boundary_keys.append(np.sort(corners, axis=1))
+            face_parts = np.tile(selected_parts, len(face_patterns))[:, None]
+            coordinate_keys = np.sort(canonical_point[corners], axis=1)
+            boundary_keys.append(np.hstack((face_parts, coordinate_keys)))
             if block.type == "tetra10":
-                selected10 = cells[np.isin(np.asarray(block_parts), part_ids)]
+                selected10 = cells[selected_mask]
                 quadratic_patterns = np.asarray(
                     (
                         (0, 2, 1, 6, 5, 4),
@@ -88,7 +103,7 @@ def _membrane_boundary_triangles(mesh, part_ids=(0, 1, 2)):
                     [selected10[:, pattern] for pattern in quadratic_patterns]
                 )
                 a, b, c, ab, bc, ca = quadratic.T
-                render_faces.append(
+                render_blocks.append(
                     np.stack(
                         (
                             np.stack((a, ab, ca), axis=1),
@@ -100,13 +115,19 @@ def _membrane_boundary_triangles(mesh, part_ids=(0, 1, 2)):
                     )
                 )
             else:
-                render_faces.append(corners[:, None, :])
+                render_blocks.append(corners[:, None, :])
     if not boundary_keys:
         raise ValueError("no tetrahedral membrane cells found for part IDs 0, 1, 2")
     keys = np.vstack(boundary_keys)
-    candidates = np.concatenate(render_faces, axis=0)
-    _, first, counts = np.unique(keys, axis=0, return_index=True, return_counts=True)
-    return candidates[first[counts == 1]].reshape(-1, 3)
+    _, inverse, counts = np.unique(keys, axis=0, return_inverse=True, return_counts=True)
+    exterior = counts[inverse] == 1
+    triangles = []
+    start = 0
+    for candidates in render_blocks:
+        stop = start + len(candidates)
+        triangles.append(candidates[exterior[start:stop]].reshape(-1, 3))
+        start = stop
+    return np.vstack(triangles)
 
 
 def write_membrane_surface_gif(
@@ -154,8 +175,11 @@ def write_membrane_surface_gif(
     # A fixed dark mounting ring makes the moving 100 mm diaphragm read as a
     # loudspeaker rather than a floating finite-element surface.
     theta = np.linspace(0.0, 2.0 * math.pi, 181)
-    outer_radius = float(np.max(np.hypot(points[used, 0], points[used, 1]))) * 1e3
-    ring_z = float(np.median(points[used, 2])) * 1e3 - 1.8
+    used_radius = np.hypot(points[used, 0], points[used, 1])
+    outer_radius_m = float(np.max(used_radius))
+    outer_nodes = used[used_radius >= 0.985 * outer_radius_m]
+    outer_radius = outer_radius_m * 1e3
+    ring_z = float(np.median(points[outer_nodes, 2])) * 1e3 - 1.8
     ax.plot(
         outer_radius * np.cos(theta),
         outer_radius * np.sin(theta),

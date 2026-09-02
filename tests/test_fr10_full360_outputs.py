@@ -61,6 +61,18 @@ def test_membrane_boundary_triangles_remove_shared_tetra_face():
     assert quadratic_faces.shape == (16, 3)
     assert set(range(10)) == set(quadratic_faces.ravel())
 
+    mixed = meshio.Mesh(
+        quadratic.points,
+        [
+            ("tetra", np.array([[0, 1, 2, 3]])),
+            ("tetra10", np.arange(10).reshape(1, 10)),
+        ],
+        cell_data={
+            "part_id": [np.array([0], dtype=np.int32), np.array([1], dtype=np.int32)]
+        },
+    )
+    assert animate._membrane_boundary_triangles(mixed).shape == (20, 3)
+
 
 def test_frequency_response_writes_1m_csv_json_and_png(tmp_path):
     rows = []
