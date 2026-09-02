@@ -4,6 +4,7 @@ import math
 from pathlib import Path
 import sys
 
+import meshio
 import numpy as np
 
 
@@ -30,6 +31,35 @@ def test_animation_phase_grid_and_plane_deduplication():
     )
     assert len(points) == 2
     np.testing.assert_allclose(values, [2 + 2j, 5 + 0j])
+
+
+def test_membrane_boundary_triangles_remove_shared_tetra_face():
+    points = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, -1.0],
+        ]
+    )
+    mesh = meshio.Mesh(
+        points,
+        [("tetra", np.array([[0, 1, 2, 3], [0, 2, 1, 4]]))],
+        cell_data={"part_id": [np.array([0, 0], dtype=np.int32)]},
+    )
+    faces = animate._membrane_boundary_triangles(mesh)
+    assert faces.shape == (6, 3)
+    assert not any(np.array_equal(np.sort(face), [0, 1, 2]) for face in faces)
+
+    quadratic = meshio.Mesh(
+        np.vstack((points[:4], np.zeros((6, 3)))),
+        [("tetra10", np.arange(10).reshape(1, 10))],
+        cell_data={"part_id": [np.array([1], dtype=np.int32)]},
+    )
+    quadratic_faces = animate._membrane_boundary_triangles(quadratic)
+    assert quadratic_faces.shape == (16, 3)
+    assert set(range(10)) == set(quadratic_faces.ravel())
 
 
 def test_frequency_response_writes_1m_csv_json_and_png(tmp_path):

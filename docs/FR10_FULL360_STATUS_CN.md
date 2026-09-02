@@ -83,6 +83,9 @@ Zmot = 15.942170167682338+0.00014409395472950233i ohm
 python cli.py fr10-animate \
   --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 \
   --frequency 2000 --frames 24 --fps 12
+python cli.py fr10-animate \
+  --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 \
+  --surface-suite --frames 24 --fps 12
 python cli.py fr10-response \
   --output /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/frequency_response_1m \
   --reuse-summary /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/final_baseline/run_summary.json
@@ -98,7 +101,9 @@ python cli.py fr10-response \
 
 动画使用 `exp(+i omega t)` 约定从复数场重建瞬时压力/位移；k=1 项是单位广义力的非镜面对称解空间诊断，不应解释为对称电驱动的绝对幅值。机器可读的动画路径、帧数和色标记录在同目录的 `animation_summary.json`。
 
-第二条命令写出 `frequency_response_1m/frequency_response_1m.{png,csv,json}`，并另存标准化曲线 `frequency_response_1m_2p83Vrms.png`。频响覆盖 50--2000 Hz 的 18 个 1/3 倍频程附近频点（50、63、80、90、100、125、160、200、250、315、400、500、630、800、1000、1250、1600、2000 Hz）。主列为 1 V peak（0.70710678 V RMS）；2.83 V RMS 列仅由线性比例换算，不是重新求解。1 m 复声压由 0.3 m 一阶 spherical Sommerfeld 边界按球面出射波外推得到；该边界不是 PML。
+第二条命令从 tetra10 外边界提取 surround、cone、dustcap 的连续二次三角面，在 `animations/membrane_surface_3d/` 写出三个 24 帧 GIF：90 Hz k=0 物理电驱动活塞振动、2000 Hz k=0 物理电驱动分割振动，以及 2000 Hz k=1/m=1 单位力摇摆诊断。顶点逐帧按 `x(t)=x0+scale*Re(U exp(i omega t))` 变形；标题给出几何放大倍率，色标始终显示未放大的真实瞬时 `u_z`（micrometre peak）。元数据见 `surface_animation_summary.json`。
+
+第三条命令写出 `frequency_response_1m/frequency_response_1m.{png,csv,json}`，并另存标准化曲线 `frequency_response_1m_2p83Vrms.png`。频响覆盖 50--2000 Hz 的 18 个 1/3 倍频程附近频点（50、63、80、90、100、125、160、200、250、315、400、500、630、800、1000、1250、1600、2000 Hz）。主列为 1 V peak（0.70710678 V RMS）；2.83 V RMS 列仅由线性比例换算，不是重新求解。1 m 复声压由 0.3 m 一阶 spherical Sommerfeld 边界按球面出射波外推得到；该边界不是 PML。
 
 本次频响中新增求解的最大块相对残差为 `2.994e-7`，最大后向误差为 `2.632e-20`；复用的既有 `final_baseline` 行仍按原始 summary 保留。
 

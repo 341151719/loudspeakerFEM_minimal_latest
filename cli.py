@@ -445,6 +445,8 @@ def cmd_fr10_animate(args):
         "--fps",
         str(args.fps),
     ]
+    if args.surface_suite:
+        command.append("--surface-suite")
     return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
 
 
@@ -526,6 +528,11 @@ def build_parser():
     f3a.add_argument("--frequency", type=float, default=2000.0)
     f3a.add_argument("--frames", type=int, default=24)
     f3a.add_argument("--fps", type=int, default=12)
+    f3a.add_argument(
+        "--surface-suite",
+        action="store_true",
+        help="render continuous moving diaphragm surfaces at 90 and 2000 Hz",
+    )
     f3a.set_defaults(func=cmd_fr10_animate)
     f3r = sp.add_parser("fr10-response", help="FR10 full-360 1 m frequency response")
     f3r.add_argument("--frequencies", type=float, nargs="+")

@@ -11,6 +11,8 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import meshio
 import numpy as np
+from matplotlib.cm import ScalarMappable
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.interpolate import griddata
 
 
@@ -44,6 +46,170 @@ def _save_gif(fig, update, frames, fps, path):
     anim = animation.FuncAnimation(fig, update, frames=frames, blit=False)
     anim.save(path, writer=animation.PillowWriter(fps=fps), dpi=115)
     plt.close(fig)
+
+
+def _membrane_boundary_triangles(mesh, part_ids=(0, 1, 2)):
+    """Return render triangles on selected tetra/tetra10 membrane exteriors.
+
+    The full-360 result stores surround, cone and dustcap as part IDs 0--2.
+    Rendering only tetra nodes produced a point cloud; retaining faces that occur
+    once reconstructs the actual outer skin of each solid membrane component.
+    A quadratic tetra10 face is split into four triangles so its midside P2
+    displacement degrees of freedom also move the rendered surface.
+    """
+    face_patterns = np.asarray(
+        ((0, 2, 1), (0, 1, 3), (1, 2, 3), (2, 0, 3)), dtype=int
+    )
+    boundary_keys = []
+    render_faces = []
+    cell_parts = mesh.cell_data.get("part_id")
+    if cell_parts is None:
+        raise KeyError("structure VTU does not contain cell part_id")
+    for block, block_parts in zip(mesh.cells, cell_parts):
+        if block.type not in ("tetra", "tetra10"):
+            continue
+        cells = np.asarray(block.data, dtype=int)
+        selected = cells[np.isin(np.asarray(block_parts), part_ids), :4]
+        if len(selected):
+            corners = np.vstack([selected[:, pattern] for pattern in face_patterns])
+            boundary_keys.append(np.sort(corners, axis=1))
+            if block.type == "tetra10":
+                selected10 = cells[np.isin(np.asarray(block_parts), part_ids)]
+                quadratic_patterns = np.asarray(
+                    (
+                        (0, 2, 1, 6, 5, 4),
+                        (0, 1, 3, 4, 8, 7),
+                        (1, 2, 3, 5, 9, 8),
+                        (2, 0, 3, 6, 7, 9),
+                    ),
+                    dtype=int,
+                )
+                quadratic = np.vstack(
+                    [selected10[:, pattern] for pattern in quadratic_patterns]
+                )
+                a, b, c, ab, bc, ca = quadratic.T
+                render_faces.append(
+                    np.stack(
+                        (
+                            np.stack((a, ab, ca), axis=1),
+                            np.stack((ab, b, bc), axis=1),
+                            np.stack((ca, bc, c), axis=1),
+                            np.stack((ab, bc, ca), axis=1),
+                        ),
+                        axis=1,
+                    )
+                )
+            else:
+                render_faces.append(corners[:, None, :])
+    if not boundary_keys:
+        raise ValueError("no tetrahedral membrane cells found for part IDs 0, 1, 2")
+    keys = np.vstack(boundary_keys)
+    candidates = np.concatenate(render_faces, axis=0)
+    _, first, counts = np.unique(keys, axis=0, return_index=True, return_counts=True)
+    return candidates[first[counts == 1]].reshape(-1, 3)
+
+
+def write_membrane_surface_gif(
+    structure_vtu,
+    output,
+    frequency,
+    identity,
+    frames=24,
+    fps=12,
+    deformation_scale=None,
+    kclass="k0",
+    physical_electrical_drive=True,
+):
+    """Animate the continuous surround/cone/dustcap surface from complex FEM U."""
+    mesh = meshio.read(structure_vtu)
+    points = np.asarray(mesh.points, float)
+    displacement = _complex_point_data(mesh, "u_real_m", "u_imag_m")
+    faces = _membrane_boundary_triangles(mesh)
+    used = np.unique(faces)
+    membrane_amplitude = np.linalg.norm(displacement[used], axis=1)
+    max_displacement = max(float(np.max(membrane_amplitude)), 1e-300)
+    span = float(np.max(np.ptp(points[used], axis=0)))
+    if deformation_scale is None:
+        deformation_scale = max(1.0, 0.05 * span / max_displacement)
+    deformation_scale = float(deformation_scale)
+    uz_limit = max(float(np.max(np.abs(displacement[used, 2]))), 1e-300)
+    phases = _phase_angles(frames)
+
+    fig = plt.figure(figsize=(8.7, 7.3))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.view_init(elev=27, azim=-58)
+    instant = np.real(displacement * np.exp(1j * phases[0]))
+    moved = points + deformation_scale * instant
+    surface = Poly3DCollection(
+        moved[faces] * 1e3,
+        cmap="coolwarm",
+        linewidths=0.0,
+        antialiased=False,
+        shade=False,
+    )
+    surface.set_clim(-uz_limit * 1e6, uz_limit * 1e6)
+    surface.set_array(np.mean(instant[faces, 2], axis=1) * 1e6)
+    ax.add_collection3d(surface)
+
+    # A fixed dark mounting ring makes the moving 100 mm diaphragm read as a
+    # loudspeaker rather than a floating finite-element surface.
+    theta = np.linspace(0.0, 2.0 * math.pi, 181)
+    outer_radius = float(np.max(np.hypot(points[used, 0], points[used, 1]))) * 1e3
+    ring_z = float(np.median(points[used, 2])) * 1e3 - 1.8
+    ax.plot(
+        outer_radius * np.cos(theta),
+        outer_radius * np.sin(theta),
+        np.full_like(theta, ring_z),
+        color="#222222",
+        linewidth=5.0,
+        alpha=0.9,
+    )
+
+    envelope = points[used].copy()
+    envelope[:, 2] += np.sign(envelope[:, 2] + 1e-30) * 0.05 * span
+    _equal_3d_axes(ax, envelope * 1e3)
+    ax.set_xlabel("x / mm")
+    ax.set_ylabel("y / mm")
+    ax.set_zlabel("z / mm")
+    ax.set_box_aspect((1.0, 1.0, 0.55))
+    title = ax.set_title("")
+    colorbar = fig.colorbar(
+        ScalarMappable(norm=surface.norm, cmap=surface.cmap),
+        ax=ax,
+        pad=0.08,
+        shrink=0.78,
+        label="instantaneous physical u_z / micrometre peak",
+    )
+    colorbar.ax.tick_params(labelsize=8)
+
+    def update(frame):
+        instant_u = np.real(displacement * np.exp(1j * phases[frame]))
+        moved_u = points + deformation_scale * instant_u
+        surface.set_verts(moved_u[faces] * 1e3)
+        surface.set_array(np.mean(instant_u[faces, 2], axis=1) * 1e6)
+        title.set_text(
+            f"FR10 continuous 3-D diaphragm, {frequency:g} Hz, {identity}\n"
+            f"phase {360 * frame / frames:.0f} deg; geometry deformation x{deformation_scale:.3g}"
+        )
+        return surface, title
+
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _save_gif(fig, update, frames, fps, output)
+    return {
+        "path": str(output),
+        "frames": int(frames),
+        "fps": int(fps),
+        "frequency_Hz": float(frequency),
+        "kclass": kclass,
+        "physical_electrical_drive": bool(physical_electrical_drive),
+        "identity": identity,
+        "surface_triangles": int(len(faces)),
+        "deformation_scale": deformation_scale,
+        "maximum_physical_displacement_um_peak": max_displacement * 1e6,
+        "colour_quantity": "instantaneous physical u_z in micrometres peak",
+        "surface_parts": ["surround", "cone", "dustcap"],
+    }
 
 
 def write_rocking_gif(structure_vtu, output, frequency, frames=24, fps=12):
@@ -366,11 +532,77 @@ def generate_animations(results_root, frequency=2000.0, frames=24, fps=12):
     return rows
 
 
+def generate_membrane_surface_animations(results_root, frames=24, fps=12):
+    """Render the physical piston/breakup cases plus the k=1 rocking diagnostic."""
+    import json
+
+    results_root = Path(results_root).resolve()
+    output = results_root / "animations" / "membrane_surface_3d"
+    cases = (
+        (
+            90.0,
+            "k=0 physical electrical piston motion",
+            results_root
+            / "final_baseline/90Hz/structure_full360_90Hz_k0_P2.vtu",
+            output / "membrane_surface_90Hz_k0_physical.gif",
+            "k0",
+            True,
+        ),
+        (
+            2000.0,
+            "k=0 physical electrical breakup motion",
+            results_root
+            / "final_baseline/2000Hz/structure_full360_2000Hz_k0_P2.vtu",
+            output / "membrane_surface_2000Hz_k0_physical.gif",
+            "k0",
+            True,
+        ),
+        (
+            2000.0,
+            "k=1 / m=1 unit-force rocking diagnostic",
+            results_root
+            / "phase_diagnostics/2000Hz_k1/structure_full360_2000Hz_diagnostic_k1_P2.vtu",
+            output / "membrane_surface_2000Hz_k1_diagnostic.gif",
+            "k1_m1",
+            False,
+        ),
+    )
+    missing = [str(source) for _, _, source, _, _, _ in cases if not source.exists()]
+    if missing:
+        raise FileNotFoundError("missing full-360 structure files: " + ", ".join(missing))
+    rows = {}
+    for frequency, identity, source, destination, kclass, physical_drive in cases:
+        key = destination.stem
+        rows[key] = write_membrane_surface_gif(
+            source,
+            destination,
+            frequency,
+            identity,
+            frames,
+            fps,
+            kclass=kclass,
+            physical_electrical_drive=physical_drive,
+        )
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "surface_animation_summary.json").write_text(
+        json.dumps(rows, indent=2), encoding="utf-8"
+    )
+    return rows
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Animate FR10 full-360 complex FEM fields")
     parser.add_argument("--results-root", type=Path, required=True)
     parser.add_argument("--frequency", type=float, default=2000.0)
     parser.add_argument("--frames", type=int, default=24)
     parser.add_argument("--fps", type=int, default=12)
+    parser.add_argument(
+        "--surface-suite",
+        action="store_true",
+        help="render continuous 3-D diaphragm surfaces at 90/2000 Hz",
+    )
     args = parser.parse_args()
-    generate_animations(args.results_root, args.frequency, args.frames, args.fps)
+    if args.surface_suite:
+        generate_membrane_surface_animations(args.results_root, args.frames, args.fps)
+    else:
+        generate_animations(args.results_root, args.frequency, args.frames, args.fps)
