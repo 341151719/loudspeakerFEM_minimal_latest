@@ -74,6 +74,25 @@ def test_membrane_boundary_triangles_remove_shared_tetra_face():
     assert animate._membrane_boundary_triangles(mixed).shape == (20, 3)
 
 
+def test_complete_assembly_loads_supplied_cad_stl_parts(tmp_path):
+    components = tmp_path / "components"
+    components.mkdir()
+    points = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    for _, filename, _ in animate._FIXED_CAD_PARTS:
+        meshio.write_points_cells(
+            components / filename, points, [("triangle", np.array([[0, 1, 2]]))]
+        )
+    rows = animate._load_complete_static_cad(tmp_path)
+    assert [row[0] for row in rows] == [row[0] for row in animate._FIXED_CAD_PARTS]
+    for _, triangles, colour, source in rows:
+        assert triangles.ndim == 3 and triangles.shape[1:] == (3, 3)
+        assert len(triangles) > 0
+        assert np.isfinite(triangles).all()
+        assert colour.startswith("#")
+        assert source.endswith(".stl")
+        assert np.max(triangles) == 1e-3
+
+
 def test_frequency_response_writes_1m_csv_json_and_png(tmp_path):
     rows = []
     for frequency, front, rear in ((100.0, 70.0, 69.0), (1000.0, 80.0, 77.0)):

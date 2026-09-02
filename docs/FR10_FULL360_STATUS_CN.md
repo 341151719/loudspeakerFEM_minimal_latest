@@ -86,6 +86,11 @@ python cli.py fr10-animate \
 python cli.py fr10-animate \
   --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 \
   --surface-suite --frames 24 --fps 12
+python cli.py fr10-animate \
+  --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 \
+  --complete-assembly-suite \
+  --assembly-cad-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/reference_cad_20260902/FR10_COMSOL_3D_model \
+  --frames 24 --fps 12
 python cli.py fr10-response \
   --output /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/frequency_response_1m \
   --reuse-summary /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/final_baseline/run_summary.json
@@ -103,7 +108,9 @@ python cli.py fr10-response \
 
 第二条命令从 tetra10 外边界提取 surround、cone、dustcap 的连续二次三角面，在 `animations/membrane_surface_3d/` 写出三个 24 帧 GIF：90 Hz k=0 物理电驱动活塞振动、2000 Hz k=0 物理电驱动分割振动，以及 2000 Hz k=1/m=1 单位力摇摆诊断。顶点逐帧按 `x(t)=x0+scale*Re(U exp(i omega t))` 变形；标题给出几何放大倍率，色标始终显示未放大的真实瞬时 `u_z`（micrometre peak）。元数据见 `surface_animation_summary.json`。
 
-第三条命令写出 `frequency_response_1m/frequency_response_1m.{png,csv,json}`，并另存标准化曲线 `frequency_response_1m_2p83Vrms.png`。频响覆盖 50--2000 Hz 的 18 个 1/3 倍频程附近频点（50、63、80、90、100、125、160、200、250、315、400、500、630、800、1000、1250、1600、2000 Hz）。主列为 1 V peak（0.70710678 V RMS）；2.83 V RMS 列仅由线性比例换算，不是重新求解。1 m 复声压由 0.3 m 一阶 spherical Sommerfeld 边界按球面出射波外推得到；该边界不是 PML。
+第三条动画命令使用交接包内层 `VISATON_FR10_COMSOL_3D_baseline.zip` 的原始部件 STL，在 `animations/complete_loudspeaker_3d/` 生成相同三个工况的完整扬声器装配动画。固定 CAD 包括盆架、上导磁板、铁氧体磁体、后导磁板、极芯、端子板和正负端子；surround、cone、dustcap、spider、former、coil 的 CAD 表面按部件最近节点映射现有 full-360 FEM 复位移。映射距离、CAD 来源、放大倍率与“固定件未参与当前结构求解”的边界均记录在 `complete_assembly_summary.json`。
+
+第四条命令写出 `frequency_response_1m/frequency_response_1m.{png,csv,json}`，并另存标准化曲线 `frequency_response_1m_2p83Vrms.png`。频响覆盖 50--2000 Hz 的 18 个 1/3 倍频程附近频点（50、63、80、90、100、125、160、200、250、315、400、500、630、800、1000、1250、1600、2000 Hz）。主列为 1 V peak（0.70710678 V RMS）；2.83 V RMS 列仅由线性比例换算，不是重新求解。1 m 复声压由 0.3 m 一阶 spherical Sommerfeld 边界按球面出射波外推得到；该边界不是 PML。
 
 本次频响中新增求解的最大块相对残差为 `2.994e-7`，最大后向误差为 `2.632e-20`；复用的既有 `final_baseline` 行仍按原始 summary 保留。
 

@@ -12,8 +12,10 @@ import matplotlib.pyplot as plt
 import meshio
 import numpy as np
 from matplotlib.cm import ScalarMappable
+from matplotlib.colors import to_rgba
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.interpolate import griddata
+from scipy.spatial import cKDTree
 
 
 def _complex_point_data(mesh, real_name, imag_name):
@@ -233,6 +235,214 @@ def write_membrane_surface_gif(
         "maximum_physical_displacement_um_peak": max_displacement * 1e6,
         "colour_quantity": "instantaneous physical u_z in micrometres peak",
         "surface_parts": ["surround", "cone", "dustcap"],
+    }
+
+
+_FIXED_CAD_PARTS = (
+    ("basket steel", "D01_basket_steel.stl", "#687178"),
+    ("top plate steel", "D08_top_plate_steel.stl", "#aeb4b8"),
+    ("ferrite magnet", "D09_ferrite_magnet.stl", "#303438"),
+    ("back plate steel", "D10_back_plate_steel.stl", "#9da4a8"),
+    ("pole piece steel", "D11_pole_piece_steel.stl", "#b8bdc0"),
+    ("terminal board", "D12_terminal_board.stl", "#7b4f32"),
+    ("positive terminal", "D13_terminal_positive.stl", "#c65b45"),
+    ("negative terminal", "D14_terminal_negative.stl", "#4b5969"),
+)
+
+_MOVING_CAD_PARTS = (
+    ("surround", "D02_surround_elastomer.stl", "#202020", 0),
+    ("cone", "D03_cone_paper.stl", "#383838", 1),
+    ("dustcap", "D04_dustcap_paper.stl", "#292929", 2),
+    ("spider", "D05_spider_fabric.stl", "#b88a45", 3),
+    ("voice-coil former", "D06_voicecoil_former.stl", "#c8a36a", 4),
+    ("voice coil", "D07_voicecoil_copper.stl", "#b9652e", 5),
+)
+
+
+def _read_stl_indexed_m(path):
+    """Read the handoff CAD STL, whose coordinates are stored in millimetres."""
+    mesh = meshio.read(path)
+    blocks = [np.asarray(block.data, int) for block in mesh.cells if block.type == "triangle"]
+    if not blocks:
+        raise ValueError(f"CAD STL has no triangle cells: {path}")
+    return np.asarray(mesh.points, float) * 1e-3, np.vstack(blocks)
+
+
+def _read_stl_triangles_m(path):
+    points, triangles = _read_stl_indexed_m(path)
+    return points[triangles]
+
+
+def _load_complete_static_cad(cad_root):
+    cad_root = Path(cad_root).resolve()
+    components = cad_root / "components"
+    rows = []
+    missing = []
+    for name, filename, colour in _FIXED_CAD_PARTS:
+        path = components / filename
+        if not path.exists():
+            missing.append(str(path))
+            continue
+        rows.append((name, _read_stl_triangles_m(path), colour, str(path)))
+    if missing:
+        raise FileNotFoundError("missing complete loudspeaker CAD parts: " + ", ".join(missing))
+    return rows
+
+
+def _map_moving_cad_to_fem(cad_root, mesh, displacement):
+    """Map solved partwise displacement to the supplied full-assembly CAD skins."""
+    cad_root = Path(cad_root).resolve()
+    components = cad_root / "components"
+    point_parts = np.asarray(mesh.point_data["part_id"])
+    fem_points = np.asarray(mesh.points, float)
+    rows = []
+    for name, filename, colour, part_id in _MOVING_CAD_PARTS:
+        source = components / filename
+        if not source.exists():
+            raise FileNotFoundError(f"missing moving CAD part: {source}")
+        cad_points, triangles = _read_stl_indexed_m(source)
+        fem_ids = np.flatnonzero(point_parts == part_id)
+        if not len(fem_ids):
+            raise ValueError(f"full-360 VTU has no points for part_id={part_id} ({name})")
+        distance, local = cKDTree(fem_points[fem_ids]).query(cad_points)
+        mapped_ids = fem_ids[local]
+        rows.append(
+            {
+                "name": name,
+                "colour": colour,
+                "source": str(source),
+                "points": cad_points,
+                "triangles": triangles,
+                "displacement": displacement[mapped_ids],
+                "mapping_max_distance_mm": float(np.max(distance) * 1e3),
+                "mapping_rms_distance_mm": float(np.sqrt(np.mean(distance**2)) * 1e3),
+            }
+        )
+    return rows
+
+
+def write_complete_loudspeaker_gif(
+    structure_vtu,
+    cad_root,
+    output,
+    frequency,
+    identity,
+    frames=24,
+    fps=12,
+    kclass="k0",
+    physical_electrical_drive=True,
+):
+    """Animate all seven solved moving parts inside a complete speaker assembly."""
+    mesh = meshio.read(structure_vtu)
+    displacement = _complex_point_data(mesh, "u_real_m", "u_imag_m")
+    moving_rows = _map_moving_cad_to_fem(cad_root, mesh, displacement)
+    maximum = max(
+        float(
+            max(
+                np.max(np.linalg.norm(row["displacement"], axis=1))
+                for row in moving_rows
+            )
+        ),
+        1e-300,
+    )
+    deformation_scale = max(1.0, 0.008 / maximum)
+    phases = _phase_angles(frames)
+
+    fig = plt.figure(figsize=(9.2, 7.7))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.view_init(elev=46, azim=-58)
+    moving_vertices = []
+    moving_colours = []
+    for row in moving_rows:
+        moved = row["points"] + deformation_scale * np.real(
+            row["displacement"] * np.exp(1j * phases[0])
+        )
+        moving_vertices.append(moved[row["triangles"]] * 1e3)
+        moving_colours.extend(
+            [to_rgba(row["colour"])] * len(row["triangles"])
+        )
+    moving_artist = Poly3DCollection(
+        np.vstack(moving_vertices),
+        facecolors=moving_colours,
+        linewidths=0.0,
+        alpha=1.0,
+        shade=True,
+    )
+    ax.add_collection3d(moving_artist)
+
+    static_rows = []
+    static_vertices = []
+    static_colours = []
+    for name, triangles, colour, source in _load_complete_static_cad(cad_root):
+        static_vertices.append(triangles * 1e3)
+        static_colours.extend([to_rgba(colour)] * len(triangles))
+        static_rows.append(
+            {"name": name, "render_triangles": int(len(triangles)), "source": source}
+        )
+    static_artist = Poly3DCollection(
+        np.vstack(static_vertices),
+        facecolors=static_colours,
+        edgecolors="#303030",
+        linewidths=0.03,
+        alpha=1.0,
+        shade=True,
+    )
+    ax.add_collection3d(static_artist)
+
+    ax.set_xlim(-60, 60)
+    ax.set_ylim(-60, 60)
+    ax.set_zlim(-52, 30)
+    ax.set_box_aspect((1.0, 1.0, 0.72))
+    ax.set_xlabel("x / mm")
+    ax.set_ylabel("y / mm")
+    ax.set_zlabel("z / mm")
+    title = ax.set_title("")
+
+    def update(frame):
+        frame_vertices = []
+        for row in moving_rows:
+            instant_u = np.real(row["displacement"] * np.exp(1j * phases[frame]))
+            moved_u = row["points"] + deformation_scale * instant_u
+            frame_vertices.append(moved_u[row["triangles"]] * 1e3)
+        moving_artist.set_verts(np.vstack(frame_vertices))
+        title.set_text(
+            f"FR10 complete 3-D loudspeaker assembly, {frequency:g} Hz, {identity}\n"
+            f"phase {360 * frame / frames:.0f} deg; moving-part deformation x{deformation_scale:.3g}"
+        )
+        return moving_artist, title
+
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _save_gif(fig, update, frames, fps, output)
+    return {
+        "path": str(output),
+        "frames": int(frames),
+        "fps": int(fps),
+        "frequency_Hz": float(frequency),
+        "kclass": kclass,
+        "physical_electrical_drive": bool(physical_electrical_drive),
+        "identity": identity,
+        "deformation_scale": float(deformation_scale),
+        "maximum_physical_displacement_um_peak": maximum * 1e6,
+        "moving_fem_parts": [row["name"] for row in moving_rows]
+        + ["neck glue (internal, not rendered)"],
+        "moving_render_triangles": int(sum(len(row["triangles"]) for row in moving_rows)),
+        "moving_cad_mapping": [
+            {
+                key: row[key]
+                for key in (
+                    "name",
+                    "source",
+                    "mapping_max_distance_mm",
+                    "mapping_rms_distance_mm",
+                )
+            }
+            for row in moving_rows
+        ],
+        "fixed_display_parts": static_rows,
+        "fixed_display_geometry_is_solved_fem": False,
+        "fixed_display_geometry_source": "original STL components from VISATON_FR10_COMSOL_3D_baseline.zip",
+        "geometry_note": "fixed CAD parts are the supplied parametric baseline geometry; only the seven moving parts carry the current full-360 FEM displacement",
     }
 
 
@@ -614,6 +824,71 @@ def generate_membrane_surface_animations(results_root, frames=24, fps=12):
     return rows
 
 
+def generate_complete_loudspeaker_animations(
+    results_root, frames=24, fps=12, cad_root=None
+):
+    """Render the full visible driver assembly for physical and diagnostic cases."""
+    import json
+
+    results_root = Path(results_root).resolve()
+    if cad_root is None:
+        cad_root = (
+            results_root.parents[1]
+            / "reference_cad_20260902"
+            / "FR10_COMSOL_3D_model"
+        )
+    cad_root = Path(cad_root).resolve()
+    output = results_root / "animations" / "complete_loudspeaker_3d"
+    cases = (
+        (
+            90.0,
+            "k=0 physical electrical piston motion",
+            results_root / "final_baseline/90Hz/structure_full360_90Hz_k0_P2.vtu",
+            output / "complete_loudspeaker_90Hz_k0_physical.gif",
+            "k0",
+            True,
+        ),
+        (
+            2000.0,
+            "k=0 physical electrical breakup motion",
+            results_root / "final_baseline/2000Hz/structure_full360_2000Hz_k0_P2.vtu",
+            output / "complete_loudspeaker_2000Hz_k0_physical.gif",
+            "k0",
+            True,
+        ),
+        (
+            2000.0,
+            "k=1 / m=1 unit-force rocking diagnostic",
+            results_root
+            / "phase_diagnostics/2000Hz_k1/structure_full360_2000Hz_diagnostic_k1_P2.vtu",
+            output / "complete_loudspeaker_2000Hz_k1_diagnostic.gif",
+            "k1_m1",
+            False,
+        ),
+    )
+    missing = [str(source) for _, _, source, _, _, _ in cases if not source.exists()]
+    if missing:
+        raise FileNotFoundError("missing full-360 structure files: " + ", ".join(missing))
+    rows = {}
+    for frequency, identity, source, destination, kclass, physical_drive in cases:
+        rows[destination.stem] = write_complete_loudspeaker_gif(
+            source,
+            cad_root,
+            destination,
+            frequency,
+            identity,
+            frames,
+            fps,
+            kclass=kclass,
+            physical_electrical_drive=physical_drive,
+        )
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "complete_assembly_summary.json").write_text(
+        json.dumps(rows, indent=2), encoding="utf-8"
+    )
+    return rows
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Animate FR10 full-360 complex FEM fields")
     parser.add_argument("--results-root", type=Path, required=True)
@@ -625,8 +900,24 @@ if __name__ == "__main__":
         action="store_true",
         help="render continuous 3-D diaphragm surfaces at 90/2000 Hz",
     )
+    parser.add_argument(
+        "--complete-assembly-suite",
+        action="store_true",
+        help="render all moving FEM parts in a complete fixed speaker assembly",
+    )
+    parser.add_argument(
+        "--assembly-cad-root",
+        type=Path,
+        help="FR10_COMSOL_3D_model directory extracted from the handoff baseline archive",
+    )
     args = parser.parse_args()
-    if args.surface_suite:
+    if args.surface_suite and args.complete_assembly_suite:
+        parser.error("choose only one of --surface-suite and --complete-assembly-suite")
+    if args.complete_assembly_suite:
+        generate_complete_loudspeaker_animations(
+            args.results_root, args.frames, args.fps, args.assembly_cad_root
+        )
+    elif args.surface_suite:
         generate_membrane_surface_animations(args.results_root, args.frames, args.fps)
     else:
         generate_animations(args.results_root, args.frequency, args.frames, args.fps)

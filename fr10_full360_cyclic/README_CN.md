@@ -48,10 +48,11 @@ python cli.py fr10-full360 --freq 2000 --diagnostic-phases 1 2 3
 ```bash
 python cli.py fr10-animate --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 --frequency 2000 --frames 24 --fps 12
 python cli.py fr10-animate --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 --surface-suite --frames 24 --fps 12
+python cli.py fr10-animate --results-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902 --complete-assembly-suite --assembly-cad-root /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/reference_cad_20260902/FR10_COMSOL_3D_model --frames 24 --fps 12
 python cli.py fr10-response --output /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/frequency_response_1m --reuse-summary /mnt/c/Users/Administrator/Documents/PYTHON2COMSOL/runs/fr10_full360_feature_20260902/final_baseline/run_summary.json
 ```
 
-首条动画命令输出原有五类声场/点位诊断。`--surface-suite` 另在 `animations/membrane_surface_3d/` 输出 90 Hz k=0 活塞、2000 Hz k=0 分割和 2000 Hz k=1/m=1 摇摆三种连续膜面 GIF；表面由 tetra10 外边界二次三角面构造，几何形变按标题倍率放大，色标仍为真实瞬时位移。频响输出为 `frequency_response_1m/frequency_response_1m.{png,csv,json}` 和 `frequency_response_1m_2p83Vrms.png`，覆盖 50--2000 Hz 的 18 个 1/3 倍频程附近频点；驱动主列为 1 V peak（0.707 Vrms），2.83 Vrms 列仅线性归一化。1 m 数值由 0.3 m Sommerfeld 球面出射波外推，不是 PML。
+首条动画命令输出原有五类声场/点位诊断。`--surface-suite` 在 `animations/membrane_surface_3d/` 输出三种连续膜面 GIF。`--complete-assembly-suite` 在 `animations/complete_loudspeaker_3d/` 使用交接包内层 `VISATON_FR10_COMSOL_3D_baseline.zip` 的原始 STL，显示盆架、磁体、导磁板、极芯、端子及运动组件；六个可见运动 CAD 表面按部件映射 full-360 FEM 位移，颈部胶参与求解但位于内部。固定件当前仅作 CAD 装配显示，不参与结构位移求解。频响输出为 `frequency_response_1m/frequency_response_1m.{png,csv,json}` 和 `frequency_response_1m_2p83Vrms.png`，覆盖 50--2000 Hz 的 18 个频点；1 m 数值由 0.3 m Sommerfeld 球面出射波外推，不是 PML。
 
 ## 当前数学模型
 

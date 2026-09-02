@@ -447,6 +447,10 @@ def cmd_fr10_animate(args):
     ]
     if args.surface_suite:
         command.append("--surface-suite")
+    if args.complete_assembly_suite:
+        command.append("--complete-assembly-suite")
+    if args.assembly_cad_root:
+        command.extend(("--assembly-cad-root", str(Path(args.assembly_cad_root))))
     return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
 
 
@@ -533,6 +537,12 @@ def build_parser():
         action="store_true",
         help="render continuous moving diaphragm surfaces at 90 and 2000 Hz",
     )
+    f3a.add_argument(
+        "--complete-assembly-suite",
+        action="store_true",
+        help="render the full loudspeaker assembly with all moving FEM parts",
+    )
+    f3a.add_argument("--assembly-cad-root")
     f3a.set_defaults(func=cmd_fr10_animate)
     f3r = sp.add_parser("fr10-response", help="FR10 full-360 1 m frequency response")
     f3r.add_argument("--frequencies", type=float, nargs="+")
