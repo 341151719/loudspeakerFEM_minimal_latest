@@ -1,0 +1,208 @@
+{
+  "source": "runs/sum_rules_highest_accuracy/sum_rule_frequency_audit.csv",
+  "coverage_target": 0.99,
+  "selected_parent_intervals": 33,
+  "new_frequencies": 66,
+  "covered_absolute_error_fraction": 0.9907036631785165,
+  "total_absolute_error_indicator_ohm_per_s": 1799.2071974673393,
+  "selected_intervals": [
+    {
+      "left_Hz": 11106.786077514733,
+      "mid_Hz": 11445.603379941713,
+      "right_Hz": 11794.756450395776,
+      "absolute_error_indicator": 757.2143512885847
+    },
+    {
+      "left_Hz": 9274.41864827684,
+      "mid_Hz": 9557.338791516931,
+      "right_Hz": 9848.88953582072,
+      "absolute_error_indicator": 357.0084660687518
+    },
+    {
+      "left_Hz": 11794.756450395776,
+      "mid_Hz": 12154.560585941012,
+      "right_Hz": 12525.340701914516,
+      "absolute_error_indicator": 211.95404232592333
+    },
+    {
+      "left_Hz": 10458.94397993574,
+      "mid_Hz": 10777.99857959988,
+      "right_Hz": 11106.786077514733,
+      "absolute_error_indicator": 91.98666862623432
+    },
+    {
+      "left_Hz": 6466.708339253259,
+      "mid_Hz": 6663.9780678494935,
+      "right_Hz": 6867.26559464828,
+      "absolute_error_indicator": 66.22082652130635
+    },
+    {
+      "left_Hz": 8733.455782062192,
+      "mid_Hz": 8999.873619615937,
+      "right_Hz": 9274.41864827684,
+      "absolute_error_indicator": 48.33748255900859
+    },
+    {
+      "left_Hz": 3338.696945670759,
+      "mid_Hz": 3440.5453368127664,
+      "right_Hz": 3545.500657079224,
+      "absolute_error_indicator": 34.96585635950509
+    },
+    {
+      "left_Hz": 6867.26559464828,
+      "mid_Hz": 7076.754495180781,
+      "right_Hz": 7292.633945028941,
+      "absolute_error_indicator": 22.38022710949683
+    },
+    {
+      "left_Hz": 12525.340701914516,
+      "mid_Hz": 12907.431625335888,
+      "right_Hz": 13301.178397267551,
+      "absolute_error_indicator": 18.560947723167292
+    },
+    {
+      "left_Hz": 2192.163827432889,
+      "mid_Hz": 2259.0367310168017,
+      "right_Hz": 2327.949621383537,
+      "absolute_error_indicator": 17.457860065171257
+    },
+    {
+      "left_Hz": 3765.11408909074,
+      "mid_Hz": 3879.970519213048,
+      "right_Hz": 3998.330694302517,
+      "absolute_error_indicator": 13.755452184374409
+    },
+    {
+      "left_Hz": 3143.9557831626685,
+      "mid_Hz": 3239.863511101835,
+      "right_Hz": 3338.696945670759,
+      "absolute_error_indicator": 13.438450774737085
+    },
+    {
+      "left_Hz": 2960.573579251934,
+      "mid_Hz": 3050.8871539222355,
+      "right_Hz": 3143.9557831626685,
+      "absolute_error_indicator": 12.430701573378611
+    },
+    {
+      "left_Hz": 3998.330694302517,
+      "mid_Hz": 4120.301497611413,
+      "right_Hz": 4245.993072911733,
+      "absolute_error_indicator": 10.871454844900642
+    },
+    {
+      "left_Hz": 2787.887782997839,
+      "mid_Hz": 2872.933502930872,
+      "right_Hz": 2960.573579251934,
+      "absolute_error_indicator": 10.677969925317742
+    },
+    {
+      "left_Hz": 2472.146183547796,
+      "mid_Hz": 2547.560069731351,
+      "right_Hz": 2625.27448905779,
+      "absolute_error_indicator": 8.386895000149382
+    },
+    {
+      "left_Hz": 14125.072600132466,
+      "mid_Hz": 14555.96403547314,
+      "right_Hz": 15000.0,
+      "absolute_error_indicator": 8.386233986707252
+    },
+    {
+      "left_Hz": 2064.2982142582537,
+      "mid_Hz": 2127.2705221318824,
+      "right_Hz": 2192.163827432889,
+      "absolute_error_indicator": 7.911257975967185
+    },
+    {
+      "left_Hz": 4245.993072911733,
+      "mid_Hz": 4375.518923958772,
+      "right_Hz": 4508.996016988873,
+      "absolute_error_indicator": 7.76655516915843
+    },
+    {
+      "left_Hz": 4508.996016988873,
+      "mid_Hz": 4646.544886343882,
+      "right_Hz": 4788.289743317767,
+      "absolute_error_indicator": 7.586445405501639
+    },
+    {
+      "left_Hz": 4788.289743317767,
+      "mid_Hz": 4934.358588323618,
+      "right_Hz": 5084.8833264823625,
+      "absolute_error_indicator": 7.357705779278544
+    },
+    {
+      "left_Hz": 5399.848344603918,
+      "mid_Hz": 5564.573048660054,
+      "right_Hz": 5734.322750900352,
+      "absolute_error_indicator": 7.299024115458946
+    },
+    {
+      "left_Hz": 13301.178397267551,
+      "mid_Hz": 13706.936584398343,
+      "right_Hz": 14125.072600132466,
+      "absolute_error_indicator": 5.1505130242706585
+    },
+    {
+      "left_Hz": 2327.949621383537,
+      "mid_Hz": 2398.964729210257,
+      "right_Hz": 2472.146183547796,
+      "absolute_error_indicator": 4.855474561805567
+    },
+    {
+      "left_Hz": 6089.51498505562,
+      "mid_Hz": 6275.278267604303,
+      "right_Hz": 6466.708339253259,
+      "absolute_error_indicator": 4.635455725728235
+    },
+    {
+      "left_Hz": 7292.633945028941,
+      "mid_Hz": 7515.098890657472,
+      "right_Hz": 7744.350225457126,
+      "absolute_error_indicator": 3.812722966413244
+    },
+    {
+      "left_Hz": 1943.890809648111,
+      "mid_Hz": 2003.190037682304,
+      "right_Hz": 2064.2982142582537,
+      "absolute_error_indicator": 3.804581390167012
+    },
+    {
+      "left_Hz": 8224.04646477834,
+      "mid_Hz": 8474.924551272803,
+      "right_Hz": 8733.455782062192,
+      "absolute_error_indicator": 3.7335057870638413
+    },
+    {
+      "left_Hz": 9848.88953582072,
+      "mid_Hz": 10149.334161398192,
+      "right_Hz": 10458.94397993574,
+      "absolute_error_indicator": 3.4894846990494544
+    },
+    {
+      "left_Hz": 49.72068164806066,
+      "mid_Hz": 51.23743249868976,
+      "right_Hz": 52.80045248857096,
+      "absolute_error_indicator": 3.1120630304158414
+    },
+    {
+      "left_Hz": 3545.500657079224,
+      "mid_Hz": 3653.6576846838666,
+      "right_Hz": 3765.11408909074,
+      "absolute_error_indicator": 2.8812597853954096
+    },
+    {
+      "left_Hz": 46.82054920046207,
+      "mid_Hz": 48.24883025922532,
+      "right_Hz": 49.72068164806066,
+      "absolute_error_indicator": 2.5343031872444497
+    },
+    {
+      "left_Hz": 5734.322750900352,
+      "mid_Hz": 5909.25074106295,
+      "right_Hz": 6089.51498505562,
+      "absolute_error_indicator": 2.5169218084122864
+    }
+  ]
+}

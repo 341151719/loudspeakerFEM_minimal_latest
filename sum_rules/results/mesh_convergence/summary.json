@@ -1,0 +1,43 @@
+{
+  "reference": "combined_finest",
+  "runs": {
+    "base": "runs/sum_rules_mesh_base",
+    "acoustic_refined": "runs/sum_rules_mesh_acoustic_refined",
+    "structure_refined": "runs/sum_rules_mesh_structure_refined",
+    "combined_finest": "runs/sum_rules_highest_accuracy_pilot"
+  },
+  "aggregate": {
+    "base": {
+      "Zmot_complex_rms_relative_error": 0.004531169490248466,
+      "Zmot_complex_max_relative_error": 0.0072212895719614085,
+      "Rac_far_rms_relative_error": 0.05568822697785496,
+      "Rac_far_max_relative_error": 0.10362375546120176,
+      "A_inf_ohm_per_s": 56776.268052639694,
+      "A0_structure_ohm_s": 0.037061798714633984
+    },
+    "acoustic_refined": {
+      "Zmot_complex_rms_relative_error": 0.0033316895808327474,
+      "Zmot_complex_max_relative_error": 0.006888961930019054,
+      "Rac_far_rms_relative_error": 0.008558381860701108,
+      "Rac_far_max_relative_error": 0.020140269803432125,
+      "A_inf_ohm_per_s": 56776.268052639694,
+      "A0_structure_ohm_s": 0.037061798714633984
+    },
+    "structure_refined": {
+      "Zmot_complex_rms_relative_error": 0.003200801758512207,
+      "Zmot_complex_max_relative_error": 0.007645056943419607,
+      "Rac_far_rms_relative_error": 0.0625379845657799,
+      "Rac_far_max_relative_error": 0.12670237250993555,
+      "A_inf_ohm_per_s": 56776.26805263969,
+      "A0_structure_ohm_s": 0.037076039788194994
+    },
+    "combined_finest": {
+      "Zmot_complex_rms_relative_error": 0.0,
+      "Zmot_complex_max_relative_error": 0.0,
+      "Rac_far_rms_relative_error": 0.0,
+      "Rac_far_max_relative_error": 0.0,
+      "A_inf_ohm_per_s": 56776.26805263969,
+      "A0_structure_ohm_s": 0.037076039788194994
+    }
+  }
+}

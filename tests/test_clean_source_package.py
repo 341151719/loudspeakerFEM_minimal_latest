@@ -10,6 +10,7 @@ allowed_binary_files={
 }
 forbidden_ext={'.npz','.vtu','.vtk','.png','.jpg','.jpeg','.parquet','.h5','.hdf5','.pyc','.pyo'}
 forbidden_reference_dirs={ROOT/'inputs/comsol_reference/stage29_nra',ROOT/'inputs/comsol_reference/stage32_figure8',ROOT/'inputs/comsol_reference/req5'}
+tracked_result_prefix='sum_rules/results/'
 def test_clean_source_package():
     bad=[]
     for p in ROOT.rglob('*'):
@@ -18,7 +19,7 @@ def test_clean_source_package():
         if any(part in ignored_generated_dirs or part.endswith('.egg-info') for part in rel.parts): continue
         if p.is_dir() and p.name in forbidden_dirs:
             bad.append(str(rel))
-        if p.is_file() and p.suffix.lower() in forbidden_ext and rel.as_posix() not in allowed_binary_files: bad.append(str(rel))
+        if p.is_file() and p.suffix.lower() in forbidden_ext and rel.as_posix() not in allowed_binary_files and not rel.as_posix().startswith(tracked_result_prefix): bad.append(str(rel))
     for p in forbidden_reference_dirs:
         if p.exists(): bad.append(str(p.relative_to(ROOT)))
     assert not bad,bad

@@ -1,0 +1,7 @@
+{
+  "A0_complex_real_ohm_s": 0.037075559681119294,
+  "A0_complex_imag_ohm_s": -6.237503930577684e-06,
+  "asymptotic_ReZ_over_omega": 6.237503930577684e-06,
+  "M2_log_contribution_per_frequency_decade_ohm_s": 9.14337735774148e-06,
+  "method": "g^H K_complex(omega=0)^-1 g on the fixed finest structural discretization"
+}

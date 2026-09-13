@@ -6,6 +6,8 @@
 
 完整的中文交接说明在 [`README_CN.md`](README_CN.md)。它记录了生产路由、固定物理合同、Stage29–Stage35 的合并状态、历史验证指标以及尚未闭环的频段和网格问题。版本冻结日期为 **2026-08-01**。
 
+SUM RULES 专用计算、完整数据和验证报告见 [`sum_rules/README_CN.md`](sum_rules/README_CN.md)。
+
 这个仓库不包含完整历史扫频归档、图片、checkpoint、已求解 COMSOL MPH 文件或虚拟环境；`inputs/` 中保留的是 Python 主链必需的网格、几何和静磁偏置场输入，`benchmarks/` 只保留经过筛选的紧凑机器可读快照。
 
 ## What this project contains

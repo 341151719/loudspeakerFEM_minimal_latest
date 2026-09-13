@@ -4,6 +4,8 @@
 主线来源：`00_MAINLINE/loudspeakerFEM_current_20260717` 的 Stage29–Stage35 合并状态。  
 交付性质：解压后可独立安装和运行 Python FEM；不包含完整历史结果、图片或 COMSOL 已解模型，精选 benchmark 快照见 [`benchmarks/`](benchmarks/)。
 
+SUM RULES 专用分支附带固定最高精度扫频、自适应积分、网格收敛数据和完整报告，入口见 [`sum_rules/README_CN.md`](sum_rules/README_CN.md)。
+
 ## 1. 新 AI 的执行基准
 
 本项目是二维轴对称扬声器频域多物理 FEM 的当前生产主线。默认入口是：

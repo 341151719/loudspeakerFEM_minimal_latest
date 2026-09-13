@@ -1,0 +1,18 @@
+{
+  "extends": "stage35_high_accuracy_acoustic_refined1.json",
+  "model_name": "Sum-rule validation: finest available structure plus refined acoustic mesh",
+  "geometry": {
+    "structure_mesh": "inputs/meshes/comsol_official_mapped_center_split_refined2_local2125_l2.msh",
+    "structure_mesh_provenance": "finest bundled two-level local refinement of domains 21/25; combined here with the bundled acoustic refined1 mesh"
+  },
+  "acoustics": {
+    "hybrid_sweep": {
+      "enabled": false
+    }
+  },
+  "diagnostic_policy": {
+    "production_default": false,
+    "COMSOL_runtime_data_consumed": false,
+    "reason": "fixed-profile, highest bundled discretization for FEM sum-rule validation; never frequency-routed"
+  }
+}

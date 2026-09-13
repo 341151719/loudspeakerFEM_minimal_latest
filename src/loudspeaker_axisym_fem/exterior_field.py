@@ -267,7 +267,7 @@ def halfspace_power_from_directivity(
     prms2 = 0.5 * np.abs(p) ** 2
     # I = p_rms^2 / (rho c), dS = R^2 2π sinθ dθ.
     integrand = prms2 / (rho0 * c0) * (radius_m ** 2) * 2.0 * np.pi * np.sin(th)
-    return float(np.trapz(integrand, th))
+    return float(np.trapezoid(integrand, th))
 
 
 def directivity_index_halfspace(pressure: np.ndarray, theta_rad: np.ndarray):
@@ -278,7 +278,7 @@ def directivity_index_halfspace(pressure: np.ndarray, theta_rad: np.ndarray):
     """
     p = np.asarray(pressure)
     th = np.asarray(theta_rad, dtype=float)
-    denom = float(np.trapz(np.abs(p) ** 2 * np.sin(th), th) / max(np.trapz(np.sin(th), th), 1e-300))
+    denom = float(np.trapezoid(np.abs(p) ** 2 * np.sin(th), th) / max(np.trapezoid(np.sin(th), th), 1e-300))
     axis = float(np.abs(p[0]) ** 2)
     return 10.0 * math.log10(max(axis, 1e-300) / max(denom, 1e-300))
 

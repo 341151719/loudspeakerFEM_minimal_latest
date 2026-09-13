@@ -1,0 +1,282 @@
+{
+  "config": "configs/stage35_high_accuracy_acoustic_refined1.json",
+  "frequency_window_Hz": [
+    50.0,
+    15000.0
+  ],
+  "n_frequencies": 6,
+  "phasor_convention": "exp(+i omega t); outgoing Green exp(-i k R)",
+  "nra_enabled": true,
+  "endpoints": {
+    "A_inf_matrix_ohm_per_s": 56776.268052639694,
+    "A0_structure_only_ohm_s": 0.037061798714633984,
+    "effective_inertial_mass_for_axial_BL_kg": 0.00186788855844135,
+    "warning": "A0_structure_only excludes the zero-frequency sealed-air constraint of the pressure formulation; use the numerical low-frequency limit for the coupled-system endpoint."
+  },
+  "moments": {
+    "window_moment_0_ohm_per_s": 67609.687047547,
+    "window_moment_2_ohm_s": 0.5269120079086388,
+    "window_useful_efficiency_moment_0_ohm_per_s": 934.9395938639482,
+    "window_internal_penalty_moment_0_ohm_per_s": 66674.74745368304,
+    "window_useful_efficiency_moment_2_ohm_s": 0.0003892320504411176,
+    "window_internal_penalty_moment_2_ohm_s": 0.5265227758581976,
+    "moment_0_fraction_of_Ainf": 1.1908089306761618
+  },
+  "quadrature_convergence": {
+    "4": {
+      "n_frequencies": 3,
+      "moment_0_ohm_per_s": 663633.3534158164,
+      "moment_2_ohm_s": 6.627546988192355
+    },
+    "2": {
+      "n_frequencies": 4,
+      "moment_0_ohm_per_s": 239077.5625512894,
+      "moment_2_ohm_s": 2.19072111641912
+    },
+    "1": {
+      "n_frequencies": 6,
+      "moment_0_ohm_per_s": 67609.687047547,
+      "moment_2_ohm_s": 0.5269120079086388
+    },
+    "fine_vs_medium": {
+      "moment_0_relative_change": 2.5361436059178373,
+      "moment_2_relative_change": 3.1576602611777425
+    }
+  },
+  "checks": {
+    "minimum_Re_Zmot_ohm": 0.047420115064749954,
+    "minimum_Rinternal_far_ohm": 0.04662674690171732,
+    "max_abs_odds_identity_residual_ohm": 1.1102230246251565e-16,
+    "median_boundary_vs_far_power_relative_difference": 0.005244610493643134,
+    "p95_boundary_vs_far_power_relative_difference_resolved": 0.0672524596946374,
+    "p95_boundary_vs_far_power_relative_difference_above_100Hz": 0.014518610862341717,
+    "max_boundary_vs_far_power_relative_difference_above_100Hz": 0.015828851039129826,
+    "negative_boundary_flux_fraction": 0.0,
+    "passivity_on_sampled_real_axis": true,
+    "nonnegative_internal_loss_on_sampled_real_axis": true
+  },
+  "mesh_and_dofs": {
+    "solid": {
+      "n_structural_nodes": 48353,
+      "n_structural_triangles": 23688,
+      "ndof_total": 96706,
+      "ndof_free": 96606,
+      "fixed_nodes": 50,
+      "coil_volume_m3": 4.394208476429172e-07,
+      "total_structural_volume_m3": 3.87876273501919e-05,
+      "domains": [
+        3,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        25
+      ],
+      "materials": {
+        "3": {
+          "E": 2000000000.0,
+          "nu": 0.42,
+          "rho": 1200.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Composite"
+        },
+        "21": {
+          "E": 2000000000.0,
+          "nu": 0.42,
+          "rho": 1200.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Composite"
+        },
+        "9": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "10": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "11": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "12": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "13": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "14": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "15": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "16": {
+          "E": 70000000000.0,
+          "nu": 0.33,
+          "rho": 2000.0,
+          "loss_factor": 0.04,
+          "beta_dK": 0.0,
+          "label": "Glass Fiber"
+        },
+        "17": {
+          "E": 110000000000.0,
+          "nu": 0.35,
+          "rho": 4500.0,
+          "loss_factor": 0.05,
+          "beta_dK": 0.0,
+          "label": "Coil"
+        },
+        "18": {
+          "E": 110000000000.0,
+          "nu": 0.35,
+          "rho": 4500.0,
+          "loss_factor": 0.05,
+          "beta_dK": 0.0,
+          "label": "Coil"
+        },
+        "19": {
+          "E": 110000000000.0,
+          "nu": 0.35,
+          "rho": 4500.0,
+          "loss_factor": 0.05,
+          "beta_dK": 0.0,
+          "label": "Coil"
+        },
+        "20": {
+          "E": 580000000.0,
+          "nu": 0.3,
+          "rho": 650.0,
+          "loss_factor": 0.0,
+          "beta_dK": 0.0005570423008216338,
+          "label": "Cloth"
+        },
+        "25": {
+          "E": 5000000.0,
+          "nu": 0.4,
+          "rho": 67.0,
+          "loss_factor": 0.0,
+          "beta_dK": 0.0018302818455567965,
+          "label": "Foam"
+        }
+      }
+    },
+    "coupling": {
+      "G_shape": [
+        96706,
+        171649
+      ],
+      "interface_boundaries": [
+        15,
+        16,
+        17,
+        19,
+        21,
+        23,
+        25,
+        27,
+        31,
+        32,
+        34,
+        39,
+        40,
+        42,
+        43,
+        44,
+        46,
+        47,
+        48,
+        49,
+        51,
+        56,
+        57,
+        61,
+        62,
+        63,
+        64,
+        66,
+        67,
+        68,
+        69,
+        74,
+        75,
+        77,
+        78,
+        79,
+        80,
+        81,
+        91,
+        92,
+        99,
+        100,
+        101,
+        102
+      ],
+      "missed_boundary_tags": [],
+      "quadrature_order": 4,
+      "pressure_trace_order": "mixed_P1_P2",
+      "mesh_coupling": "nonconforming_closest_same_boundary",
+      "max_projection_distance_m": 0.00013485106116792106
+    },
+    "acoustic_unknowns": 171649
+  },
+  "input_sha256": {
+    "configs/stage35_high_accuracy_acoustic_refined1.json": "2ddf8f6b2648555bc1ff7b635d2c1323d11331304d43c50650795105118094ce",
+    "inputs/comsol_reference/magnetostatic_converged_55iter.vtu": "839489b2bfc80ecaa07a952c7a99670cb3c27ab39373a73eccf4e8b94f54105f",
+    "inputs/meshes/comsol_geometry_polyline_acoustic_refined1.msh": "cfd9f43efe594bf63e0c20c12ee6aaffefe7e37518960fc05cfd4d38138213e8",
+    "inputs/meshes/comsol_official_mapped_center_split_refined2_local2125.msh": "6f0f96e490df9b65ec11c72f94534f518aa7ee5ee9231070dcf3b72918baac9a"
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "total_frequency_solve_seconds": 252.50430361600013
+  },
+  "command": "tools/validate_sum_rules_fem.py --config configs/stage35_high_accuracy_acoustic_refined1.json --freqs 50,1000,4000,8000,12000,15000 --outdir runs/sum_rules_mesh_acoustic_refined --jobs 3 --blas-threads 1 --resume",
+  "plots": [
+    "power_efficiency_audit.png",
+    "cumulative_sum_rules.png"
+  ]
+}
