@@ -13,6 +13,8 @@
 
 完整解读见 [`report/FINAL_ANALYSIS_CN.md`](report/FINAL_ANALYSIS_CN.md)。
 
+材料参数稳健性另用锥盆面密度和杨氏模量的 0.5×/1×/2× 扫描验证。五种模型的 M2/A0 为 99.48%–100.33%，并全部满足被动性；局部 M0 会随模态位置明显重排。结果与方法见 [`results/parameter_scan/REPORT_CN.md`](results/parameter_scan/REPORT_CN.md)。
+
 ## 计算定义
 
 反映到电端口的运动阻抗为
@@ -123,12 +125,30 @@ configs/sum_rules_highest_accuracy.json
 python tools/compare_sum_rules_discretizations.py
 ```
 
+材料参数扫描使用以下四个配置；`sum_rules_highest_accuracy.json` 是共享的 1× 基准：
+
+```text
+configs/sum_rules_cone_density_0p5.json
+configs/sum_rules_cone_density_2p0.json
+configs/sum_rules_cone_stiffness_0p5.json
+configs/sum_rules_cone_stiffness_2p0.json
+```
+
+每个变体先运行 81 点主网格，再用 `select_sum_rule_adaptive_frequencies.py --coverage 0.95` 选点、用 `merge_sum_rule_adaptive_audit.py` 合并。统一汇总命令是：
+
+```bash
+python tools/analyze_sum_rule_parameter_scan.py
+```
+
+具体命令、频点和输入哈希保存在 `results/parameter_scan/raw/` 内各案例的 JSON 文件中。
+
 ## 数据与报告
 
 - [`results/main_321/`](results/main_321/)：321 点完整主扫描、累积积分图和功率审计图。
 - [`results/adaptive_387/`](results/adaptive_387/)：自适应选点清单、66 点原始子集，以及合并后的 387 点数据和收敛结果。
 - [`results/mesh_convergence/`](results/mesh_convergence/)：2×2 结构/声学网格锚点对照；`raw/` 保留四个变体的原始 CSV/JSON。
 - [`results/low_frequency/`](results/low_frequency/)：0.1/0.2/0.5/1 Hz 低频端点数据。
+- [`results/parameter_scan/`](results/parameter_scan/)：锥盆面密度和刚性的 0.5×/1×/2× 扫描、局部带宽积分、原始数据与专项报告。
 - [`report/FINAL_ANALYSIS_CN.md`](report/FINAL_ANALYSIS_CN.md)：综合分析、结论等级与后续路径。
 
 CSV 是主要科学数据，JSON 保留配置、输入哈希、端点、检查项和运行命令，PNG 只是对应 CSV 的可视化。

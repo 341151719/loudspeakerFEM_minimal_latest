@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 import json
 import math
@@ -18,6 +18,7 @@ from loudspeaker_axisym_fem.exterior_field import hk_pressure_from_samples, spl_
 
 from p2_axisym_solid import (
     build_p2_solid,
+    default_stage4_materials,
     assemble_region_stiffness,
     assemble_p2_G,
     assemble_nonconforming_p2_G,
@@ -66,6 +67,37 @@ class FrequencySolution:
     metadata: dict
 
 
+def solid_materials_from_config(cfg: dict) -> dict | None:
+    """Return optional per-domain material overrides from dimensionless scales.
+
+    Scaling density at fixed geometry/thickness is equivalent to scaling areal
+    density.  A ``None`` result preserves the historical default path exactly.
+    """
+    scale_cfg = cfg.get("structure", {}).get("material_parameter_scales", {})
+    if not scale_cfg:
+        return None
+    materials = default_stage4_materials()
+    for raw_domain, raw_scales in scale_cfg.items():
+        domain = int(raw_domain)
+        if domain not in materials:
+            raise ValueError(f"unknown structural material domain: {domain}")
+        if not isinstance(raw_scales, dict):
+            raise TypeError(f"material scales for domain {domain} must be an object")
+        density_scale = float(raw_scales.get("density", 1.0))
+        stiffness_scale = float(raw_scales.get("youngs_modulus", 1.0))
+        if not (math.isfinite(density_scale) and density_scale > 0.0):
+            raise ValueError(f"density scale for domain {domain} must be positive and finite")
+        if not (math.isfinite(stiffness_scale) and stiffness_scale > 0.0):
+            raise ValueError(f"Young's-modulus scale for domain {domain} must be positive and finite")
+        material = materials[domain]
+        materials[domain] = replace(
+            material,
+            rho=material.rho * density_scale,
+            E=material.E * stiffness_scale,
+        )
+    return materials
+
+
 def load_config(root: str | Path, config_path: str | Path | None = None) -> dict:
     root = Path(root)
     p = Path(config_path) if config_path else root / "configs" / "best_model.json"
@@ -108,7 +140,7 @@ def build_best_model(
     mesh = load_tagged_meshio(mesh_path)
     structure_mesh = mesh if structure_mesh_path == mesh_path else load_tagged_meshio(structure_mesh_path)
     ac = build_stage4C_acoustic_structure_model(mesh, mphtxt, solid_uniform_refine=0, c0=cfg["air"]["c0_m_s"])
-    solid = build_p2_solid(structure_mesh)
+    solid = build_p2_solid(structure_mesh, materials=solid_materials_from_config(cfg))
     regions = assemble_region_stiffness(solid)
     if magnetostatic_vtu is None:
         magnetostatic_vtu = root / "runs" / "magnetics" / "magnetostatic_solution.vtu"

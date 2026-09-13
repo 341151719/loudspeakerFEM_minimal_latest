@@ -1,0 +1,26 @@
+{
+  "base_frequencies": 81,
+  "adaptive_frequencies": 12,
+  "combined_frequencies": 93,
+  "base_moments": {
+    "window_moment_0_ohm_per_s": 23913.677004342677,
+    "window_moment_2_ohm_s": 0.036896206260236014,
+    "window_useful_efficiency_moment_0_ohm_per_s": 1256.9366723394262,
+    "window_internal_penalty_moment_0_ohm_per_s": 22656.740332003195,
+    "window_useful_efficiency_moment_2_ohm_s": 6.766382569040435e-05,
+    "window_internal_penalty_moment_2_ohm_s": 0.0368285424345456
+  },
+  "adaptive_moments": {
+    "window_moment_0_ohm_per_s": 20958.342517144447,
+    "window_moment_2_ohm_s": 0.03689580038335767,
+    "window_useful_efficiency_moment_0_ohm_per_s": 1173.9719013567703,
+    "window_internal_penalty_moment_0_ohm_per_s": 19784.370615787622,
+    "window_useful_efficiency_moment_2_ohm_s": 6.764891649237465e-05,
+    "window_internal_penalty_moment_2_ohm_s": 0.0368281514668653
+  },
+  "adaptive_minus_base_moment_0_ohm_per_s": -2955.33448719823,
+  "adaptive_minus_base_moment_0_relative": -0.14100993362336228,
+  "posterior_absolute_local_error_indicator_ohm_per_s": 3746.96038460212,
+  "posterior_indicator_fraction_of_moment_0": 0.17878133166003052,
+  "selected_interval_net_change_check_ohm_per_s": -2955.334487198227
+}

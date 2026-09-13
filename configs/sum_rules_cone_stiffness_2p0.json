@@ -1,0 +1,9 @@
+{
+  "extends": "sum_rules_highest_accuracy.json",
+  "model_name": "SUM RULES cone Young's-modulus sensitivity: 2.0x",
+  "structure": {
+    "material_parameter_scales": {
+      "21": {"youngs_modulus": 2.0}
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "source": "runs/sum_rules_parameter_scan/cone_stiffness_0p5/sum_rule_frequency_audit.csv",
+  "coverage_target": 0.95,
+  "selected_parent_intervals": 7,
+  "new_frequencies": 14,
+  "covered_absolute_error_fraction": 0.9549991187024233,
+  "total_absolute_error_indicator_ohm_per_s": 8369.883046000323,
+  "selected_intervals": [
+    {
+      "left_Hz": 11794.756450395776,
+      "mid_Hz": 13301.178397267551,
+      "right_Hz": 15000.0,
+      "absolute_error_indicator": 4496.446023735766
+    },
+    {
+      "left_Hz": 4508.996016988873,
+      "mid_Hz": 5084.8833264823625,
+      "right_Hz": 5734.322750900352,
+      "absolute_error_indicator": 2039.0293349546782
+    },
+    {
+      "left_Hz": 2192.163827432889,
+      "mid_Hz": 2472.146183547796,
+      "right_Hz": 2787.887782997839,
+      "absolute_error_indicator": 675.1678203188368
+    },
+    {
+      "left_Hz": 3545.500657079224,
+      "mid_Hz": 3998.330694302517,
+      "right_Hz": 4508.996016988873,
+      "absolute_error_indicator": 414.35047998873813
+    },
+    {
+      "left_Hz": 46.82054920046207,
+      "mid_Hz": 52.80045248857096,
+      "right_Hz": 59.54410682073603,
+      "absolute_error_indicator": 132.94780111783356
+    },
+    {
+      "left_Hz": 9274.41864827684,
+      "mid_Hz": 10458.94397993574,
+      "right_Hz": 11794.756450395776,
+      "absolute_error_indicator": 127.14220854685281
+    },
+    {
+      "left_Hz": 2787.887782997839,
+      "mid_Hz": 3143.9557831626685,
+      "right_Hz": 3545.500657079224,
+      "absolute_error_indicator": 108.1472639099563
+    }
+  ]
+}

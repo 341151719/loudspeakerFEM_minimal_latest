@@ -1,0 +1,9 @@
+{
+  "extends": "sum_rules_highest_accuracy.json",
+  "model_name": "SUM RULES cone areal-density sensitivity: 0.5x",
+  "structure": {
+    "material_parameter_scales": {
+      "21": {"density": 0.5}
+    }
+  }
+}
