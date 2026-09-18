@@ -91,7 +91,7 @@ def acoustic_transform(ac,phase,tol=2e-8):
     return T,{'seam_pairs':len(slave),'axis_nodes':len(axis),'reduced_nodes':len(retained),'seam_max_mismatch_m':float(d.max() if len(d) else 0)}
 
 
-def reduced_system(cfg,model,front,rear,G,freq,sscale,kclass):
+def reduced_system(cfg,model,front,rear,G,freq,sscale,kclass,force_full=None):
     phase=np.exp(1j*kclass*math.pi/2);w=2*math.pi*freq;rho=float(cfg['air']['rho_kg_m3']);c=float(cfg['air']['c_m_s']);kk=w/c
     Tu,sfree,srep=structural_transform(model,phase);Tp,prep=acoustic_transform(front,phase)
     # rear uses identical undeformed topology and same cyclic transform dimensions
@@ -105,7 +105,10 @@ def reduced_system(cfg,model,front,rear,G,freq,sscale,kclass):
     Af=Aac(front,Tp);Ar=Aac(rear,Tpr)
     G0=G[sfree,:].tocsr();Bf=(Tu.conj().T@(G0@Tp)).tocsc();Br=(Tu.conj().T@(G0@Tpr)).tocsc()
     C_f=(Tp.conj().T@(G0.T@Tu)).tocsc();C_r=(Tpr.conj().T@(G0.T@Tu)).tocsc()
-    f0=model['fL'][sfree].astype(complex);f=(Tu.conj().T@f0)
+    source=model['fL'] if force_full is None else np.asarray(force_full)
+    if source.shape != (model['Nd'],):
+        raise ValueError(f'force_full must have shape ({model["Nd"]},)')
+    f0=source[sfree].astype(complex);f=(Tu.conj().T@f0)
     return {'phase':phase,'Tu':Tu,'Tp':Tp,'Tpr':Tpr,'sfree':sfree,'H':H,'Af':Af,'Ar':Ar,'Bf':Bf,'Br':Br,'Cf':C_f,'Cr':C_r,'f':np.asarray(f).ravel(),'struct_report':srep,'ac_report':prep}
 
 
@@ -195,8 +198,8 @@ def _coupled_backward_error(H, Af, Ar, Bf, Br, Cf, Cr, rw2, u, pf, pr, f):
     }
 
 
-def solve_phase(cfg,model,front,rear,G,freq,sscale,kclass,force_scale=1.0):
-    t0=time.time();r=reduced_system(cfg,model,front,rear,G,freq,sscale,kclass);w=2*math.pi*freq;rho=float(cfg['air']['rho_kg_m3']);rw2=rho*w*w
+def solve_phase(cfg,model,front,rear,G,freq,sscale,kclass,force_scale=1.0,force_full=None):
+    t0=time.time();r=reduced_system(cfg,model,front,rear,G,freq,sscale,kclass,force_full=force_full);w=2*math.pi*freq;rho=float(cfg['air']['rho_kg_m3']);rw2=rho*w*w
     H,Af,Ar=r['H'],r['Af'],r['Ar'];Bf,Br,Cf,Cr=r['Bf'],r['Br'],r['Cf'],r['Cr'];f=r['f']*force_scale
     If=_active_trace_indices(Bf,Cf);Ir=_active_trace_indices(Br,Cr)
     Bfi=Bf[:,If].tocsc();Bri=Br[:,Ir].tocsc();Cfi=Cf[If,:].tocsc();Cri=Cr[Ir,:].tocsc()

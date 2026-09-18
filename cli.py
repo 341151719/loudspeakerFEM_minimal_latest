@@ -470,6 +470,24 @@ def cmd_fr10_response(args):
     return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
 
 
+def cmd_fr10_rocking(args):
+    command = [
+        sys.executable,
+        str(ROOT / "fr10_full360_cyclic/rocking_frequency.py"),
+    ]
+    if args.config:
+        config = Path(args.config)
+        command.extend(("--config", str(config if config.is_absolute() else ROOT / config)))
+    if args.freq:
+        command.extend(("--freq", *(str(value) for value in args.freq)))
+    if args.scale is not None:
+        command.extend(("--scale", str(args.scale)))
+    if args.outdir:
+        output = Path(args.outdir)
+        command.extend(("--out", str(output if output.is_absolute() else ROOT / output)))
+    return subprocess.call(command, cwd=ROOT / "fr10_full360_cyclic")
+
+
 def build_parser():
     p = argparse.ArgumentParser(description="Best COMSOL loudspeaker reproduction project")
     sp = p.add_subparsers(dest="command", required=True)
@@ -550,6 +568,15 @@ def build_parser():
     f3r.add_argument("--reuse-summary")
     f3r.add_argument("--scale", type=float)
     f3r.set_defaults(func=cmd_fr10_response)
+    f3k = sp.add_parser(
+        "fr10-rocking",
+        help="FR10 frequency-domain m=1 rocking response and mass/stiffness/Bl separation",
+    )
+    f3k.add_argument("--config")
+    f3k.add_argument("--freq", type=float, nargs="+")
+    f3k.add_argument("--scale", type=float)
+    f3k.add_argument("--outdir")
+    f3k.set_defaults(func=cmd_fr10_rocking)
     e = sp.add_parser("comsol-export-info"); e.set_defaults(func=cmd_export_info)
     return p
 

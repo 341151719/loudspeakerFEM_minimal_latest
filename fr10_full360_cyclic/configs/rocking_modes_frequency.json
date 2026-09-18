@@ -1,0 +1,15 @@
+{
+  "analysis_kind": "frequency_domain_weak_asymmetry_rocking_modes",
+  "drive_voltage_peak_V": 1.0,
+  "frequencies_Hz": [60, 80, 90, 100, 120, 150, 180, 220, 260, 300, 320, 350, 400, 500, 750, 1000, 1250, 1500, 1750, 1850, 1950, 2000, 2050, 2150, 2250, 2350, 2500],
+  "root_causes": {
+    "mass_unbalance_kg_m": 6e-7,
+    "mass_direction_deg": 0.0,
+    "stiffness_coupling_N": 1.46,
+    "stiffness_direction_deg": 0.0,
+    "bl_moment_Nm_per_A": 0.00092,
+    "bl_direction_deg": 0.0,
+    "parameter_note": "Illustrative perturbations, not measured FR10 properties: 20 mg at 30 mm; 2 percent of Kms acting at 40 mm; 2 percent of Bl acting at 10 mm."
+  },
+  "model_scope": "Paper-style feed-forward root-cause separation. Piston response is k=0 full-360 cyclic FEM; rocking compliance is k=1 full-360 cyclic FEM under a normalized coil-distributed moment."
+}

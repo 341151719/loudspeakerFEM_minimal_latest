@@ -88,3 +88,27 @@ full-360 输出同时包含四扇区显式重建的结构/声学 VTU、结构位
 - 90 Hz `Zmot`、500/1000/2000 Hz SPL 和 phase 诊断的记录值见 [`docs/FR10_FULL360_STATUS_CN.md`](../docs/FR10_FULL360_STATUS_CN.md)。
 
 本目录内的 `meshes/` 保存 sector 结构网格和严格周期声学网格；完整结果在运行时生成到项目外输出根目录，不提交结果文件。历史 `HANDOFF_BLOCKER_AND_NEXT_STEP.txt` 保留改造前记录，当前状态以 [`docs/FR10_FULL360_STATUS_CN.md`](../docs/FR10_FULL360_STATUS_CN.md) 为准。
+
+## 频域摇摆模态与根因分离
+
+`rocking_frequency.py` 在现有三维 cyclic FEM 上增加论文式弱不对称前馈分析：
+
+- `k=0` 电驱动解给出音圈位移和电流；
+- `k=1` 解施加归一化的音圈分布单位力矩，得到包含前后声学负载的摇摆柔度；
+- 质量、刚度和 Bl 不对称分别生成 `omega^2*Delta_m*X`、`-Delta_k*X` 和 `Delta_Bl_moment*I`；
+- 输出各根因力矩、倾角及总倾角的 JSON、CSV 和 PNG。
+
+运行示例：
+
+```bash
+python cli.py fr10-rocking --freq 80 90 120 200 300 350 500 \
+  --outdir runs/fr10_rocking_frequency
+```
+
+默认参数位于 `fr10_full360_cyclic/configs/rocking_modes_frequency.json`，只是量级合理的诊断扰动，并非 FR10 实测缺陷。当前实现采用论文的弱耦合前馈近似：不对称力矩不会反向改变 `k=0` 活塞/电路解，也没有把四个 Bloch phase class 装配为一个含缺陷的全耦合矩阵；电磁驱动仍为等效 `Bl/Rdc/Le`，不是三维 MQS。
+
+单个复数 `k=1` 解表示 `m=1` 摇摆双重态的一支圆极化基；固定空间方向的实摇摆由共轭的 `k=1/k=3` 组合恢复。对当前旋转对称线性基线，两支具有相同的标量摇摆柔度，因此根因幅频分离使用 `k=1` 即可。
+
+实际验证和结果解释见 [`docs/ROCKING_MODES_FREQUENCY_CN.md`](../docs/ROCKING_MODES_FREQUENCY_CN.md)。
+
+该文档还提供已生成的连续振膜和全结构节点 GIF，可直接在 GitHub 中查看不同根因和摇摆形式的可视化结果。
