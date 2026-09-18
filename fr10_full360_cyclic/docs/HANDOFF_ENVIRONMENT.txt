@@ -1,0 +1,13 @@
+Validated sandbox baseline:
+Python      3.13.5
+numpy       2.2.6
+scipy       1.16.3
+gmsh        4.11.1
+meshio      5.3.5
+scikit-fem  12.0.2
+pyamg       5.2.1
+
+External offline wheel archive used previously (NOT duplicated in this handoff to avoid +90 MB):
+  fem_mesh_amg_linux_cp313.zip
+
+The two small Linux gmsh runtime archives are included under runtime_libs/.

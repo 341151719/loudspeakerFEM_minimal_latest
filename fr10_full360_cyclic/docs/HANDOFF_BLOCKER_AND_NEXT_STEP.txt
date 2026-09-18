@@ -1,0 +1,28 @@
+HISTORICAL RECORD — RESOLVED ON 2026-09-02
+==========================================
+The blocker below was removed by exact periodic local-ASB trace condensation.
+See ../README_CN.md and ../../docs/FR10_FULL360_STATUS_CN.md for current status.
+
+ORIGINAL BLOCKER
+===============
+The full-360 geometry/DOF space and cyclic/Bloch constraints are implemented.
+The remaining bottleneck is the nested Krylov structure in solve_phase():
+outer local-ASB trace GMRES -> rear Helmholtz GMRES -> front-LU preconditioner.
+
+NEXT STEP RECOMMENDED
+=====================
+Form the exact condensed acoustic radiation operator on the periodic ASB trace once per frequency:
+    Hf = E^T Af^{-1} E
+    Hr = E^T Ar^{-1} E
+then combine it with the structurally condensed trace operator and solve the resulting few-hundred-DOF complex dense/sparse interface system directly.
+This preserves all local ASB trace DOFs and is not a rank reduction.
+
+ACCEPTANCE BEFORE CLAIMING FULL-360 COMPLETE
+=============================================
+1. Recheck k=0 free-air resonance at 90 Hz: Im(Zmot) ~ 0.
+2. Run 500, 1000, 2000 Hz k=0 to convergence.
+3. Export full-360 VTU fields.
+4. Verify linear-system residual/backward error.
+5. Fourier-decompose circumferential displacement and report m-energy.
+6. Run at least one k=1/2/3 diagnostic excitation and prove non-mirror solution space is active.
+7. Compare k=0 full-360 against the previous quarter P2/local-ASB baseline; in the symmetric baseline they should agree within discretization error.

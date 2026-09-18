@@ -6,6 +6,10 @@
 
 完整的中文交接说明在 [`README_CN.md`](README_CN.md)。它记录了生产路由、固定物理合同、Stage29–Stage35 的合并状态、历史验证指标以及尚未闭环的频段和网格问题。版本冻结日期为 **2026-08-01**。
 
+## FR10 full-360 3-D branch
+
+[`fr10_full360_cyclic/`](fr10_full360_cyclic/) on `feature/fr10-full360-cyclic-3d` extends the loudspeaker to a four-sector cyclic/Bloch full-360 3-D P2/local-ASB structural plus front/rear Helmholtz FEM. It exports full-360 VTU fields, 3-D PNG views, and circumferential-order diagnostics. Run `python cli.py fr10-full360 --freq 90 500 1000 2000`; see the [FR10 status note](docs/FR10_FULL360_STATUS_CN.md) for recorded results and limits. The outer boundary is first-order Sommerfeld Robin (not PML), the electrical drive is equivalent `Bl/Rdc/Le` (not full 3-D MQS), and internal dimensions are engineering assumptions rather than manufacturer CAD.
+
 这个仓库不包含完整历史扫频归档、图片、checkpoint、已求解 COMSOL MPH 文件或虚拟环境；`inputs/` 中保留的是 Python 主链必需的网格、几何和静磁偏置场输入，`benchmarks/` 只保留经过筛选的紧凑机器可读快照。
 
 ## What this project contains

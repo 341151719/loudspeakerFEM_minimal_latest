@@ -1,0 +1,56 @@
+{
+  "frequency_Hz": 2000.0,
+  "voltage_peak_V": 1,
+  "electrical": {
+    "Z_blocked_ohm": [
+      7.2,
+      2.5132741228718345
+    ],
+    "Z_motional_ohm": [
+      0.42566806012125424,
+      -0.8505161744059684
+    ],
+    "Z_total_ohm": [
+      7.625668060121255,
+      1.662757948465866
+    ],
+    "current_A_peak": [
+      0.12518420395595634,
+      -0.02729610422445122
+    ]
+  },
+  "mechanical": {
+    "coil_displacement_peak_m": [
+      -2.042896760671423e-06,
+      -5.202141776620441e-07
+    ],
+    "max_nodal_displacement_peak_m": 3.1747843991147246e-06,
+    "mass_used_full_kg": 0.0057,
+    "suspension_stiffness_scale": 14.553,
+    "volume_displacement_coherence": 0.6794600014358811,
+    "azimuthal_variation_ratio": 0.019407155529419146,
+    "azimuthal_metric_ring_groups": 29
+  },
+  "acoustic": {
+    "front_outer_axis_pressure_R_Pa_peak": [
+      1.058686545379962,
+      -0.6092039711345214
+    ],
+    "SPL_1m_from_outer_axis_dB": 82.24905824755567,
+    "max_front_pressure_Pa_peak": 16.21836237126133,
+    "max_rear_pressure_Pa_peak": 12.720621688660161
+  },
+  "mesh": {
+    "structural_p2_nodes": 13233,
+    "structural_vector_dofs": 39699,
+    "structural_free_dofs": 38315,
+    "acoustic_front_nodes": 8094,
+    "acoustic_rear_nodes": 8094,
+    "coupled_unknowns": 54503,
+    "system_nnz": 2801559
+  },
+  "solver": {
+    "normwise_backward_error_inf": 1.9732640100041584e-23,
+    "elapsed_s": 25.06073021888733
+  }
+}
