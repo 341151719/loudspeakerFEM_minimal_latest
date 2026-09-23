@@ -4,7 +4,7 @@
 
 ## Start here
 
-完整的中文交接说明在 [`README_CN.md`](README_CN.md)。它记录了生产路由、固定物理合同、Stage29–Stage35 的合并状态、历史验证指标以及尚未闭环的频段和网格问题。版本冻结日期为 **2026-08-01**。
+Agent 入口在 [`AGENTS.md`](AGENTS.md)，任务导航见 [`docs/AGENT_MAP_CN.md`](docs/AGENT_MAP_CN.md)。完整的中文技术交接说明在 [`README_CN.md`](README_CN.md)；两个 FEM 仓库的相似点、边界和依赖关系见 [`docs/PROJECT_RELATIONSHIP_CN.md`](docs/PROJECT_RELATIONSHIP_CN.md)。它记录了生产路由、固定物理合同、Stage29–Stage35 的合并状态、历史验证指标以及尚未闭环的频段和网格问题。版本冻结日期为 **2026-08-01**。
 
 ## FR10 full-360 3-D branch
 

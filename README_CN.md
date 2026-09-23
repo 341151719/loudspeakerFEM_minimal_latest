@@ -6,6 +6,8 @@
 
 ## 1. 新 AI 的执行基准
 
+开始处理前先读根目录 [`AGENTS.md`](AGENTS.md) 和 [`docs/AGENT_MAP_CN.md`](docs/AGENT_MAP_CN.md)。涉及 `loudspeakerTimeFEM` 时，再读 [`docs/PROJECT_RELATIONSHIP_CN.md`](docs/PROJECT_RELATIONSHIP_CN.md)；不要把其时域代码当成此仓库的扫频实现。
+
 本项目是二维轴对称扬声器频域多物理 FEM 的当前生产主线。默认入口是：
 
 ```text
@@ -30,7 +32,7 @@ configs/best_model.json
 - `inputs/`：开箱运行不可缺少的几何、网格、磁静态场和少量配置输入；
 - `tests/`、`self_test.py`；
 - `tools/` 和 `comsol_exports/` 中的源码；
-- 本文件，且仅保留这一份项目说明文档。
+- 本文件是物理模型、生产状态和数值验收的权威交接说明。Agent 导航文件 [`AGENTS.md`](AGENTS.md) 与 [`docs/AGENT_MAP_CN.md`](docs/AGENT_MAP_CN.md) 只负责指路，不复制或覆盖本文件中的物理结论。两个独立仓库的边界见 [`docs/PROJECT_RELATIONSHIP_CN.md`](docs/PROJECT_RELATIONSHIP_CN.md)。
 
 排除：
 
