@@ -1,0 +1,328 @@
+{
+  "frequency_commit": "ebc97e26f672a3aabf847617751529b55540b1d4",
+  "time_commit": "f1c2f5b6d28d76df86bbb86c1efe4a4c7123fade",
+  "direct_time_imports": [
+    "loudspeaker_axisym_fem.axisym_magnetics",
+    "loudspeaker_axisym_fem.stage4C_acoustic_structure",
+    "p2_axisym_solid"
+  ],
+  "time_import_closure": [
+    "loudspeaker_axisym_fem.axisym_magnetics",
+    "loudspeaker_axisym_fem.narrow_region_acoustics",
+    "loudspeaker_axisym_fem.stage4B_solid_electroacoustic",
+    "loudspeaker_axisym_fem.stage4C_acoustic_structure",
+    "loudspeaker_axisym_fem.stage4_electroacoustic",
+    "loudspeaker_axisym_fem.stage4_solid_fem",
+    "p2_axisym_solid"
+  ],
+  "modules": [
+    {
+      "module": "boundary93_parity",
+      "frequency_path": "best_model/boundary93_parity.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/boundary93_parity.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "comparison",
+      "frequency_path": "best_model/comparison.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/comparison.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "coupled_solver",
+      "frequency_path": "best_model/coupled_solver.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/coupled_solver.py",
+      "status": "different",
+      "time_import_closure": false
+    },
+    {
+      "module": "eigenmodes",
+      "frequency_path": "best_model/eigenmodes.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/eigenmodes.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "global_p2_acoustic_operator",
+      "frequency_path": "best_model/global_p2_acoustic_operator.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/global_p2_acoustic_operator.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "interface_recovery",
+      "frequency_path": "best_model/interface_recovery.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/interface_recovery.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.axisym_magnetics",
+      "frequency_path": "src/loudspeaker_axisym_fem/axisym_magnetics.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/axisym_magnetics.py",
+      "status": "same",
+      "time_import_closure": true
+    },
+    {
+      "module": "loudspeaker_axisym_fem.axisym_solid",
+      "frequency_path": "src/loudspeaker_axisym_fem/axisym_solid.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/axisym_solid.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.comsol_driver_model",
+      "frequency_path": "src/loudspeaker_axisym_fem/comsol_driver_model.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/comsol_driver_model.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.comsol_feature_matrix",
+      "frequency_path": "src/loudspeaker_axisym_fem/comsol_feature_matrix.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/comsol_feature_matrix.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.comsol_geom_mphtxt",
+      "frequency_path": "src/loudspeaker_axisym_fem/comsol_geom_mphtxt.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/comsol_geom_mphtxt.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.comsol_mfile_inventory",
+      "frequency_path": "src/loudspeaker_axisym_fem/comsol_mfile_inventory.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/comsol_mfile_inventory.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.comsol_results_compare",
+      "frequency_path": "src/loudspeaker_axisym_fem/comsol_results_compare.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/comsol_results_compare.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.comsol_studies",
+      "frequency_path": "src/loudspeaker_axisym_fem/comsol_studies.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/comsol_studies.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.enclosure_acoustics",
+      "frequency_path": "src/loudspeaker_axisym_fem/enclosure_acoustics.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.enclosure_geometry",
+      "frequency_path": "src/loudspeaker_axisym_fem/enclosure_geometry.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.enclosure_models",
+      "frequency_path": "src/loudspeaker_axisym_fem/enclosure_models.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/enclosure_models.py",
+      "status": "different",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.enclosure_schema",
+      "frequency_path": "src/loudspeaker_axisym_fem/enclosure_schema.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.enclosure_topology",
+      "frequency_path": "src/loudspeaker_axisym_fem/enclosure_topology.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.enclosure_validation",
+      "frequency_path": "src/loudspeaker_axisym_fem/enclosure_validation.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.engineering_metrics",
+      "frequency_path": "src/loudspeaker_axisym_fem/engineering_metrics.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/engineering_metrics.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.exterior_field",
+      "frequency_path": "src/loudspeaker_axisym_fem/exterior_field.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/exterior_field.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.fem_solver",
+      "frequency_path": "src/loudspeaker_axisym_fem/fem_solver.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/fem_solver.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.impedance_fit",
+      "frequency_path": "src/loudspeaker_axisym_fem/impedance_fit.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/impedance_fit.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.json_utils",
+      "frequency_path": "src/loudspeaker_axisym_fem/json_utils.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/json_utils.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.meshgen",
+      "frequency_path": "src/loudspeaker_axisym_fem/meshgen.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/meshgen.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.mmcpl_lorentz_backemf",
+      "frequency_path": "src/loudspeaker_axisym_fem/mmcpl_lorentz_backemf.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/mmcpl_lorentz_backemf.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.narrow_region_acoustics",
+      "frequency_path": "src/loudspeaker_axisym_fem/narrow_region_acoustics.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/narrow_region_acoustics.py",
+      "status": "same",
+      "time_import_closure": true
+    },
+    {
+      "module": "loudspeaker_axisym_fem.postprocess",
+      "frequency_path": "src/loudspeaker_axisym_fem/postprocess.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/postprocess.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.production_wet_trace",
+      "frequency_path": "src/loudspeaker_axisym_fem/production_wet_trace.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.stage4B_solid_electroacoustic",
+      "frequency_path": "src/loudspeaker_axisym_fem/stage4B_solid_electroacoustic.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/stage4B_solid_electroacoustic.py",
+      "status": "same",
+      "time_import_closure": true
+    },
+    {
+      "module": "loudspeaker_axisym_fem.stage4C_acoustic_structure",
+      "frequency_path": "src/loudspeaker_axisym_fem/stage4C_acoustic_structure.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/stage4C_acoustic_structure.py",
+      "status": "same",
+      "time_import_closure": true
+    },
+    {
+      "module": "loudspeaker_axisym_fem.stage4D_exterior_nra",
+      "frequency_path": "src/loudspeaker_axisym_fem/stage4D_exterior_nra.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/stage4D_exterior_nra.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.stage4E_convergence",
+      "frequency_path": "src/loudspeaker_axisym_fem/stage4E_convergence.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/stage4E_convergence.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.stage4F_hk_refinement",
+      "frequency_path": "src/loudspeaker_axisym_fem/stage4F_hk_refinement.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/stage4F_hk_refinement.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.stage4_electroacoustic",
+      "frequency_path": "src/loudspeaker_axisym_fem/stage4_electroacoustic.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/stage4_electroacoustic.py",
+      "status": "same",
+      "time_import_closure": true
+    },
+    {
+      "module": "loudspeaker_axisym_fem.stage4_solid_fem",
+      "frequency_path": "src/loudspeaker_axisym_fem/stage4_solid_fem.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/stage4_solid_fem.py",
+      "status": "same",
+      "time_import_closure": true
+    },
+    {
+      "module": "loudspeaker_axisym_fem.thermoviscous_boundaries",
+      "frequency_path": "src/loudspeaker_axisym_fem/thermoviscous_boundaries.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "loudspeaker_axisym_fem.vibroacoustic",
+      "frequency_path": "src/loudspeaker_axisym_fem/vibroacoustic.py",
+      "time_snapshot_path": "inputs/frequency_mainline/src/loudspeaker_axisym_fem/vibroacoustic.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "native_blocked_coil",
+      "frequency_path": "best_model/native_blocked_coil.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/native_blocked_coil.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "p2_axisym_solid",
+      "frequency_path": "best_model/p2_axisym_solid.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/p2_axisym_solid.py",
+      "status": "different",
+      "time_import_closure": true
+    },
+    {
+      "module": "p2_pml_operator",
+      "frequency_path": "best_model/p2_pml_operator.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/p2_pml_operator.py",
+      "status": "same",
+      "time_import_closure": false
+    },
+    {
+      "module": "sweep_checkpoint",
+      "frequency_path": "best_model/sweep_checkpoint.py",
+      "time_snapshot_path": null,
+      "status": "frequency_only",
+      "time_import_closure": false
+    },
+    {
+      "module": "visualization",
+      "frequency_path": "best_model/visualization.py",
+      "time_snapshot_path": "inputs/frequency_mainline/best_model/visualization.py",
+      "status": "different",
+      "time_import_closure": false
+    }
+  ]
+}

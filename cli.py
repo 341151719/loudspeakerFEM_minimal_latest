@@ -5,13 +5,13 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timezone
 import hashlib
+from importlib.metadata import PackageNotFoundError, version
 import json
 import math
 import os
 from pathlib import Path
 import subprocess
 import sys
-from types import SimpleNamespace
 
 import numpy as np
 
@@ -26,6 +26,7 @@ from eigenmodes import solve_p2_eigenmodes, write_eigen_outputs
 from loudspeaker_axisym_fem.axisym_magnetics import load_tagged_meshio
 from native_blocked_coil import NativeBlockedCoil
 from p2_axisym_solid import build_p2_solid
+from sweep_checkpoint import SweepCheckpoint
 
 
 _WORKER_MODEL = None
@@ -294,15 +295,53 @@ def _require_ready(plan):
         raise FileNotFoundError("required solve inputs are missing:\n" + "\n".join(sorted(set(missing))))
 
 
-def _write_run_manifest(out: Path, plan: dict, args) -> Path:
-    """Record the effective configurations and exact input bytes used by a run."""
-    def sha256_file(path: Path) -> str:
-        digest = hashlib.sha256()
-        with path.open("rb") as stream:
-            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-                digest.update(chunk)
-        return digest.hexdigest()
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
+
+def _environment_versions() -> dict:
+    packages = {}
+    for name in ("numpy", "scipy", "meshio", "pandas", "threadpoolctl"):
+        try:
+            packages[name] = version(name)
+        except PackageNotFoundError:
+            packages[name] = None
+    return {"python": sys.version, "packages": packages}
+
+
+def _sweep_run_key(plan: dict, args) -> str:
+    """Bind cached points to solver sources, effective configs, inputs and drive."""
+    source_hashes = {p.relative_to(ROOT).as_posix(): _sha256_file(p) for p in sorted(
+        [ROOT / "cli.py", *list((ROOT / "best_model").glob("*.py")),
+         *list((ROOT / "src/loudspeaker_axisym_fem").glob("*.py"))]
+    )}
+    profiles = {}
+    for label, profile in plan["profiles"].items():
+        config = load_config(ROOT, None if label == "configs/best_model.json" else label)
+        profiles[label] = {
+            "effective_config": config,
+            "inputs": {name: _sha256_file(Path(item["path"])) for name, item in profile["inputs"].items()},
+        }
+    identity = {
+        "sources": source_hashes,
+        "frequencies": plan["frequencies"],
+        "profiles": profiles,
+        "drive": args.drive,
+        "current": args.current,
+        "voltage": args.voltage,
+        "without_nra": args.without_nra,
+        "save_each": args.save_each,
+        "environment": _environment_versions(),
+    }
+    return hashlib.sha256(json.dumps(identity, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def _write_run_manifest(out: Path, plan: dict, args, *, status="completed", run_key=None) -> Path:
+    """Record the effective configurations and exact input bytes used by a run."""
     profiles = {}
     for label, profile in plan["profiles"].items():
         config_path = None if label == "configs/best_model.json" else label
@@ -311,7 +350,7 @@ def _write_run_manifest(out: Path, plan: dict, args) -> Path:
             "effective_config_sha256": hashlib.sha256(
                 json.dumps(effective, sort_keys=True, ensure_ascii=False).encode("utf-8")
             ).hexdigest(),
-            "inputs": {name: {**item, "sha256": sha256_file(Path(item["path"]))}
+            "inputs": {name: {**item, "sha256": _sha256_file(Path(item["path"]))}
                        for name, item in profile["inputs"].items()},
         }
     try:
@@ -329,11 +368,14 @@ def _write_run_manifest(out: Path, plan: dict, args) -> Path:
         "git_commit": commit,
         "git_dirty": dirty,
         "python": sys.version,
+        "packages": _environment_versions()["packages"],
         "command": [sys.executable, *sys.argv],
         "drive": args.drive,
         "current_A_peak": args.current,
         "voltage_V_peak": args.voltage,
         "nra_enabled": not args.without_nra,
+        "run_status": status,
+        "sweep_run_key": run_key,
         "frequencies": plan["frequencies"],
         "profiles": profiles,
     }
@@ -403,78 +445,100 @@ def cmd_sweep(args):
     out.mkdir(parents=True, exist_ok=True)
     checkpoint = out / "checkpoints"
     checkpoint.mkdir(exist_ok=True)
-    jobs = _recommended_jobs(args.jobs, len(freqs))
-    solutions = []
-    if jobs == 1:
-        from threadpoolctl import threadpool_limits
-        models = {}
-        with threadpool_limits(limits=max(1, int(args.blas_threads))):
-            for i, f in enumerate(freqs, 1):
-                print(f"[{i}/{len(freqs)}] {f:g} Hz", flush=True)
-                profile = _profile_for_frequency(args.config, hybrid if hybrid_enabled else {}, float(f))
-                if profile not in models:
-                    models[profile] = build_best_model(
-                        ROOT, config_path=profile, magnetostatic_vtu=args.magnetostatic_vtu
-                    )
-                active_model = models[profile]
-                sol = solve_frequency(
-                    active_model,
-                    f,
-                    drive=args.drive,
-                    current_A_peak=complex(args.current),
-                    voltage_V_peak=complex(args.voltage),
-                    blocked_impedance_csv=args.blocked_impedance_csv,
-                    nra_enabled=not args.without_nra,
-                )
-                solutions.append(sol)
-                if args.save_each:
-                    write_solution_files(active_model, sol, checkpoint / f"{f:g}Hz")
-    else:
-        print(f"Parallel sweep: {jobs} worker processes, {args.blas_threads} BLAS thread(s) per worker", flush=True)
-        tasks_by_config: dict[str | None, list[dict]] = {}
-        for f in freqs:
-            task_config = _profile_for_frequency(args.config, hybrid if hybrid_enabled else {}, float(f))
-            tasks_by_config.setdefault(task_config, []).append({
-                "freq_Hz": float(f),
-                "drive": args.drive,
-                "current_A_peak": complex(args.current),
-                "voltage_V_peak": complex(args.voltage),
-                "blocked_impedance_csv": args.blocked_impedance_csv,
-                "nra_enabled": not args.without_nra,
-                "save_dir": str(checkpoint / f"{f:g}Hz") if args.save_each else None,
-            })
-        completed = 0
-        compact = []
-        for task_config, tasks in tasks_by_config.items():
-            phase_jobs = min(jobs, len(tasks))
-            profile = task_config or "configs/best_model.json"
-            print(f"Profile {profile}: {len(tasks)} frequencies, {phase_jobs} workers", flush=True)
-            with ProcessPoolExecutor(
-                max_workers=phase_jobs,
-                initializer=_parallel_worker_init,
-                initargs=(str(ROOT), task_config, args.magnetostatic_vtu, args.blas_threads),
-            ) as pool:
-                future_to_freq = {pool.submit(_parallel_solve_one, task): task["freq_Hz"] for task in tasks}
-                for future in as_completed(future_to_freq):
-                    compact.append(future.result())
-                    completed += 1
-                    print(f"[{completed}/{len(freqs)}] completed {future_to_freq[future]:g} Hz", flush=True)
-        compact.sort(key=lambda x: x["freq_Hz"])
-        solutions = [SimpleNamespace(**x) for x in compact]
-    metrics = write_sweep_metrics(solutions, out)
-    manifest = _write_run_manifest(out, plan, args)
-    if args.render:
+    try:
+        store = SweepCheckpoint(out, _sweep_run_key(plan, args), freqs)
+    except (ValueError, RuntimeError) as error:
+        print(f"Sweep cannot resume: {error}", file=sys.stderr)
+        return 2
+    pending = [index for index in range(len(freqs)) if index not in store.completed]
+    jobs = _recommended_jobs(args.jobs, len(pending)) if pending else 0
+    print(f"Sweep: {len(store.completed)} cached, {len(pending)} pending", flush=True)
+    try:
+        if jobs == 1:
+            from threadpoolctl import threadpool_limits
+            models = {}
+            with threadpool_limits(limits=max(1, int(args.blas_threads))):
+                for index in pending:
+                    freq = freqs[index]
+                    print(f"[{index + 1}/{len(freqs)}] {freq:g} Hz", flush=True)
+                    store.start(index)
+                    try:
+                        profile = _profile_for_frequency(args.config, hybrid if hybrid_enabled else {}, float(freq))
+                        if profile not in models:
+                            models[profile] = build_best_model(
+                                ROOT, config_path=profile, magnetostatic_vtu=args.magnetostatic_vtu
+                            )
+                        model = models[profile]
+                        solution = solve_frequency(
+                            model, freq, drive=args.drive,
+                            current_A_peak=complex(args.current), voltage_V_peak=complex(args.voltage),
+                            blocked_impedance_csv=args.blocked_impedance_csv,
+                            nra_enabled=not args.without_nra,
+                        )
+                        if args.save_each:
+                            write_solution_files(model, solution, checkpoint / f"{index:06d}_{freq:g}Hz")
+                        store.finish(index, _compact_solution(solution))
+                    except Exception as error:
+                        store.fail(index, error)
+                        print(f"[{index + 1}/{len(freqs)}] failed: {error}", file=sys.stderr, flush=True)
+        elif pending:
+            print(f"Parallel sweep: {jobs} worker processes, {args.blas_threads} BLAS thread(s) per worker", flush=True)
+            tasks_by_config: dict[str | None, list[dict]] = {}
+            for index in pending:
+                freq = freqs[index]
+                profile = _profile_for_frequency(args.config, hybrid if hybrid_enabled else {}, float(freq))
+                tasks_by_config.setdefault(profile, []).append({
+                    "index": index,
+                    "freq_Hz": float(freq), "drive": args.drive,
+                    "current_A_peak": complex(args.current), "voltage_V_peak": complex(args.voltage),
+                    "blocked_impedance_csv": args.blocked_impedance_csv,
+                    "nra_enabled": not args.without_nra,
+                    "save_dir": str(checkpoint / f"{index:06d}_{freq:g}Hz") if args.save_each else None,
+                })
+            for profile, tasks in tasks_by_config.items():
+                phase_jobs = min(jobs, len(tasks))
+                print(f"Profile {profile or 'configs/best_model.json'}: {len(tasks)} frequencies, {phase_jobs} workers", flush=True)
+                with ProcessPoolExecutor(
+                    max_workers=phase_jobs, initializer=_parallel_worker_init,
+                    initargs=(str(ROOT), profile, args.magnetostatic_vtu, args.blas_threads),
+                ) as pool:
+                    futures = {}
+                    for task in tasks:
+                        store.start(task["index"])
+                        futures[pool.submit(_parallel_solve_one, task)] = task
+                    for future in as_completed(futures):
+                        task = futures[future]
+                        index = task["index"]
+                        try:
+                            store.finish(index, future.result())
+                            print(f"[{len(store.completed)}/{len(freqs)}] completed {task['freq_Hz']:g} Hz", flush=True)
+                        except Exception as error:
+                            store.fail(index, error)
+                            print(f"[{index + 1}/{len(freqs)}] failed: {error}", file=sys.stderr, flush=True)
+    except KeyboardInterrupt:
+        store.interrupt_running()
+        print("Sweep interrupted; completed points are reusable", file=sys.stderr, flush=True)
+        return 130
+    finally:
+        store.close()
+    solutions = store.ordered_solutions()
+    metrics = write_sweep_metrics(solutions, out) if solutions else None
+    manifest = _write_run_manifest(out, plan, args, status=store.state["status"], run_key=store.run_key)
+    if args.render and solutions:
         render_sweep(solutions, out / "plots")
     print(json.dumps({
         "n_frequencies": len(freqs),
+        "n_completed": len(solutions),
+        "n_failed": sum(state == "failed" for state in store.state["points"]),
+        "status": store.state["status"],
         "jobs": jobs,
         "hybrid_sweep": hybrid_enabled,
         "hybrid_crossover_Hz": crossover if hybrid_enabled else None,
         "hybrid_upper_crossover_Hz": upper_crossover if hybrid_enabled and upper_config else None,
-        "metrics": str(metrics),
+        "metrics": str(metrics) if metrics else None,
         "manifest": str(manifest),
     }, indent=2))
-    return 0
+    return 0 if store.state["status"] == "completed" else 2
 
 
 def _load_solution(npz_path: str | Path) -> FrequencySolution:

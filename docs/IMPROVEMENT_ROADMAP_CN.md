@@ -8,14 +8,20 @@
 - `solve` 与 `sweep` 在昂贵装配前检查频率和所需输入。串行扫频按需创建各路由的模型；只扫一个频段时不预先创建其他频段的模型。
 - `sweep --jobs 0` 的自动并行数同时受系统可用内存和 WSL/container cgroup 剩余内存限制；显式 `--jobs` 仍由用户控制。
 - 成功的 `solve` 与 `sweep` 在输出目录写入 `run_manifest.json`，记录命令、Git 提交与工作树状态、频率到配置的映射、合并后的配置哈希和结束时的输入文件哈希。工作树若有未提交修改，仍需单独保存差异。
+- `sweep` 对每个频点原子保存紧凑检查点和 `sweep_state.json`；同一输出目录、相同源码/输入/有效配置/驱动参数会复用已完成频点。输入或代码不一致时拒绝复用，需换输出目录。失败频点标记为 `failed`，中断标记为 `interrupted`，可再次运行以补齐；同目录只允许一个扫频进程。
+
+## 已完成的项目级审计
+
+| 原优先级 | 工作 | 证据和边界 |
+|---|---|---|
+| 1 | 可重复运行与资源控制 | 50/100 Hz 串行和双进程真实扫频完成后，同命令重启均显示 `2 cached, 0 pending`；改变驱动参数时拒绝复用。检查点逐点保存，状态区分完成、失败和部分完成；`--jobs 0` 同时考虑 WSL/cgroup 剩余内存。最终串行证据在 `runs/improvement_final_resume_2/`，并行证据在 `runs/improvement_final_parallel/`。 |
+| 2 | 频域与时域共享代码审计 | [`TIME_SNAPSHOT_AUDIT_CN.md`](TIME_SNAPSHOT_AUDIT_CN.md) 和 [逐文件 JSON](TIME_SNAPSHOT_AUDIT.json)；时域仓库另存基线说明。静态导入闭包 7 个模块，仅 `p2_axisym_solid.py` 不同，差异函数不在当前时域调用链中，因此没有整目录同步。 |
+| 3 | 低中频几何和边界一致性 | [`LOW_MID_INTERFACE_AUDIT_CN.md`](LOW_MID_INTERFACE_AUDIT_CN.md)：50/6300 Hz 的现有生产路由通过网格相邻域、ASB、NRA 与 Boundary93 审计，并与真实 FEM 输出元数据核对。箱体平面活塞与生产曲面湿面仍是独立的未闭合问题。 |
 
 ## 后续工作优先级
 
 | 优先级 | 工作 | 实施入口 | 接受条件 |
 |---|---|---|---|
-| 1 | 可重复运行与资源控制 | `cli.py`、`best_model/visualization.py` | 扫频中断后能安全续跑；相同输入/配置不重复求解；结果清楚区分成功、失败和部分完成。 |
-| 2 | 频域与时域共享代码的变更审计 | `src/loudspeaker_axisym_fem/`、时域仓库 `inputs/frequency_mainline/` | 生成逐文件依赖和差异清单；只同步经时域调用链核对的文件；两个仓库分别记录基线提交。 |
-| 3 | 低频到中频的几何/边界一致性 | `src/loudspeaker_axisym_fem/`、`best_model/`、`tools/production_wet_trace_audit.py` | 声学域、NRA 腔、结构界面和 Boundary93 的几何/法向在同一网格层逐项闭合；保持离线 COMSOL 独立验证。 |
 | 4 | 高频网格与误差闭环 | `configs/stage35_high_accuracy*.json`、`tools/stage35_*` | 先对 12 kHz 的全声学域细化候选做 L0/L1/L2，再扩展受影响频段；同时报告自由度、耗时、内存、主场/全角/复数指标；15 kHz 不宣称严格网格无关，直到参考网格也收敛。 |
 | 5 | 磁场局部误差与模态 | `best_model/native_blocked_coil.py`、`best_model/eigenmodes.py` | `Jphi` 局部场、复阻抗、损耗和 skin depth 一起收敛；Figure 11 的模态用形状与 MAC 配对，不能只按频率排序。 |
 | 6 | 箱体和三维分支的能力边界 | `src/loudspeaker_axisym_fem/enclosure_*.py`、`fr10_full360_cyclic/` | 每条路线单独给出频段、激励、边界和误差证据；二维轴对称与 3-D cyclic/Bloch 的结果不混称。 |

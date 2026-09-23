@@ -13,6 +13,9 @@
 |---|---|---|
 | 频域单点、扫频、生产路由 | `cli.py`、`best_model/coupled_solver.py` | `configs/best_model.json`、`README_CN.md` 第 1、4 节 |
 | 求解前检查、运行可追溯性 | `cli.py plan`、输出目录 `run_manifest.json` | `docs/IMPROVEMENT_ROADMAP_CN.md` |
+| 扫频续跑与部分失败 | `best_model/sweep_checkpoint.py`、`cli.py sweep` | `runs/<outdir>/sweep_state.json` 与 `docs/IMPROVEMENT_ROADMAP_CN.md` |
+| 时域快照差异 | `tools/audit_time_snapshot.py` | `docs/TIME_SNAPSHOT_AUDIT_CN.md` |
+| 低中频界面几何 | `tools/audit_frequency_interfaces.py` | `docs/LOW_MID_INTERFACE_AUDIT_CN.md` |
 | 磁场、结构、声学基础装配 | `src/loudspeaker_axisym_fem/` | 对应 `stage4*`、`axisym_*`、`vibroacoustic.py` 模块 |
 | P2 结构、混合声学、边界恢复、blocked MQS | `best_model/` | `configs/` 与 `README_CN.md` 第 4–8 节 |
 | 密闭/开口/倒相箱、热黏性箱体 | `src/loudspeaker_axisym_fem/enclosure_*.py`、`configs/enclosures/` | `docs/ENCLOSURE_*_CN.md`、`docs/enclosure_phase*_handoff.json` |

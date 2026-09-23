@@ -46,6 +46,7 @@ python cli.py plan --freqs 50,6300,12000
 ```
 
 Successful `solve` and `sweep` runs write `run_manifest.json` with the effective configuration hash, input file hashes, frequency routing, and invocation. Project-wide improvement priorities are in [`docs/IMPROVEMENT_ROADMAP_CN.md`](docs/IMPROVEMENT_ROADMAP_CN.md).
+Reusing a sweep output directory with unchanged solver sources, inputs, effective configurations, and drive settings resumes from completed per-frequency checkpoints. Inspect `sweep_state.json` for completed, failed, and pending points. Low/mid-frequency geometry and transient-snapshot audits are linked from the improvement roadmap.
 
 建议按低、中、高频顺序做真实但独立的冒烟算例，结果写入新建的 `runs/` 或项目外目录，不要写入 `inputs/`：
 

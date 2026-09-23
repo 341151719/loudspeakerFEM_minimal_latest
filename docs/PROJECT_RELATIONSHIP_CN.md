@@ -27,6 +27,8 @@
 
 本次对照的检出基线为：频域仓库 `main@6f18365`，时域仓库 `main@4266d3f`。在这两个检出版本中，快照与旁边频域工作树**不是完全相同的树**：频域仓库多出 enclosure acoustics/geometry/schema/topology/validation 和 `production_wet_trace.py`；`enclosure_models.py` 不同；`best_model/coupled_solver.py`、`p2_axisym_solid.py`、`visualization.py` 不同。未列出的相同文件也不代表以后会持续同步。
 
+更新的逐文件与静态导入闭包审计见 [`TIME_SNAPSHOT_AUDIT_CN.md`](TIME_SNAPSHOT_AUDIT_CN.md)，其基线单独记录为频域 `ebc97e2`、时域 `f1c2f5b`。时域仓库的[函数级核对说明](https://github.com/341151719/loudspeakerTimeFEM_minimal_latest/blob/main/docs/FREQUENCY_SNAPSHOT_AUDIT_CN.md)记录了为什么本次没有同步 `p2_axisym_solid.py`。
+
 因此：
 
 1. 频域功能的源代码改动先落在 `loudspeakerFEM`；时域项目是否需要同步其中某个被导入文件，要按具体依赖逐文件判断。

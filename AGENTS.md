@@ -8,6 +8,7 @@ This repository is the independent 2-D axisymmetric, frequency-domain loudspeake
 2. [`README_CN.md`](README_CN.md) for the production route, physical contracts, evidence limits, and required validation matrix.
 3. [`docs/PROJECT_RELATIONSHIP_CN.md`](docs/PROJECT_RELATIONSHIP_CN.md) before working across the frequency and transient projects.
 4. [`docs/IMPROVEMENT_ROADMAP_CN.md`](docs/IMPROVEMENT_ROADMAP_CN.md) when choosing project-wide improvements.
+5. [`docs/LOW_MID_INTERFACE_AUDIT_CN.md`](docs/LOW_MID_INTERFACE_AUDIT_CN.md) and [`docs/TIME_SNAPSHOT_AUDIT_CN.md`](docs/TIME_SNAPSHOT_AUDIT_CN.md) for the completed low/mid geometry and cross-repository audits.
 
 ## Main route
 
