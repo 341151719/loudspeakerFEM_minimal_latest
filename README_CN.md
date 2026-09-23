@@ -57,6 +57,8 @@ python cli.py self-test
 python -m pytest -q
 ```
 
+正式求解前可用 `python cli.py plan --freqs 50,6300,12000` 查看频率路由、离散配置和必需输入，不装配 FEM。成功的 `solve`/`sweep` 会在输出目录写 `run_manifest.json`，记录有效配置及输入哈希。项目级改进次序见 [`docs/IMPROVEMENT_ROADMAP_CN.md`](docs/IMPROVEMENT_ROADMAP_CN.md)。
+
 随后运行不绘图的真实 FEM 冒烟算例：
 
 ```bash

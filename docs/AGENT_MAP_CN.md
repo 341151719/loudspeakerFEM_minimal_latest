@@ -1,6 +1,7 @@
 # Agent 导航图：loudspeakerFEM
 
 本页用于快速选入口和文件，不替代 [`README_CN.md`](../README_CN.md) 中的物理定义、生产状态或验收标准。仓库关系和相似/差异清单见 [`PROJECT_RELATIONSHIP_CN.md`](PROJECT_RELATIONSHIP_CN.md)。
+项目级改进候选与实施顺序见 [`IMPROVEMENT_ROADMAP_CN.md`](IMPROVEMENT_ROADMAP_CN.md)。
 
 ## 项目边界
 
@@ -11,6 +12,7 @@
 | 任务 | 首要入口 | 继续阅读 |
 |---|---|---|
 | 频域单点、扫频、生产路由 | `cli.py`、`best_model/coupled_solver.py` | `configs/best_model.json`、`README_CN.md` 第 1、4 节 |
+| 求解前检查、运行可追溯性 | `cli.py plan`、输出目录 `run_manifest.json` | `docs/IMPROVEMENT_ROADMAP_CN.md` |
 | 磁场、结构、声学基础装配 | `src/loudspeaker_axisym_fem/` | 对应 `stage4*`、`axisym_*`、`vibroacoustic.py` 模块 |
 | P2 结构、混合声学、边界恢复、blocked MQS | `best_model/` | `configs/` 与 `README_CN.md` 第 4–8 节 |
 | 密闭/开口/倒相箱、热黏性箱体 | `src/loudspeaker_axisym_fem/enclosure_*.py`、`configs/enclosures/` | `docs/ENCLOSURE_*_CN.md`、`docs/enclosure_phase*_handoff.json` |

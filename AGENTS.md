@@ -7,11 +7,13 @@ This repository is the independent 2-D axisymmetric, frequency-domain loudspeake
 1. [`docs/AGENT_MAP_CN.md`](docs/AGENT_MAP_CN.md) for task-to-file routing.
 2. [`README_CN.md`](README_CN.md) for the production route, physical contracts, evidence limits, and required validation matrix.
 3. [`docs/PROJECT_RELATIONSHIP_CN.md`](docs/PROJECT_RELATIONSHIP_CN.md) before working across the frequency and transient projects.
+4. [`docs/IMPROVEMENT_ROADMAP_CN.md`](docs/IMPROVEMENT_ROADMAP_CN.md) when choosing project-wide improvements.
 
 ## Main route
 
 - Production configuration: `configs/best_model.json`; frequency-dependent routing is part of the production contract.
 - CLI: `cli.py`; primary coupled frequency solver: `best_model/coupled_solver.py`.
+- Run `python cli.py plan --freqs 50,6300,12000` to inspect routing and required inputs before an expensive solve. Successful `solve` and `sweep` runs write `run_manifest.json` with effective config and input hashes.
 - Shared axisymmetric FEM implementations: `src/loudspeaker_axisym_fem/`.
 - The separate 3-D FR10 route lives in `fr10_full360_cyclic/`; consult `docs/FR10_FULL360_STATUS_CN.md` before changing it.
 

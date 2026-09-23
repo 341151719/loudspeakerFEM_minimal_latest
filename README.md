@@ -39,6 +39,14 @@ python cli.py self-test
 python -m pytest -q
 ```
 
+Before a solve, inspect the selected numerical profiles and required files without assembling the FEM model:
+
+```bash
+python cli.py plan --freqs 50,6300,12000
+```
+
+Successful `solve` and `sweep` runs write `run_manifest.json` with the effective configuration hash, input file hashes, frequency routing, and invocation. Project-wide improvement priorities are in [`docs/IMPROVEMENT_ROADMAP_CN.md`](docs/IMPROVEMENT_ROADMAP_CN.md).
+
 建议按低、中、高频顺序做真实但独立的冒烟算例，结果写入新建的 `runs/` 或项目外目录，不要写入 `inputs/`：
 
 ```bash

@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from datetime import datetime, timezone
+import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -81,6 +84,21 @@ def _recommended_jobs(requested: int, frequency_count: int) -> int:
         available_gib = pages * page_size / 1024**3
     except (ValueError, OSError, AttributeError):
         pass
+    for limit_name, usage_name in (
+        ("memory.max", "memory.current"),
+        ("memory/memory.limit_in_bytes", "memory/memory.usage_in_bytes"),
+    ):
+        try:
+            limit_text = (Path("/sys/fs/cgroup") / limit_name).read_text().strip()
+            if limit_text == "max":
+                continue
+            remaining_gib = max(0, int(limit_text) - int(
+                (Path("/sys/fs/cgroup") / usage_name).read_text().strip()
+            )) / 1024**3
+            available_gib = min(available_gib, remaining_gib) if available_gib is not None else remaining_gib
+            break
+        except (OSError, ValueError):
+            continue
     memory_limit = max(1, int(available_gib // 2)) if available_gib is not None else 4
     return max(1, min(int(frequency_count), max(1, cpu // 2), memory_limit, 8))
 
@@ -106,11 +124,17 @@ def parse_freqs(spec: str, cfg: dict) -> list[float]:
     return [float(x) for x in spec.replace(";", ",").split(",") if x.strip()]
 
 
+def _validate_frequencies(freqs) -> None:
+    if not freqs or any(not math.isfinite(float(f)) or float(f) <= 0 for f in freqs):
+        raise ValueError("frequencies must be finite positive numbers")
+
+
 def cmd_blocked(args):
     import pandas as pd
 
     cfg = load_config(ROOT, args.config)
     freqs = parse_freqs(args.freqs, cfg)
+    _validate_frequencies(freqs)
     bcfg = cfg["blocked_coil"]
     blocked_mesh_path = bcfg.get("field_mesh", cfg["geometry"]["mesh"])
     mesh = load_tagged_meshio(ROOT / blocked_mesh_path)
@@ -211,7 +235,126 @@ def _profile_for_frequency(base_config, hybrid: dict, freq_Hz: float):
     return base_config
 
 
+def _frequency_plan(config_path, freqs, *, magnetostatic_vtu=None,
+                    blocked_impedance_csv=None, single_profile=False):
+    """Describe the actual solve route and required on-disk inputs without assembling FEM."""
+    base = load_config(ROOT, config_path)
+    hybrid = base.get("acoustics", {}).get("hybrid_sweep", {})
+    if single_profile:
+        hybrid = {}
+    if hybrid.get("enabled") and not hybrid.get("low_frequency_config"):
+        raise ValueError("enabled acoustics.hybrid_sweep requires low_frequency_config")
+    _validate_frequencies(freqs)
+
+    rows = []
+    profiles = {}
+    for freq in freqs:
+        config = _profile_for_frequency(config_path, hybrid, float(freq))
+        label = str(config or "configs/best_model.json")
+        rows.append({"freq_Hz": float(freq), "config": label})
+        if label in profiles:
+            continue
+        cfg = load_config(ROOT, config)
+        geometry = cfg["geometry"]
+        blocked = cfg.get("blocked_coil", {})
+        required = {
+            "acoustic_mesh": ROOT / geometry["mesh"],
+            "structure_mesh": ROOT / geometry.get("structure_mesh", geometry["mesh"]),
+            "geometry_mphtxt": ROOT / geometry["mphtxt"],
+            "lorentz_magnetostatic_vtu": Path(magnetostatic_vtu) if magnetostatic_vtu else ROOT / "inputs/comsol_reference/magnetostatic_converged_55iter.vtu",
+        }
+        if blocked_impedance_csv:
+            required["blocked_impedance_csv"] = Path(blocked_impedance_csv)
+        if str(blocked.get("mode", "")).startswith("native") and blocked.get("runtime_mode") != "embedded_native_surrogate":
+            required["blocked_field_mesh"] = ROOT / blocked.get("field_mesh", geometry["mesh"])
+            required["blocked_magnetostatic_vtu"] = ROOT / blocked.get(
+                "magnetostatic_vtu", "inputs/comsol_reference/magnetostatic_converged_55iter.vtu"
+            )
+        parity = cfg.get("exterior", {}).get("req6_ppr_parity", {})
+        if parity.get("apply_to_hk"):
+            required["boundary93_parity_config"] = ROOT / parity["config"]
+        config_file = Path(label)
+        if not config_file.is_absolute():
+            config_file = ROOT / config_file
+        required["config"] = config_file
+        profiles[label] = {
+            "model_name": cfg.get("model_name"),
+            "acoustic_order": cfg.get("acoustics", {}).get("physical_pressure_order"),
+            "selective_p2_domains": cfg.get("acoustics", {}).get("selective_p2_domains", []),
+            "inputs": {name: {"path": str(path), "exists": path.is_file()} for name, path in required.items()},
+        }
+    return {"frequencies": rows, "profiles": profiles,
+            "ready": all(item["exists"] for profile in profiles.values() for item in profile["inputs"].values())}
+
+
+def _require_ready(plan):
+    missing = [item["path"] for profile in plan["profiles"].values()
+               for item in profile["inputs"].values() if not item["exists"]]
+    if missing:
+        raise FileNotFoundError("required solve inputs are missing:\n" + "\n".join(sorted(set(missing))))
+
+
+def _write_run_manifest(out: Path, plan: dict, args) -> Path:
+    """Record the effective configurations and exact input bytes used by a run."""
+    def sha256_file(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    profiles = {}
+    for label, profile in plan["profiles"].items():
+        config_path = None if label == "configs/best_model.json" else label
+        effective = load_config(ROOT, config_path)
+        profiles[label] = {
+            "effective_config_sha256": hashlib.sha256(
+                json.dumps(effective, sort_keys=True, ensure_ascii=False).encode("utf-8")
+            ).hexdigest(),
+            "inputs": {name: {**item, "sha256": sha256_file(Path(item["path"]))}
+                       for name, item in profile["inputs"].items()},
+        }
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+        dirty = bool(subprocess.check_output(
+            ["git", "status", "--porcelain"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL
+        ).strip())
+    except (OSError, subprocess.CalledProcessError):
+        commit = None
+        dirty = None
+    manifest = {
+        "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "git_commit": commit,
+        "git_dirty": dirty,
+        "python": sys.version,
+        "command": [sys.executable, *sys.argv],
+        "drive": args.drive,
+        "current_A_peak": args.current,
+        "voltage_V_peak": args.voltage,
+        "nra_enabled": not args.without_nra,
+        "frequencies": plan["frequencies"],
+        "profiles": profiles,
+    }
+    path = out / "run_manifest.json"
+    path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return path
+
+
+def cmd_plan(args):
+    freqs = parse_freqs(args.freqs, load_config(ROOT, args.config))
+    plan = _frequency_plan(args.config, freqs, magnetostatic_vtu=args.magnetostatic_vtu,
+                           blocked_impedance_csv=args.blocked_impedance_csv,
+                           single_profile=args.single_profile)
+    print(json.dumps(plan, indent=2, ensure_ascii=False))
+    return 0 if plan["ready"] else 2
+
+
 def cmd_solve(args):
+    plan = _frequency_plan(args.config, [args.freq], magnetostatic_vtu=args.magnetostatic_vtu,
+                           blocked_impedance_csv=args.blocked_impedance_csv)
+    _require_ready(plan)
     cfg = load_config(ROOT, args.config)
     profile = _profile_for_frequency(args.config, cfg.get("acoustics", {}).get("hybrid_sweep", {}), args.freq)
     model = build_best_model(ROOT, config_path=profile, magnetostatic_vtu=args.magnetostatic_vtu)
@@ -228,6 +371,7 @@ def cmd_solve(args):
         )
     out = Path(args.outdir or ROOT / "runs" / f"solve_{args.freq:g}Hz")
     files = write_solution_files(model, solution, out)
+    files["manifest"] = _write_run_manifest(out, plan, args)
     if args.render:
         render_solution(model, solution, out / "plots", exterior_grid=not args.no_exterior_grid)
     print(json.dumps({
@@ -243,6 +387,10 @@ def cmd_solve(args):
 def cmd_sweep(args):
     cfg = load_config(ROOT, args.config)
     freqs = parse_freqs(args.freqs, cfg)
+    plan = _frequency_plan(args.config, freqs, magnetostatic_vtu=args.magnetostatic_vtu,
+                           blocked_impedance_csv=args.blocked_impedance_csv,
+                           single_profile=args.single_profile)
+    _require_ready(plan)
     hybrid = cfg.get("acoustics", {}).get("hybrid_sweep", {})
     hybrid_enabled = bool(hybrid.get("enabled", False)) and not args.single_profile
     crossover = float(hybrid.get("crossover_Hz", -np.inf))
@@ -259,26 +407,16 @@ def cmd_sweep(args):
     solutions = []
     if jobs == 1:
         from threadpoolctl import threadpool_limits
-        model = _model(args)
-        low_model = (
-            build_best_model(ROOT, config_path=low_config, magnetostatic_vtu=args.magnetostatic_vtu)
-            if hybrid_enabled and any(float(f) <= crossover for f in freqs)
-            else None
-        )
-        upper_model = (
-            build_best_model(ROOT, config_path=upper_config, magnetostatic_vtu=args.magnetostatic_vtu)
-            if hybrid_enabled and upper_config and any(float(f) > upper_crossover for f in freqs)
-            else None
-        )
+        models = {}
         with threadpool_limits(limits=max(1, int(args.blas_threads))):
             for i, f in enumerate(freqs, 1):
                 print(f"[{i}/{len(freqs)}] {f:g} Hz", flush=True)
-                if low_model is not None and float(f) <= crossover:
-                    active_model = low_model
-                elif upper_model is not None and float(f) > upper_crossover:
-                    active_model = upper_model
-                else:
-                    active_model = model
+                profile = _profile_for_frequency(args.config, hybrid if hybrid_enabled else {}, float(f))
+                if profile not in models:
+                    models[profile] = build_best_model(
+                        ROOT, config_path=profile, magnetostatic_vtu=args.magnetostatic_vtu
+                    )
+                active_model = models[profile]
                 sol = solve_frequency(
                     active_model,
                     f,
@@ -324,6 +462,7 @@ def cmd_sweep(args):
         compact.sort(key=lambda x: x["freq_Hz"])
         solutions = [SimpleNamespace(**x) for x in compact]
     metrics = write_sweep_metrics(solutions, out)
+    manifest = _write_run_manifest(out, plan, args)
     if args.render:
         render_sweep(solutions, out / "plots")
     print(json.dumps({
@@ -333,6 +472,7 @@ def cmd_sweep(args):
         "hybrid_crossover_Hz": crossover if hybrid_enabled else None,
         "hybrid_upper_crossover_Hz": upper_crossover if hybrid_enabled and upper_config else None,
         "metrics": str(metrics),
+        "manifest": str(manifest),
     }, indent=2))
     return 0
 
@@ -493,6 +633,13 @@ def build_parser():
     sp = p.add_subparsers(dest="command", required=True)
 
     s = sp.add_parser("self-test"); s.set_defaults(func=cmd_self_test)
+    plan = sp.add_parser("plan", help="show frequency routing and required inputs without solving")
+    plan.add_argument("--config", help="model JSON; defaults to configs/best_model.json")
+    plan.add_argument("--freqs", default="50,6300,12000", help="preset, comma list, file, or log:start:stop:n")
+    plan.add_argument("--magnetostatic-vtu", help="Lorentz-force magnetostatic VTU override")
+    plan.add_argument("--blocked-impedance-csv", help="optional blocked-impedance table")
+    plan.add_argument("--single-profile", action="store_true", help="use only --config")
+    plan.set_defaults(func=cmd_plan)
     b = sp.add_parser("blocked", help="native voltage-constrained blocked-coil impedance")
     b.add_argument("--config", help="model JSON; defaults to configs/best_model.json")
     b.add_argument("--freqs", default="comsol_126")
