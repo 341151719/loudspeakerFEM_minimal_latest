@@ -19,7 +19,7 @@
 | 磁场、结构、声学基础装配 | `src/loudspeaker_axisym_fem/` | 对应 `stage4*`、`axisym_*`、`vibroacoustic.py` 模块 |
 | P2 结构、混合声学、边界恢复、blocked MQS | `best_model/` | `configs/` 与 `README_CN.md` 第 4–8 节 |
 | 密闭/开口/倒相箱、热黏性箱体 | `src/loudspeaker_axisym_fem/enclosure_*.py`、`configs/enclosures/` | `docs/ENCLOSURE_*_CN.md`、`docs/enclosure_phase*_handoff.json` |
-| 频域误差或 COMSOL 离线比较 | `tools/`、`comsol_exports/`、`benchmarks/` | `benchmarks/README_CN.md`；参考数据不得进入生产运行时校正 |
+| 频域误差或 COMSOL 离线比较 | `tools/`、`comsol_exports/`、`benchmarks/` | `benchmarks/README_CN.md`、`docs/COMSOL_2D_MODEL_AUDIT_CN.md`；参考数据不得进入生产运行时校正 |
 | FR10 周期扇区三维分支 | `fr10_full360_cyclic/` | `docs/FR10_FULL360_STATUS_CN.md`；这是独立于二维轴对称主线的 3-D 路线 |
 | 回归与接口约束 | `tests/` | `README_CN.md` 第 8、10 节；测试通过本身不等于数值正确 |
 
