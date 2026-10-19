@@ -1,0 +1,9 @@
+*.py text eol=lf
+*.java text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+# Preserve exported input bytes so dataset/provenance hashes survive checkout.
+inputs/** -text -whitespace
+benchmarks/*.csv -text whitespace=cr-at-eol

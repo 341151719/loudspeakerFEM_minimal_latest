@@ -1,0 +1,24 @@
+{
+  "pressure_dofs": 80889,
+  "types": [
+    {
+      "assembly_s": 6.9003198530117515,
+      "minimum_absolute_sampled_Jacobian": 4.714582673593163e-12,
+      "native_elements": 46695,
+      "type": "tet"
+    },
+    {
+      "assembly_s": 0.4173739529796876,
+      "minimum_absolute_sampled_Jacobian": 1.552003701271956e-10,
+      "native_elements": 2169,
+      "type": "pyr"
+    },
+    {
+      "assembly_s": 0.07165949000045657,
+      "minimum_absolute_sampled_Jacobian": 9.220040500774367e-10,
+      "native_elements": 200,
+      "type": "hex"
+    }
+  ],
+  "volume_quadrature_order": 5
+}

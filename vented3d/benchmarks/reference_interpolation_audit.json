@@ -1,0 +1,27 @@
+{
+  "independent_mapping": [
+    {
+      "domain": 17,
+      "independent_samples": 3000,
+      "mapping_errors": [
+        1.8703707737695218e-16,
+        1.9972911321689961e-16,
+        2.2986433116677464e-16,
+        7.882413330894819e-16
+      ]
+    },
+    {
+      "domain": 25,
+      "independent_samples": 274,
+      "mapping_errors": [
+        1.9845834626247167e-16,
+        1.9464578150526327e-16,
+        1.937969456847528e-16,
+        7.465663670784748e-16
+      ]
+    }
+  ],
+  "native_pressure_dofs": 80889,
+  "port_fixed_dofs": 82,
+  "unique_acoustic_native_face_sides": 6645
+}

@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-20",
+  "scope": "portable source-checkout route; full regression executed using frozen local sources",
+  "geometry_only_reassembly_vs_frozen_native_control": [
+    {
+      "matrix": "ak_17.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "ak_22.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "ak_25.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "ak_28.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "ak_29.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "am_17.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "am_22.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "am_25.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "am_28.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    },
+    {
+      "matrix": "am_29.npz",
+      "relative_difference": 0.0,
+      "shape": [
+        80889,
+        80889
+      ]
+    }
+  ],
+  "interface_face_regeneration": {
+    "records": 14112,
+    "indices_orientation_areas_exact_match": true,
+    "method": "Regenerate from physical mesh incidence; compare with frozen coupled-regression face records"
+  },
+  "scalar_core_stability": {
+    "reason": "Installed MKL intermittently aborted on the degenerate 1x1 test path; scalar cores now use an exact inverse.",
+    "repeat_processes": 10,
+    "all_passed": true,
+    "non_scalar_native_factorization_unchanged": true
+  },
+  "unit_tests": {
+    "passed": 39,
+    "command": "python -B vented3d/run.py test --mkl-rt <installed-runtime>",
+    "elapsed_s": 4.352
+  },
+  "source_package_checks": {
+    "passed": 2,
+    "command": "python -B -m pytest -q tests/test_clean_source_package.py tests/test_no_results_packaged.py"
+  },
+  "wheel_build_install_and_explicit_input_inspection": {
+    "passed": true,
+    "python": "3.12",
+    "numpy": "2.4.6",
+    "scipy": "1.18.0"
+  },
+  "dataset_hashes_match_worktree_and_committed_git_objects": true
+}
