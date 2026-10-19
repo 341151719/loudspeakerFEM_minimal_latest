@@ -96,10 +96,18 @@
   },
   "unit_tests": {
     "passed": 39,
-    "command": "python -B vented3d/run.py test --mkl-rt <installed-runtime>"
+    "command": "python -B vented3d/run.py test --mkl-rt <installed-runtime>",
+    "elapsed_s": 4.352
   },
   "source_package_checks": {
     "passed": 2,
     "command": "python -B -m pytest -q tests/test_clean_source_package.py tests/test_no_results_packaged.py"
-  }
+  },
+  "wheel_build_install_and_explicit_input_inspection": {
+    "passed": true,
+    "python": "3.12",
+    "numpy": "2.4.6",
+    "scipy": "1.18.0"
+  },
+  "dataset_hashes_match_worktree_and_committed_git_objects": true
 }

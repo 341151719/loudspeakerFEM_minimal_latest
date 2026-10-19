@@ -1,0 +1,240 @@
+{
+  "date": "2026-10-20",
+  "kind": "independent_full_coupled_native_acoustics",
+  "execution": "frozen local implementation; portable CLI verified separately",
+  "reference_fields_used_to_assemble_or_solve": false,
+  "benchmark_acceptance": false,
+  "original_compatibility_hash": "3036de56377d684579927fd792832ea9c606ed8831ffa423f7ff238389c6d9d2",
+  "records": [
+    {
+      "X_pressure": {
+        "absolute_error": 0.008439476180461055,
+        "amplitude_difference_dB": -0.249275695058143,
+        "complex_relative_error": 0.02910571834189326,
+        "phase_defined": true,
+        "phase_difference_deg": 0.3974631074667885,
+        "prediction_imag": 0.28175585944981574,
+        "prediction_real": 0.0003956570954815053,
+        "reference_imag": 0.28994929743801934,
+        "reference_real": 0.0024186084379590415,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.0064047811903060105,
+        "amplitude_difference_dB": -0.24705268925698592,
+        "complex_relative_error": 0.0289566109384979,
+        "phase_defined": true,
+        "phase_difference_deg": 0.41954699420965047,
+        "prediction_imag": 0.2108862536210727,
+        "prediction_real": 0.04176886994934426,
+        "reference_imag": 0.21665011828304773,
+        "reference_real": 0.04456155436655525,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 0.0031312394220691145,
+        "amplitude_difference_dB": -0.11604238522354855,
+        "complex_relative_error": 0.01474059208724391,
+        "phase_defined": true,
+        "phase_difference_deg": 0.3700735635587795,
+        "prediction_imag": 0.12667583756845896,
+        "prediction_real": 0.16699401386357116,
+        "reference_imag": 0.12728377432336255,
+        "reference_real": 0.1700656702929846,
+        "small_reference": false
+      },
+      "elapsed_s": 372.4517656570242,
+      "frequency_Hz": 40,
+      "native_pressure_error": 0.011610844652949969,
+      "solver_success": true
+    },
+    {
+      "X_pressure": {
+        "absolute_error": 0.01121167914683906,
+        "amplitude_difference_dB": -0.1974060752558109,
+        "complex_relative_error": 0.027129648329315696,
+        "phase_defined": true,
+        "phase_difference_deg": 0.8809272973123465,
+        "prediction_imag": 0.10984973777281291,
+        "prediction_real": -0.3887545700326845,
+        "reference_imag": 0.1184759119668275,
+        "reference_real": -0.3959163343450717,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.008045942426257864,
+        "amplitude_difference_dB": -0.21185070474580686,
+        "complex_relative_error": 0.027874557735017607,
+        "phase_defined": true,
+        "phase_difference_deg": 0.8128458017601293,
+        "prediction_imag": 0.13531080624652048,
+        "prediction_real": -0.24706690993564318,
+        "reference_imag": 0.14222920755923588,
+        "reference_real": -0.251174575063532,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 0.003593253779216352,
+        "amplitude_difference_dB": 0.3541330762279514,
+        "complex_relative_error": 0.04433985820239384,
+        "phase_defined": true,
+        "phase_difference_deg": 0.8593821045334679,
+        "prediction_imag": -0.08117526625220178,
+        "prediction_real": 0.02314805462088592,
+        "reference_imag": -0.0782567727990075,
+        "reference_real": 0.021051898928787952,
+        "small_reference": false
+      },
+      "elapsed_s": 388.680475561996,
+      "frequency_Hz": 31.5,
+      "native_pressure_error": 0.016460043394560885,
+      "solver_success": true
+    },
+    {
+      "X_pressure": {
+        "absolute_error": 0.00766075252240635,
+        "amplitude_difference_dB": -0.09380119086050133,
+        "complex_relative_error": 0.01101503438287662,
+        "phase_defined": true,
+        "phase_difference_deg": -0.140616442966308,
+        "prediction_imag": 0.4286814491866027,
+        "prediction_real": 0.5381371982292928,
+        "reference_imag": 0.434669720237921,
+        "reference_real": 0.5429150365506992,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.0035591203710510317,
+        "amplitude_difference_dB": 0.06802777464027054,
+        "complex_relative_error": 0.009079022864066567,
+        "phase_defined": true,
+        "phase_difference_deg": 0.259071333813648,
+        "prediction_imag": 0.12962251438832056,
+        "prediction_real": 0.3732298520603629,
+        "reference_imag": 0.1269355204842561,
+        "reference_real": 0.3708958851421846,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 0.0006837654221810634,
+        "amplitude_difference_dB": -0.04149358769590568,
+        "complex_relative_error": 0.008899364030344957,
+        "phase_defined": true,
+        "phase_difference_deg": 0.4316514407726444,
+        "prediction_imag": -0.07644365311908806,
+        "prediction_real": -0.0018853850213323019,
+        "reference_imag": -0.0767932560942936,
+        "reference_real": -0.00247301833582177,
+        "small_reference": false
+      },
+      "elapsed_s": 413.719072168984,
+      "frequency_Hz": 315,
+      "native_pressure_error": 0.01589247644915128,
+      "solver_success": true
+    },
+    {
+      "X_pressure": {
+        "absolute_error": 0.21639215718535365,
+        "amplitude_difference_dB": -0.9556413122436641,
+        "complex_relative_error": 0.23397600304759605,
+        "phase_defined": true,
+        "phase_difference_deg": -12.70830050336961,
+        "prediction_imag": 0.02009335111118854,
+        "prediction_real": 0.8282479476165049,
+        "reference_imag": 0.22527588969741816,
+        "reference_real": 0.8969916131475282,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.0252544947060479,
+        "amplitude_difference_dB": 0.05199703841504078,
+        "complex_relative_error": 0.26830926283792933,
+        "phase_defined": true,
+        "phase_difference_deg": -15.369241901833242,
+        "prediction_imag": 0.08531239237491481,
+        "prediction_real": -0.04108455075475531,
+        "reference_imag": 0.07094646060604927,
+        "reference_real": -0.061854950540751276,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 0.0036728329529187266,
+        "amplitude_difference_dB": -0.6929777306603089,
+        "complex_relative_error": 0.20694033625562486,
+        "phase_defined": true,
+        "phase_difference_deg": -11.480119547227439,
+        "prediction_imag": -0.015567510536953445,
+        "prediction_real": -0.005118191987703818,
+        "reference_imag": -0.017626358711425656,
+        "reference_real": -0.002076671628653408,
+        "small_reference": false
+      },
+      "elapsed_s": 571.5679655999993,
+      "frequency_Hz": 3550,
+      "native_pressure_error": 0.34890192342742754,
+      "solver_success": true
+    }
+  ],
+  "numerical_checks": {
+    "40": {
+      "solver_success": true,
+      "physical_core_residual": {
+        "absolute_inf": 8.667243319456052e-10,
+        "componentwise_backward": 5.925432162028122e-16,
+        "normwise_backward": 2.405998746740116e-16
+      },
+      "bem_boundary_relative_residual": 0.0001435283771682132,
+      "chief_relative_residual": 6.803750386305204e-05,
+      "least_squares_normal_residual": 1.7316422230907042e-10,
+      "iterative_stop_code": 2,
+      "iterative_iterations": 95,
+      "peak_process_memory_bytes": 16984649728,
+      "elapsed_s": 372.4517656570242
+    },
+    "31.5": {
+      "solver_success": true,
+      "physical_core_residual": {
+        "absolute_inf": 3.1948895223054916e-10,
+        "componentwise_backward": 6.384853089753002e-16,
+        "normwise_backward": 1.7276866086745313e-16
+      },
+      "bem_boundary_relative_residual": 4.2018267774244005e-05,
+      "chief_relative_residual": 6.636832367566884e-05,
+      "least_squares_normal_residual": 3.6570979164312854e-10,
+      "iterative_stop_code": 2,
+      "iterative_iterations": 96,
+      "peak_process_memory_bytes": 17015930880,
+      "elapsed_s": 388.680475561996
+    },
+    "315": {
+      "solver_success": true,
+      "physical_core_residual": {
+        "absolute_inf": 3.288891794849642e-11,
+        "componentwise_backward": 5.884328159270397e-16,
+        "normwise_backward": 1.9086518993973962e-16
+      },
+      "bem_boundary_relative_residual": 0.0003660051797223113,
+      "chief_relative_residual": 0.00013983116603143639,
+      "least_squares_normal_residual": 9.531479443831038e-12,
+      "iterative_stop_code": 2,
+      "iterative_iterations": 96,
+      "peak_process_memory_bytes": 17082605568,
+      "elapsed_s": 413.719072168984
+    },
+    "3550": {
+      "solver_success": true,
+      "physical_core_residual": {
+        "absolute_inf": 4.976254746842219e-13,
+        "componentwise_backward": 7.511264517990795e-16,
+        "normwise_backward": 1.5829457767615283e-16
+      },
+      "bem_boundary_relative_residual": 0.0010351627102094675,
+      "chief_relative_residual": 0.00037320327177455394,
+      "least_squares_normal_residual": 1.9806455564520766e-11,
+      "iterative_stop_code": 2,
+      "iterative_iterations": 180,
+      "peak_process_memory_bytes": 17083797504,
+      "elapsed_s": 571.5679655999993
+    }
+  }
+}
