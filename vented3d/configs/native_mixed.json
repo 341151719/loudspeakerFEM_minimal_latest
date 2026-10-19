@@ -1,0 +1,82 @@
+{
+  "benchmark_root": "../inputs/vented_enclosure",
+  "strict_bundle": true,
+  "level": 0,
+  "temperature_K": 293.15,
+  "voltage_peak_V": [
+    3.55,
+    0.0
+  ],
+  "memory_limit_GiB": 24.0,
+  "triplet_entries": 2000000,
+  "factor_fill_estimate": 12.0,
+  "constraint_tol": 2e-10,
+  "max_transform_entries": 15000000,
+  "shell": {
+    "shear_correction": 0.8333333333333334,
+    "drilling": 1e-05,
+    "fluctuation_cap": 1.0,
+    "fold_policy": "welded_facets"
+  },
+  "connection": {
+    "method": "nodal_spin",
+    "quadrature": 3,
+    "min_fraction": 0.05
+  },
+  "bem": {
+    "backend": "iterative",
+    "iterative_tol": 1e-08,
+    "iterative_maxiter": 1000,
+    "mirror": true,
+    "chief_count": 24,
+    "chief_candidates": 128,
+    "chief_min_clearance_m": 1e-05,
+    "near_ratio": 1.5,
+    "order": 4,
+    "radial_order": 12,
+    "quadrature_rtol": 1e-08,
+    "max_depth": 12,
+    "chief_weight": 1.0,
+    "rcond": 1e-11,
+    "max_relative_residual": 0.05,
+    "schur_chunk": 8,
+    "chief_max_relative_residual": 0.05,
+    "iterative_conlim": 100000000.0,
+    "column_equilibration": "geometric",
+    "iterative_show": true
+  },
+  "solver": {
+    "core_backend": "pardiso",
+    "ilu_drop_tol": 0.0,
+    "ilu_fill_factor": 12.0,
+    "ilu_shift": 0.01,
+    "iterative_core_tol": 1e-09,
+    "iterative_core_maxiter": 300,
+    "backward_tol": 1e-08,
+    "displacement_scale_m": 1e-06,
+    "rotation_scale": 0.0001,
+    "pressure_scale_Pa": 1.0,
+    "current_scale_A": 1.0,
+    "length_scale_m": 1.0
+  },
+  "modes": {
+    "shift_Hz": [
+      1.0,
+      0.0
+    ],
+    "candidates": 64,
+    "tol": 1e-09,
+    "maxiter": 5000,
+    "rigid_Hz": 0.01
+  },
+  "compare": {
+    "pressure_floor_Pa": 1e-05,
+    "velocity_floor_m_s": 1e-08,
+    "projection_m": 1e-07,
+    "mls_max_distance_m": 0.025,
+    "director": "unresolved",
+    "director_normal_sign": {},
+    "mac_min": 0.7,
+    "scalar_relative_acceptance": 0.01
+  }
+}

@@ -18,6 +18,7 @@ This repository is the independent 2-D axisymmetric, frequency-domain loudspeake
 - Run `python cli.py plan --freqs 50,6300,12000` to inspect routing and required inputs before an expensive solve. Successful `solve` and `sweep` runs write `run_manifest.json` with effective config and input hashes.
 - Shared axisymmetric FEM implementations: `src/loudspeaker_axisym_fem/`.
 - The separate 3-D FR10 route lives in `fr10_full360_cyclic/`; consult `docs/FR10_FULL360_STATUS_CN.md` before changing it.
+- The independent vented enclosure route lives in `vented3d/`; read its `AGENTS.md`, `README.md` and `benchmarks/STATUS.md`. Use its separate CLI and inputs. Its acoustic controls do not establish full-model 1% acceptance.
 
 ## Project boundary
 

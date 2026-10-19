@@ -14,6 +14,10 @@
 configs/best_model.json
 ```
 
+### 三维倒相箱
+
+三维倒相箱的独立 FEM–shell–BEM 路线见 [`vented3d/README.md`](vented3d/README.md)，与下面的 FR10 路线分开。入口为 `python vented3d/run.py inspect`；原生混合声学、完整耦合回归和未完成的 1% 验收见 [`vented3d/benchmarks/STATUS.md`](vented3d/benchmarks/STATUS.md)。
+
 ### FR10 full-360 三维功能分支
 
 [`fr10_full360_cyclic/`](fr10_full360_cyclic/) 的 `feature/fr10-full360-cyclic-3d` 分支提供四扇区 cyclic/Bloch full-360 三维 P2/local-ASB 结构与前/后 Helmholtz 声场，并导出 full-360 VTU、3D PNG 和周向阶次诊断。运行：`python cli.py fr10-full360 --freq 90 500 1000 2000`；连续三维振膜动画运行 `python cli.py fr10-animate --results-root <results-root> --surface-suite --frames 24 --fps 12`；使用交接包原始 STL 完整装配体的动画运行 `python cli.py fr10-animate --results-root <results-root> --complete-assembly-suite --assembly-cad-root <FR10_COMSOL_3D_model> --frames 24 --fps 12`。声场动画和 1 m 频响分别运行 `python cli.py fr10-animate --results-root <results-root> --frequency 2000 --frames 24 --fps 12` 与 `python cli.py fr10-response --output <results-root>/frequency_response_1m --reuse-summary <results-root>/final_baseline/run_summary.json`。详细结果见 [`docs/FR10_FULL360_STATUS_CN.md`](docs/FR10_FULL360_STATUS_CN.md)。其外边界是一阶 Sommerfeld Robin（不是 PML），电磁仍为 `Bl/Rdc/Le` 等效（不是完整 3D MQS）。完整动画中的固定 CAD 来自交接包基线；当前 full-360 位移只求解七个运动件。

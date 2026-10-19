@@ -1,0 +1,90 @@
+{
+  "kind": "prescribed_COMSOL_wall_motion_and_aperture_pressure_control",
+  "independent_full_coupled_acceptance": false,
+  "records": [
+    {
+      "backward_error": 5.943221808535202e-17,
+      "case": "shell_only_baseline",
+      "frequency_Hz": 31.5,
+      "interior_sample_errors": {
+        "17": 2.762231537955377e-05,
+        "25": 2.7202779120334653e-05
+      },
+      "native_pressure_relative_error": 2.7659415535715382e-05,
+      "replay_relative_error": 1.7773090641170476e-13
+    },
+    {
+      "backward_error": 5.974200515723303e-17,
+      "case": "add_native_solid_overlap",
+      "frequency_Hz": 31.5,
+      "interior_sample_errors": {
+        "17": 4.889162764648576e-07,
+        "25": 4.878360198152778e-07
+      },
+      "native_pressure_relative_error": 5.021467989485896e-07
+    },
+    {
+      "backward_error": 6.253555870037794e-17,
+      "case": "shell_only_baseline",
+      "frequency_Hz": 40,
+      "interior_sample_errors": {
+        "17": 2.968838253750985e-05,
+        "25": 3.519891646269873e-05
+      },
+      "native_pressure_relative_error": 3.040390177938193e-05,
+      "replay_relative_error": 2.1808627399234165e-13
+    },
+    {
+      "backward_error": 6.269636166944848e-17,
+      "case": "add_native_solid_overlap",
+      "frequency_Hz": 40,
+      "interior_sample_errors": {
+        "17": 3.3583344241766014e-07,
+        "25": 4.212360492229283e-07
+      },
+      "native_pressure_relative_error": 3.6348713447709836e-07
+    },
+    {
+      "backward_error": 6.158904605032115e-17,
+      "case": "shell_only_baseline",
+      "frequency_Hz": 315,
+      "interior_sample_errors": {
+        "17": 0.0008376289033123397,
+        "25": 0.0005567694901428853
+      },
+      "native_pressure_relative_error": 0.0007743813643943878,
+      "replay_relative_error": 6.62443236843071e-14
+    },
+    {
+      "backward_error": 6.126872971038994e-17,
+      "case": "add_native_solid_overlap",
+      "frequency_Hz": 315,
+      "interior_sample_errors": {
+        "17": 7.456704841301171e-06,
+        "25": 4.629248455002479e-06
+      },
+      "native_pressure_relative_error": 6.376259885128385e-06
+    },
+    {
+      "backward_error": 6.129998369702191e-17,
+      "case": "shell_only_baseline",
+      "frequency_Hz": 3550,
+      "interior_sample_errors": {
+        "17": 0.023117806200013247,
+        "25": 0.06211614757416864
+      },
+      "native_pressure_relative_error": 0.02166957055622182,
+      "replay_relative_error": 4.265645781487016e-13
+    },
+    {
+      "backward_error": 6.161901856274663e-17,
+      "case": "add_native_solid_overlap",
+      "frequency_Hz": 3550,
+      "interior_sample_errors": {
+        "17": 0.0009511516301481781,
+        "25": 0.0011486123632883968
+      },
+      "native_pressure_relative_error": 0.0008816027674993754
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+# Native 3-D vented enclosure FEM–shell–BEM
+
+This is an independent route for the vented loudspeaker enclosure benchmark. It preserves the native quadratic acoustic tetrahedra, pyramids and hexahedra and their curved geometry. Both the solid and shell interfaces contribute where the COMSOL model selects both couplings. The existing axisymmetric and FR10 routes remain separate.
+
+**The full model has not passed a uniform 1% COMSOL reproduction gate.** See [the saved evidence and remaining work](benchmarks/STATUS.md). Prescribed-boundary acoustic controls and independent full-model solves are reported separately.
+
+## Run from this repository
+
+Use Python 3.11 or newer on Linux/WSL, from the repository root. The current file locking and runtime loader use Linux interfaces:
+
+```bash
+python -m pip install -r vented3d/requirements.txt
+python vented3d/run.py inspect
+python vented3d/run.py prepare --out /path/to/local/vented-run
+```
+
+The included inputs contain the base mesh, native geometry/DOF topology, material settings and electrical impedance interpolation. There are 80,889 native acoustic pressure DOFs and 46,695 tet10, 2,169 pyr14 and 200 hex27 acoustic elements. Saved COMSOL response vectors, solved MPH files and preassembled matrices are not required for an independent solve.
+
+The default core backend is oneMKL PARDISO. Use an installed compatible runtime:
+
+```bash
+python vented3d/run.py test --mkl-rt /path/to/libmkl_rt.so.3
+python vented3d/run.py solve --freqs 40 31.5 315 3550 \
+  --mkl-rt /path/to/libmkl_rt.so.3 --threads 8 \
+  --out /path/to/local/vented-run --resume
+```
+
+Alternatively set `VENTED_MKL_RT` in the environment. The CLI adds the runtime's directory to the loader path before importing numerical modules. A separately installed `py-mkl-pardiso==0.0.6` wheel can supply the original single-thread fallback; editable installation with the optional dependency is `python -m pip install -e './vented3d[mkl]'`. No solver runtime is downloaded automatically. `--backend direct` selects SciPy LU and can require more memory for the full model.
+
+The recorded 40 Hz full solve used about 15.8 GiB peak process memory. Serialize full solves. The 8-thread speed measurements for acoustic subproblems do not establish the same speedup for the entire FEM–BEM chain.
+
+`--resume` checks source, input and configuration hashes and skips completed frequencies. All generated output goes to `--out`; the default is `runs/vented3d/`. Existing successful checkpoints from different source/input hashes are not overwritten. COMSOL references are used only by offline validation, never as runtime corrections or imposed boundaries in this CLI.
+
+## What changed
+
+- Acoustic interpolation and geometry remain native tet10/pyr14/hex27. Splitting native mixed elements into straight P2 tetrahedra changed the high-frequency response substantially.
+- Each selected acoustic–solid and acoustic–shell coupling is assembled, including overlapping selections. Choosing only the shell at these locations omitted a contribution present in the reference model.
+- Curved interfaces use the same coupling matrix and its transpose for pressure work and structural-motion loading. The aperture uses a work-adjoint mortar into the existing P0 BEM.
+- The native pressure topology preserves the two sides of internal shells. An ownership audit found no merging of distinct native pressure DOFs in the earlier Python mesh.
+
+The prescribed-reference-boundary acoustic controls reached about **0.095% and 0.115% interior complex-pressure error at 3550 Hz** in domains 17 and 25. Those figures do not describe independent whole-model accuracy.
+
+## Remaining approximations
+
+Structural solids still use the previous straight converted tetrahedra. Shells remain faceted Reissner–Mindlin elements, connections use the existing nodal-spin ties, and exterior radiation uses faceted P0 BEM with CHIEF stabilization. Modal matching and mesh convergence remain open. See [benchmarks/STATUS.md](benchmarks/STATUS.md) for measured independent regression errors.
+
+The bundled `vented1` implementation is the reviewed local solver snapshot used by this route. `src/vented3d/model.py` attaches the repaired acoustic space and interfaces. No original axisymmetric production configuration is replaced.
+
+## Inputs, exports and evidence
+
+- [inputs/vented_enclosure/DATASET.json](inputs/vented_enclosure/DATASET.json) records file hashes and coordinate units. Native coordinates use metres; base `vertices.csv` uses millimetres.
+- [benchmarks/](benchmarks/) contains compact numeric evidence. It excludes raw field archives, solved MPH files, large matrix caches and solver binaries.
+- [comsol_exports/](comsol_exports/) contains optional read-only Java exports. They require a local solved model and an appropriate COMSOL installation. They do not run studies or save changes to the model.
+
+For installed wheels, supply `--input-dir` and `--config` pointing to a source checkout; the documented default data layout is provided by the checkout/editable installation.
