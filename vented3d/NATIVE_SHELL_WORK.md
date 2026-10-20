@@ -4,7 +4,7 @@ User request (2026-10-20): implement all three missing mechanisms in Python: MIT
 
 Confirmed local settings in `inputs/vented_enclosure/live_settings.csv`: `shell/prop/ShellAdvancedSettings.UseMITCInterp=1`; `shell/prop/FoldlineAngle.FoldlineAngle=0.001`; pointwise elemental fold constraints; `coupling/sshc1.connectionSettings=sharedBnd`, `connectionType=Hard`, shell-thickness distance, no offset in thickness features. Shell translations/directors are quadratic: tri6 / quad9. Solid displacement is tet10 / pyr13 / hex20. Existing Python shells use faceted P2/mean shear and shared axial rotations; connector uses solid curl.
 
-Implementation status: all three mechanisms are connected to `build_native_coupled` under `configs/native_shell_mitc.json`. Full-model accuracy is pending; the completed acoustic baseline has not been overwritten. Real-model preflight checks are performed before starting a fresh 3550/315 Hz run. Unsupported geometry or constraints fail explicitly.
+Implementation status: all three mechanisms are connected to `build_native_coupled` under `configs/native_shell_mitc.json`. Corrected trial04 has completed independent 315/3550 Hz regression, source 5da57f9; the completed acoustic baseline has not been overwritten. Real-model preflight checks are performed before starting a fresh 3550/315 Hz run. Unsupported geometry or constraints fail explicitly.
 
 Implementation details:
 
@@ -35,3 +35,12 @@ Other settings audited: damping reference 40 Hz, thickness and quadratic order a
 The initial trial03 incorrectly added normal-fiber slope constraints on shared faces. Its numerical residuals passed but both 315 and 3550 Hz responses were almost suppressed (about 100% complex error). It is a rejected experiment, not an accepted implementation. A mechanical-only 315 Hz control reused identical K/M/loss/C matrices: full fiber ties produced coil velocity per ampere 1.48e-7 + 3.14e-6j m/s/A; removing the inapplicable director ties restored 0.02123 - 0.19780j m/s/A. Keeping only tangential fiber ties was still suppressed; removing fold-angle constraints alone did not restore the response.
 
 The official theory distinguishes shared cladding faces from shell edges perpendicular to a solid. `distanceEvaluation` belongs to the parallel-boundary branch; `Hard`/`Rigid` does not activate the perpendicular plane-section law on shared faces. The corrected production route uses `native_shared_boundary`. Tests explicitly allow a solid normal strain and independent shell directors at a shared face, while still enforcing all translation traces. No response calibration is involved.
+
+## Corrected independent regression
+
+| Hz | 线圈速度复误差：原基线 → 本次 | +X 声压复误差：原基线 → 本次 | +Z 声压复误差：原基线 → 本次 | 内部压力 DOF L2：原基线 → 本次 |
+|---:|---:|---:|---:|---:|
+|315|0.890% → 0.122%|1.102% → 1.028%|0.908% → 0.688%|1.589% → 0.213%|
+|3550|20.694% → 0.876%|23.398% → 1.730%|26.831% → 0.962%|34.890% → 2.255%|
+
+Both frequencies pass numerical residual checks. These are independent solves; references enter only the offline comparator. The corrected route has not passed a uniform 1% gate or a fresh 46-point sweep. See benchmarks/native_shell_regression.json and native_shell_regression_provenance.json.

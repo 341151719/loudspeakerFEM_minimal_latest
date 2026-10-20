@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-20",
+  "source_commit": "5da57f9",
+  "config": "configs/native_shell_mitc.json",
+  "unit_tests": {
+    "passed": 60,
+    "elapsed_s": 5.647,
+    "command": "python -B vented3d/run.py test --mkl-rt <installed-runtime>",
+    "log_sha256": "646e1fb8346fddca7763f12b02df255d5a13f6962e8ac1caf03c932808f28076"
+  },
+  "source_package_checks": {
+    "passed": 2,
+    "elapsed_s": 0.03,
+    "command": "python -B -m pytest -q tests/test_clean_source_package.py tests/test_no_results_packaged.py"
+  },
+  "scope": [
+    "curved shell rigid motions",
+    "membrane and bending patches",
+    "thin-limit shear locking",
+    "flat tangent-space zero modes",
+    "raw native director topology",
+    "curved solid geometry inverse and conservative Bernstein bounds",
+    "finite thickness interval roots",
+    "selected shared-boundary connection scope",
+    "full normal-gradient shear transfer",
+    "offset force and moment transfer",
+    "director reaction moments",
+    "oblique-director symmetry",
+    "shared-face directors stay independent",
+    "solid normal strain is not suppressed by shared-face law",
+    "quad9 shell trace on serendipity solid face"
+  ],
+  "source_response_vectors_used_in_solver": false,
+  "benchmark_acceptance": false
+}

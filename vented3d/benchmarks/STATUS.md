@@ -43,3 +43,20 @@
 完整回归每点约需 16 GiB 内存，实际以保存的运行统计为准。续算通过来源哈希复用兼容的完成点；不要同时启动多个整机分解。二进制运行库、完整场 NPZ、矩阵缓存和已解 MPH 留在本地。
 
 下一阶段仍需验证结构实体曲率、薄壳曲率与连接方式、外部 P0 BEM 离散，以及真实模型模态和网格收敛。应先用这四个代表频点定位误差，再决定是否重跑全部 46 点。
+
+## 原生 MITC／折线／连接分支
+
+`configs/native_shell_mitc.json` 已启用曲面 MITC6a/MITC9、原生 arx/ary/arz 拓扑和折线约束，以及原生 tet10/pyr13/hex20 实体。当前模型的连接选项是 `sharedBnd` 且无偏置，因此共享面只匹配位移，director 保持独立。保存在设置表中的 `Hard` 和 `distanceEvaluation=ShellProperties` 属于其他连接分支，不能据此额外施加厚度斜率约束。有限厚度／偏置算子单独实现并测试。
+
+60 项路线测试和 2 项源码包检查通过。真实装配共 18,363 条约束，秩为 17,561，剩余 113,314 个机械自由度；最大约束变换系数约为 1，`max(abs(C*T))=3.45e-13`，刚体运动相对残差 5.55e-17。详见 [`native_shell_settings_audit.json`](native_shell_settings_audit.json) 和 [`native_shell_verification.json`](native_shell_verification.json)。
+
+先前 trial03 将不适用的厚度方向斜率关系套到共享面上，虽然数值残差通过，却把 315／3550 Hz 响应压到接近零。该实验已拒绝，见 [`native_shell_rejected_trial03.json`](native_shell_rejected_trial03.json)。复用同一 K/M/loss/C 矩阵的机械对照定位了额外 director 约束，见 [`native_shell_connection_controls.json`](native_shell_connection_controls.json)。它们是原因诊断，不是精度验收。
+
+修正后的 trial04 已独立完成 315／3550 Hz 回归，源代码版本 `5da57f9`，两点均通过数值检查。上方四频点表始终指早期声学修复基线。
+
+| Hz | 线圈速度复误差：原基线 → 本次 | +X 声压复误差：原基线 → 本次 | +Z 声压复误差：原基线 → 本次 | 内部压力 DOF L2：原基线 → 本次 |
+|---:|---:|---:|---:|---:|
+|315|0.890% → 0.122%|1.102% → 1.028%|0.908% → 0.688%|1.589% → 0.213%|
+|3550|20.694% → 0.876%|23.398% → 1.730%|26.831% → 0.962%|34.890% → 2.255%|
+
+本次 3550 Hz 的 74 方向复声压 L2 误差为 1.515%，电流复误差为 0.0456%；用时 303.0 秒，进程峰值内存 9.13 GiB。未加入参考运动、参考声压或响应增益。完整复相量和数值残差见 [`native_shell_regression.json`](native_shell_regression.json)，源代码／输入／配置哈希见 [`native_shell_regression_provenance.json`](native_shell_regression_provenance.json)。本轮仅重算这两个代表频点，未宣称修复后 46 点均通过；全频段统一 1%、模态匹配和网格收敛仍未验收。
