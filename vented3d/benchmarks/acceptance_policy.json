@@ -1,0 +1,12 @@
+{
+  "effective_date": "2026-10-20",
+  "authority": "User instruction: 把以后要求放宽到3％",
+  "scope": "vented3d COMSOL reproduction accuracy, future acceptance",
+  "relative_error_limit": 0.03,
+  "comparison_convention": "Existing peak complex-phasor scalar relative errors and existing radiation/native-pressure relative L2 errors; error definitions and floors unchanged.",
+  "numerical_residual_tolerances_changed": false,
+  "modal_or_mesh_convergence_criteria_changed": false,
+  "historical_solve_reports_rewritten": false,
+  "recompute_required_for_policy_change": false,
+  "resume_note": "Historical run manifests retain the original config/hash. New configs change compatibility fingerprints; retain completed checkpoints and assess them offline, rather than rerunning or overwriting them."
+}

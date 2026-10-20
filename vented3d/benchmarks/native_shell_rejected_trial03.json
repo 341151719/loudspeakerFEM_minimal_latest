@@ -1,0 +1,130 @@
+{
+  "benchmark_acceptance": false,
+  "campaign_status": "complete",
+  "kind": "offline_COMSOL_comparison_after_independent_solve",
+  "records": [
+    {
+      "X_pressure": {
+        "absolute_error": 0.6944433465895535,
+        "amplitude_difference_dB": -52.7909589681342,
+        "complex_relative_error": 0.9985073029406618,
+        "phase_defined": true,
+        "phase_difference_deg": -49.34000908957596,
+        "prediction_imag": -0.0002949866937270402,
+        "prediction_real": 0.0015673983861234986,
+        "reference_imag": 0.434669720237921,
+        "reference_real": 0.5429150365506992,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.39109693801326234,
+        "amplitude_difference_dB": -52.58852438354342,
+        "complex_relative_error": 0.9976560700699948,
+        "phase_defined": true,
+        "phase_difference_deg": 3.0797096726249844,
+        "prediction_imag": 0.0003443029002276449,
+        "prediction_real": 0.0008533490008070098,
+        "reference_imag": 0.1269355204842561,
+        "reference_real": 0.3708958851421846,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 0.07683459671418334,
+        "amplitude_difference_dB": -93.15575670289142,
+        "complex_relative_error": 1.0000199251128512,
+        "phase_defined": true,
+        "phase_difference_deg": 154.97510870572756,
+        "prediction_imag": 1.507107565949977e-06,
+        "prediction_real": 7.635869658601915e-07,
+        "reference_imag": -0.0767932560942936,
+        "reference_real": -0.00247301833582177,
+        "small_reference": false
+      },
+      "current": {
+        "absolute_error": 0.12214038167917557,
+        "amplitude_difference_dB": -0.27778925393263004,
+        "complex_relative_error": 0.21968543376115604,
+        "phase_defined": true,
+        "phase_difference_deg": -12.683870686088037,
+        "prediction_imag": -0.22096473267744984,
+        "prediction_real": 0.49105388980621667,
+        "reference_imag": -0.11125267312704047,
+        "reference_real": 0.5447338378868745,
+        "small_reference": false
+      },
+      "elapsed_s": 243.7097226640035,
+      "frequency_Hz": 315.0,
+      "native_pressure_dof_relative_L2_error": 0.983304746318412,
+      "peak_process_memory_bytes": 10650091520,
+      "radiation_74_relative_L2_error": 0.9983539549512274,
+      "solver_success": true,
+      "status_sha256": "6ede704b4898be6cdafede4d5bdda71f3ff7960fbc7ded81f4d91f1ed6a57e79"
+    },
+    {
+      "X_pressure": {
+        "absolute_error": 0.9251986896554535,
+        "amplitude_difference_dB": -66.59159820994923,
+        "complex_relative_error": 1.0003795620237395,
+        "phase_defined": true,
+        "phase_difference_deg": 144.15698313475252,
+        "prediction_imag": 0.0001604170831016231,
+        "prediction_real": -0.00040219078127158917,
+        "reference_imag": 0.22527588969741816,
+        "reference_real": 0.8969916131475282,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.09412348691009759,
+        "amplitude_difference_dB": -79.26006603453213,
+        "complex_relative_error": 0.9999884647280607,
+        "phase_defined": true,
+        "phase_difference_deg": -83.9159765420696,
+        "prediction_imag": 7.5163855462719785e-06,
+        "prediction_real": 6.9681249001753514e-06,
+        "reference_imag": 0.07094646060604927,
+        "reference_real": -0.061854950540751276,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 0.017751050037707123,
+        "amplitude_difference_dB": -70.82567219385253,
+        "complex_relative_error": 1.0001566395156498,
+        "phase_defined": true,
+        "phase_difference_deg": 122.99961928985947,
+        "prediction_imag": 2.259656608990502e-06,
+        "prediction_real": 4.576044107697417e-06,
+        "reference_imag": -0.017626358711425656,
+        "reference_real": -0.002076671628653408,
+        "small_reference": false
+      },
+      "current": {
+        "absolute_error": 0.007549576929945181,
+        "amplitude_difference_dB": -0.06480498242378191,
+        "complex_relative_error": 0.05201428052575224,
+        "phase_defined": true,
+        "phase_difference_deg": -2.9609639850130844,
+        "prediction_imag": -0.12601913294861447,
+        "prediction_real": 0.06981422012439915,
+        "reference_imag": -0.12316007060409244,
+        "reference_real": 0.07680148527832717,
+        "small_reference": false
+      },
+      "elapsed_s": 330.3979567560018,
+      "frequency_Hz": 3550.0,
+      "native_pressure_dof_relative_L2_error": 0.9972356009377651,
+      "peak_process_memory_bytes": 10634911744,
+      "radiation_74_relative_L2_error": 1.0001838530943667,
+      "solver_success": true,
+      "status_sha256": "8ca276ff0a650dcf9025b8fa2dc43f85778c38292ce637c73535cdec0a3ef310"
+    }
+  ],
+  "reference_files": {
+    "directivity_reference.csv": "5affd418129ea63f2113cd8bbb463aee322f56648cc3f14fe245755abbb3b0d4",
+    "frequency_reference.csv": "9addd6fd2cc9aa5495a7d194e1b990c35082fdb91a18cc54af6caf8321f499db"
+  },
+  "reference_used_during_assembly_or_solve": false,
+  "run_manifest_sha256": "089f1348ca6002ef16932771ac1449936d7e6175b7587a40b520365729c46eba",
+  "accepted_implementation": false,
+  "source_commit": "80a2fc0",
+  "rejection_reason": "Plane-section fiber slope constraints were incorrectly applied to sharedBnd/NoOffset cladding faces, suppressing mobility despite numerical residual success."
+}

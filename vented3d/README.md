@@ -2,7 +2,7 @@
 
 This is an independent route for the vented loudspeaker enclosure benchmark. It preserves the native quadratic acoustic tetrahedra, pyramids and hexahedra and their curved geometry. Both the solid and shell interfaces contribute where the COMSOL model selects both couplings. The existing axisymmetric and FR10 routes remain separate.
 
-**The full model has not passed a uniform 1% COMSOL reproduction gate.** See [the saved evidence and remaining work](benchmarks/STATUS.md). Prescribed-boundary acoustic controls and independent full-model solves are reported separately.
+**The full model has not passed a uniform 3% COMSOL reproduction gate.** See [the saved evidence and remaining work](benchmarks/STATUS.md). Prescribed-boundary acoustic controls and independent full-model solves are reported separately.
 
 ## Run from this repository
 
@@ -33,6 +33,8 @@ The recorded 40 Hz full solve used about 15.8 GiB peak process memory. Serialize
 
 ## What changed
 
+The `feature/vented3d-native-shell-interfaces` branch also provides an experimental native shell route. It replaces the three remaining shell/interface mechanisms with published MITC6a/MITC9 tensor tying on curved tri6/quad9 geometry, independent fold directors with fixed-angle constraints, and solid–shell coupling selected by the actual connection branch. Use `--config vented3d/configs/native_shell_mitc.json` with the `solve` command. Source settings such as `UseMITCInterp`, the fold angle and the active shared-boundary connection type are checked against `live_settings.csv`; unsupported settings fail explicitly. See [the implementation and verification notes](NATIVE_SHELL_WORK.md). The four-point acoustic-repair table in benchmarks/STATUS.md remains the earlier baseline; native-shell results are reported separately there.
+
 - Acoustic interpolation and geometry remain native tet10/pyr14/hex27. Splitting native mixed elements into straight P2 tetrahedra changed the high-frequency response substantially.
 - Each selected acoustic–solid and acoustic–shell coupling is assembled, including overlapping selections. Choosing only the shell at these locations omitted a contribution present in the reference model.
 - Curved interfaces use the same coupling matrix and its transpose for pressure work and structural-motion loading. The aperture uses a work-adjoint mortar into the existing P0 BEM.
@@ -40,9 +42,11 @@ The recorded 40 Hz full solve used about 15.8 GiB peak process memory. Serialize
 
 The prescribed-reference-boundary acoustic controls reached about **0.095% and 0.115% interior complex-pressure error at 3550 Hz** in domains 17 and 25. Those figures do not describe independent whole-model accuracy.
 
+The corrected native-shell route has independently completed 315/3550 Hz regression. At 3550 Hz, coil velocity error is **0.876%** (previously 20.694%), +X/+Z pressure errors are **1.730% / 0.962%** (23.398% / 26.831%), and native pressure-field L2 error is **2.255%** (34.890%). See the separate native-shell table and provenance in [benchmarks/STATUS.md](benchmarks/STATUS.md). Both tested frequencies pass the recorded scalar and field L2 metrics under the user’s current 3% accuracy target. A complete repaired 46-point sweep remains unverified. See [the policy](benchmarks/acceptance_policy.json) and [offline reassessment](benchmarks/native_shell_acceptance_3percent.json).
+
 ## Remaining approximations
 
-Structural solids still use the previous straight converted tetrahedra. Shells remain faceted Reissner–Mindlin elements, connections use the existing nodal-spin ties, and exterior radiation uses faceted P0 BEM with CHIEF stabilization. Modal matching and mesh convergence remain open. See [benchmarks/STATUS.md](benchmarks/STATUS.md) for measured independent regression errors.
+The default `native_mixed.json` configuration retains straight converted structural tetrahedra, faceted Reissner–Mindlin shells and nodal-spin ties. The experimental `native_shell_mitc.json` replaces these with curved native solids, published MITC shells, native fold directors and shared-boundary displacement connections. Its published MITC variants and connection enforcement have not been certified identical to COMSOL internals. Both routes use faceted P0 BEM with CHIEF stabilization. Modal matching and mesh convergence remain open. See [benchmarks/STATUS.md](benchmarks/STATUS.md) for measured independent regression errors.
 
 The bundled `vented1` implementation is the reviewed local solver snapshot used by this route. `src/vented3d/model.py` attaches the repaired acoustic space and interfaces. No original axisymmetric production configuration is replaced.
 

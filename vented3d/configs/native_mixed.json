@@ -77,6 +77,6 @@
     "director": "unresolved",
     "director_normal_sign": {},
     "mac_min": 0.7,
-    "scalar_relative_acceptance": 0.01
+    "scalar_relative_acceptance": 0.03
   }
 }

@@ -1,0 +1,53 @@
+{
+  "kind": "mechanical_only_connection_constraint_control",
+  "frequency_Hz": 315,
+  "unit_current_A": 1,
+  "reference_fields_used": false,
+  "fixed_K_M_loss_C_for_all_variants": true,
+  "source_kernel_commit": "80a2fc0",
+  "records": [
+    {
+      "variant": "full",
+      "coil_velocity_per_A": [
+        1.4787235909531426e-07,
+        3.140326439619908e-06
+      ],
+      "free_dofs": 108846,
+      "elapsed_s": 6.251758074009558
+    },
+    {
+      "variant": "translation_connection_only",
+      "coil_velocity_per_A": [
+        0.021231795304521326,
+        -0.19779884551668814
+      ],
+      "free_dofs": 113168,
+      "elapsed_s": 2.930847145995358
+    },
+    {
+      "variant": "tangent_connection",
+      "coil_velocity_per_A": [
+        1.5184284988426526e-07,
+        3.243830170447027e-06
+      ],
+      "free_dofs": 110235,
+      "elapsed_s": 4.094787090987666
+    },
+    {
+      "variant": "no_fold_angle",
+      "coil_velocity_per_A": [
+        5.802971129473143e-06,
+        0.00011690273003679024
+      ],
+      "free_dofs": 110116,
+      "elapsed_s": 5.313717289012857
+    }
+  ],
+  "matrix_sha256": {
+    "K": "fe59d376fb08aac764600114880c8433a191cf57e1509d0c22df7715ce5e4b61",
+    "M": "3d0ce3ad0643e9a79109917b4738244adcc760570f02a4ca736940cc4f2ea548",
+    "loss": "8e47f21cf424f085944ea7c9d0c8005306e9559147b2d8c166ba95133eb13959",
+    "C": "c2356c50a28156995858158bf7d8addf53bc3ef1deb531b6ce6841f2608a5a57"
+  },
+  "interpretation": "Adding fiber director ties suppresses coil mobility. Keeping tangential fiber ties is also suppressed. Removing fold-angle constraints alone does not restore mobility. The translation-only control uses the fiber zeroth-moment displacement approximation; corrected production sharedBnd instead uses the exact coincident native surface trace. This is an isolation control, not a coupled COMSOL accuracy test."
+}

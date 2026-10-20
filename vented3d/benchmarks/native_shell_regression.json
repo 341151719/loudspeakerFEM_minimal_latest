@@ -1,0 +1,220 @@
+{
+  "benchmark_acceptance": false,
+  "campaign_status": "complete",
+  "kind": "offline_COMSOL_comparison_after_independent_solve",
+  "records": [
+    {
+      "X_pressure": {
+        "absolute_error": 0.00714944923592348,
+        "amplitude_difference_dB": -0.08610961113064736,
+        "complex_relative_error": 0.010279855526202428,
+        "phase_defined": true,
+        "phase_difference_deg": 0.16650641044781,
+        "prediction_imag": 0.4319421829379309,
+        "prediction_real": 0.5363063177146304,
+        "reference_imag": 0.434669720237921,
+        "reference_real": 0.5429150365506992,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.0026969059027247785,
+        "amplitude_difference_dB": -0.02439176030902515,
+        "complex_relative_error": 0.006879584785114668,
+        "phase_defined": true,
+        "phase_difference_deg": 0.3604441525640327,
+        "prediction_imag": 0.12890377903677783,
+        "prediction_real": 0.36905217699863885,
+        "reference_imag": 0.1269355204842561,
+        "reference_real": 0.3708958851421846,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 9.379857709560457e-05,
+        "amplitude_difference_dB": 0.0030842056015012663,
+        "complex_relative_error": 0.001220810026396915,
+        "phase_defined": true,
+        "phase_difference_deg": 0.06691020480687138,
+        "prediction_imag": -0.07682336550304524,
+        "prediction_real": -0.0023841836772149666,
+        "reference_imag": -0.0767932560942936,
+        "reference_real": -0.00247301833582177,
+        "small_reference": false
+      },
+      "current": {
+        "absolute_error": 0.00014910723160339298,
+        "amplitude_difference_dB": -0.001988304221925634,
+        "complex_relative_error": 0.0002681888364960089,
+        "phase_defined": true,
+        "phase_difference_deg": 0.008009331555162891,
+        "prediction_imag": -0.11115107740335958,
+        "prediction_real": 0.5446246990970416,
+        "reference_imag": -0.11125267312704047,
+        "reference_real": 0.5447338378868745,
+        "small_reference": false
+      },
+      "elapsed_s": 210.32370369200362,
+      "frequency_Hz": 315.0,
+      "native_pressure_dof_relative_L2_error": 0.002130963977415505,
+      "peak_process_memory_bytes": 9821102080,
+      "radiation_74_relative_L2_error": 0.009660218389488896,
+      "solver_success": true,
+      "status_sha256": "93733979c3b12e755c9214b51462beb84ca0f6210a867d1df009a166ca5789a4"
+    },
+    {
+      "X_pressure": {
+        "absolute_error": 0.01599530788331639,
+        "amplitude_difference_dB": -0.12339338442452003,
+        "complex_relative_error": 0.01729507323524839,
+        "phase_defined": true,
+        "phase_difference_deg": -0.5774690132398234,
+        "prediction_imag": 0.21317405571017461,
+        "prediction_real": 0.8865323833275424,
+        "reference_imag": 0.22527588969741816,
+        "reference_real": 0.8969916131475282,
+        "small_reference": false
+      },
+      "Z_pressure": {
+        "absolute_error": 0.0009054823883026925,
+        "amplitude_difference_dB": -0.06501978966364874,
+        "complex_relative_error": 0.00962004248930952,
+        "phase_defined": true,
+        "phase_difference_deg": -0.34948091589059826,
+        "prediction_imag": 0.07079052493279393,
+        "prediction_real": -0.06096299626987594,
+        "reference_imag": 0.07094646060604927,
+        "reference_real": -0.061854950540751276,
+        "small_reference": false
+      },
+      "coil_velocity": {
+        "absolute_error": 0.00015546047807046175,
+        "amplitude_difference_dB": -0.04740758892498826,
+        "complex_relative_error": 0.008759190526428888,
+        "phase_defined": true,
+        "phase_difference_deg": -0.3942751722427647,
+        "prediction_imag": -0.017515788530190396,
+        "prediction_real": -0.0021859519803342944,
+        "reference_imag": -0.017626358711425656,
+        "reference_real": -0.002076671628653408,
+        "small_reference": false
+      },
+      "current": {
+        "absolute_error": 6.611782605905367e-05,
+        "amplitude_difference_dB": 0.0026323874987987817,
+        "complex_relative_error": 0.0004555316389647653,
+        "phase_defined": true,
+        "phase_difference_deg": -0.01948038942739005,
+        "prediction_imag": -0.1232235148074947,
+        "prediction_real": 0.07678287345473496,
+        "reference_imag": -0.12316007060409244,
+        "reference_real": 0.07680148527832717,
+        "small_reference": false
+      },
+      "elapsed_s": 303.0150621100038,
+      "frequency_Hz": 3550.0,
+      "native_pressure_dof_relative_L2_error": 0.02254501969272153,
+      "peak_process_memory_bytes": 9806594048,
+      "radiation_74_relative_L2_error": 0.015146876434529355,
+      "solver_success": true,
+      "status_sha256": "9513dc89793f3017ab06b2044dc2d213adb17cf2852267bc797baf0656b78085"
+    }
+  ],
+  "reference_files": {
+    "directivity_reference.csv": "5affd418129ea63f2113cd8bbb463aee322f56648cc3f14fe245755abbb3b0d4",
+    "frequency_reference.csv": "9addd6fd2cc9aa5495a7d194e1b990c35082fdb91a18cc54af6caf8321f499db"
+  },
+  "reference_used_during_assembly_or_solve": false,
+  "run_manifest_sha256": "296afe8d6fdb4299b407aa7bb56260e1feb51c7ade83834ed17509d664a47f26",
+  "date": "2026-10-20",
+  "implementation_commit": "5da57f9812297cb9fc882bdc6228b848128454e0",
+  "config": "configs/native_shell_mitc.json",
+  "numerical_checks": [
+    {
+      "frequency_Hz": 315.0,
+      "solver_success": true,
+      "physical_core_residual": {
+        "absolute_inf": 5.031424345280724e-11,
+        "componentwise_backward": 4.614448476385328e-16,
+        "normwise_backward": 2.870898562467164e-16
+      },
+      "block_residuals": {
+        "electrical": {
+          "absolute_inf": 4.965068306494546e-16,
+          "componentwise_backward": 5.1550525316030626e-17,
+          "normwise_backward": 5.1550525316030626e-17
+        },
+        "interior_acoustic": {
+          "absolute_inf": 5.440163625242331e-15,
+          "componentwise_backward": 2.483103775555353e-16,
+          "normwise_backward": 1.2660850844653327e-16
+        },
+        "mechanical": {
+          "absolute_inf": 5.031424345280724e-11,
+          "componentwise_backward": 4.614448476385328e-16,
+          "normwise_backward": 2.870898562467164e-16
+        }
+      },
+      "constraint_violation": 8.813399108345191e-17,
+      "bem_boundary_relative_residual": 0.00036803123951072023,
+      "bem_chief_relative_residual": 0.00036750553088478943,
+      "least_squares_normal_residual": 1.205186773328383e-11,
+      "reaction_recovery_residual": 4.214302669485966e-08,
+      "iterative_iterations": 95
+    },
+    {
+      "frequency_Hz": 3550.0,
+      "solver_success": true,
+      "physical_core_residual": {
+        "absolute_inf": 5.996034386507799e-13,
+        "componentwise_backward": 5.499497017958486e-16,
+        "normwise_backward": 1.7090174155301827e-16
+      },
+      "block_residuals": {
+        "electrical": {
+          "absolute_inf": 5.551115123125783e-17,
+          "componentwise_backward": 7.225621651281508e-18,
+          "normwise_backward": 7.225621651281508e-18
+        },
+        "interior_acoustic": {
+          "absolute_inf": 4.440892098500626e-16,
+          "componentwise_backward": 3.3869657459966757e-16,
+          "normwise_backward": 1.320914035469008e-16
+        },
+        "mechanical": {
+          "absolute_inf": 5.996034386507799e-13,
+          "componentwise_backward": 5.499497017958486e-16,
+          "normwise_backward": 1.7090174155301827e-16
+        }
+      },
+      "constraint_violation": 1.0758790482366571e-18,
+      "bem_boundary_relative_residual": 0.0009868603817104595,
+      "bem_chief_relative_residual": 0.0009861173263984867,
+      "least_squares_normal_residual": 1.8170865956718556e-11,
+      "reaction_recovery_residual": 4.802423149494794e-09,
+      "iterative_iterations": 180
+    }
+  ],
+  "baseline_comparison": [
+    {
+      "frequency_Hz": 315.0,
+      "coil_complex_relative_error_before": 0.008899364030344957,
+      "coil_complex_relative_error_after": 0.001220810026396915,
+      "X_pressure_complex_relative_error_before": 0.01101503438287662,
+      "X_pressure_complex_relative_error_after": 0.010279855526202428,
+      "Z_pressure_complex_relative_error_before": 0.009079022864066567,
+      "Z_pressure_complex_relative_error_after": 0.006879584785114668,
+      "native_pressure_relative_L2_before": 0.01589247644915128,
+      "native_pressure_relative_L2_after": 0.002130963977415505
+    },
+    {
+      "frequency_Hz": 3550.0,
+      "coil_complex_relative_error_before": 0.20694033625562486,
+      "coil_complex_relative_error_after": 0.008759190526428888,
+      "X_pressure_complex_relative_error_before": 0.23397600304759605,
+      "X_pressure_complex_relative_error_after": 0.01729507323524839,
+      "Z_pressure_complex_relative_error_before": 0.26830926283792933,
+      "Z_pressure_complex_relative_error_after": 0.00962004248930952,
+      "native_pressure_relative_L2_before": 0.34890192342742754,
+      "native_pressure_relative_L2_after": 0.02254501969272153
+    }
+  ]
+}
