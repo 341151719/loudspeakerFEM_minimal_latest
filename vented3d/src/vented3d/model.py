@@ -44,7 +44,12 @@ def build_native_coupled(source,cfg,output,progress=None):
     from .inputs import prepare_kernels, acoustic_faces
     prepare_kernels(source,cache,progress)
     if progress:progress('legacy_mechanical_assembly')
-    model=build(load(source,cfg),cfg)
+    native_shell=cfg.get('shell',{}).get('formulation')=='mitc_native'
+    if native_shell:
+        from copy import deepcopy
+        base_cfg=deepcopy(cfg);base_cfg['connection']['method']='nodal_spin'
+    else:base_cfg=cfg
+    model=build(load(source,base_cfg),base_cfg)
     mesh,space=model.mesh,model.space;inc=incidence(mesh)
     xyz=read_matrix(geom/'nodes_coords_model_unit.f64.gz','>f8')
     types={};all_dofs=[]
@@ -135,4 +140,8 @@ def build_native_coupled(source,cfg,output,progress=None):
     atomic_json(output/'assembly_audit.json',model.report)
     np.savez_compressed(output/'native_pressure_space.npz',native_dof=native)
     sparse.save_npz(output/'native_Bi.npz',full_Bi);sparse.save_npz(output/'native_Cp.npz',native_Cp)
+    if native_shell:
+        from .native_shell_model import upgrade
+        model=upgrade(model,source,cfg,output,{'surfaces':surfaces,'xyz':xyz,'types':types,'lookup':lookup,
+            'faces':faces,'triangle_count':triangle_count,'selections':selections},progress)
     return model
