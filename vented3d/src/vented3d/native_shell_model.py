@@ -38,9 +38,8 @@ def symmetry(mesh,space,topology):
     for i,(x,n) in enumerate(zip(topology.xyz,topology.normals)):
         if abs(x[1])>1e-11:continue
         fixed.append(space.offset+6*i+1)
-        if abs(n[1])<1e-6:fixed.append(space.offset+6*i+4)
-        elif abs(n[1])>1-1e-6:fixed.extend([space.offset+6*i+3,space.offset+6*i+5])
-        else:raise ValueError('Shell director at the symmetry plane has no symmetric orientation')
+        if np.linalg.norm(n[[0,2]])<1e-12:fixed.extend([space.offset+6*i+3,space.offset+6*i+5])
+        else:fixed.append(space.offset+6*i+4)
     return sparse.coo_matrix((np.ones(len(fixed)),(np.arange(len(fixed)),fixed)),shape=(len(fixed),space.nm)).tocsr()
 
 

@@ -123,7 +123,9 @@ def reduce_constraints(C: sparse.csr_matrix, cfg: dict):
     return C, T, free, {
         "rows": C.shape[0], "rank": len(order), "dependent_rows": dependent,
         "free_dofs": len(free), "transform_nnz": T.nnz,
-        "max_C_times_T": residual
+        "max_C_times_T": residual,
+        "transform_max_abs":normmax(T),
+        "relative_C_times_T":residual/max(1.,normmax(T))
     }
 
 

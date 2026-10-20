@@ -7,6 +7,17 @@ from vented3d.shell_topology import build_topology
 
 
 class ShellConstraintTests(unittest.TestCase):
+    def test_director_symmetry_preserves_plane_rotations_for_oblique_normals(self):
+        from types import SimpleNamespace
+        from vented3d.native_shell_model import DirectorSpace,rigid_modes,symmetry
+        xyz=np.array([[0.,0,0],[1,0,0],[0,0,1]])
+        normals=np.array([[.3,.4,np.sqrt(.75)],[0,1.,0],[0,0,1.]])
+        topology=SimpleNamespace(xyz=xyz,normals=normals)
+        mesh=SimpleNamespace(x=np.vstack([xyz,xyz]))
+        space=DirectorSpace(SimpleNamespace(),np.arange(3,6),np.arange(3),normals)
+        C=symmetry(mesh,space,topology);R=rigid_modes(mesh,space,topology)
+        np.testing.assert_allclose(C@R[:,[0,2,4]],0,atol=1e-14)
+
     def test_director_reaction_is_converted_to_physical_moment(self):
         from types import SimpleNamespace
         from vented1.engine import _resultant
@@ -77,4 +88,5 @@ class ShellConstraintTests(unittest.TestCase):
         C=director_constraints(np.arange(len(s.xyz)),s.normals,size)
         F,_=fold_constraints(s.groups,s.normals,size)
         self.assertGreater(s.report['native_quad9'],0);self.assertGreater(s.report['fold_node_groups'],0)
+        self.assertEqual(s.report['director_nodes'],6995);self.assertEqual(s.report['fold_node_groups'],809)
         self.assertLess(abs(C@R).max(),1e-12);self.assertLess(abs(F@R).max(),1e-12)

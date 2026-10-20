@@ -163,13 +163,14 @@ def shell_matrices(shape,points,material,order=5,mitc=True,directors=None,offset
     D=E/(1-nu**2)*np.array([[1,nu,0],[nu,1,0],[0,0,(1-nu)/2]])
     size=6*len(shape.local);K=np.zeros((size,size));M=np.zeros_like(K)
     extension=np.zeros_like(K);shear_energy=np.zeros_like(K);minimum=np.inf
-    zg,zw=leggauss(3)
+    zg,zw=leggauss(3);orientation=None
     for unit,weight in zip(zg,zw):
         z=.5*t*unit-offset
         Bm,_,Bs,(N,J,n,jac)=(mitc_strains if mitc else displacement_strains)(shape,points,q,directors,z)
         F=np.concatenate([J,n[:,:,None]],axis=2);det=np.linalg.det(F)
-        if np.any(det<=1e-20):raise ValueError('Folded shell through-thickness geometry')
-        minimum=min(minimum,float(det.min()))
+        if orientation is None:orientation=np.sign(det[0])
+        if np.any(det*orientation<=1e-20):raise ValueError('Folded shell through-thickness geometry')
+        minimum=min(minimum,float(abs(det).min()))
         en=n/np.linalg.norm(n,axis=1)[:,None]
         t1=np.cross(J[:,:,1],en);t1/=np.linalg.norm(t1,axis=1)[:,None]
         frame=np.stack([t1,np.cross(en,t1),en],axis=2)
@@ -183,7 +184,7 @@ def shell_matrices(shape,points,material,order=5,mitc=True,directors=None,offset
         local=np.einsum('qai,qabd,qbj->qijd',Q,tensor,Q,optimize=True)
         B=np.stack([local[:,0,0],local[:,1,1],2*local[:,0,1]],axis=1)
         S=2*np.stack([local[:,0,2],local[:,1,2]],axis=1)
-        measure=w*det*.5*t*weight
+        measure=w*abs(det)*.5*t*weight
         Ke=np.einsum('q,qad,ab,qbe->de',measure,B,D,B,optimize=True)
         Ks=np.einsum('q,qad,qae->de',measure*(5/6)*E/(2*(1+nu)),S,S,optimize=True)
         extension+=Ke;shear_energy+=Ks;K+=Ke+Ks

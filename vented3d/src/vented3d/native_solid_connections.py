@@ -36,6 +36,7 @@ def fiber_segments(element,x,normal,h,offset=0.):
 def connection_constraints(solids,shell,cfg,offset):
     width=offset+6*len(shell.xyz);assignments={};selected=set()
     by_geometry={}
+    bounds=[e.bounds() for e in solids.elements]
     for index,e in enumerate(solids.elements):
         for gid in e.native_nodes:by_geometry.setdefault(int(gid),set()).add(index)
     for e in shell.elements:
@@ -55,7 +56,11 @@ def connection_constraints(solids,shell,cfg,offset):
             for gid in solids.elements[index].native_nodes:candidates.update(by_geometry[int(gid)])
         candidates={j for j in candidates if solids.elements[j].domain in domains}
         x,n=shell.xyz[node],shell.normals[node];intervals=[]
+        endpoints=x+np.array([-h/2-extra,h/2-extra])[:,None]*n
+        low,high=endpoints.min(axis=0),endpoints.max(axis=0)
         for index in sorted(candidates):
+            minimum,maximum=bounds[index]
+            if np.any(maximum<low-2e-12) or np.any(minimum>high+2e-12):continue
             for a,b in fiber_segments(solids.elements[index],x,n,h,extra):intervals.append((a,b,index))
         cuts=sorted({v for a,b,_ in intervals for v in [a,b]});segments=[]
         for a,b in zip(cuts[:-1],cuts[1:]):

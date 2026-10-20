@@ -20,6 +20,10 @@ class SolidShape:
             if sum(a for a in [i,j,k] if a>1)<=2])
         else:self.powers=None
         self.inverse=np.linalg.inv(self.values(self.local))
+        grid=np.array([[x,y,z] for z in [0.,.5,1] for y in [0.,.5,1] for x in [0.,.5,1]])
+        if kind=='pyr':grid[:,:2]*=1-grid[:,2,None]
+        T=np.array([[1.,0,0],[-.5,2,-.5],[0,0,1]])
+        self.bounds_transform=np.kron(T,np.kron(T,T))@(self.values(grid)@self.inverse)
     def values(self,q):
         if self.kind=='hex':return np.prod(np.asarray(q)[:,None]**self.powers[None],axis=2)
         if self.kind=='pyr':return np.delete(basis(np.asarray(q),'pyr'),8,axis=1)
@@ -44,7 +48,14 @@ class SolidShape:
     def inverse_points(self,points,query,seed=None):
         query=np.atleast_2d(query)
         center=np.full(3,.25 if self.kind=='tet' else .2 if self.kind=='pyr' else .5)
-        q=np.tile(center,(len(query),1)) if seed is None else np.broadcast_to(seed,(len(query),3)).copy()
+        if seed is None:
+            targets=np.array([[0.,0,0],[1,0,0],[0,1,0],[0,0,1]])
+            corner=np.linalg.norm(targets[:,None]-self.local[None],axis=2).argmin(axis=1)
+            axes=(points[corner[1:]]-points[corner[0]]).T
+            try:q=np.linalg.solve(axes,(query-points[corner[0]]).T).T
+            except np.linalg.LinAlgError:q=np.tile(center,(len(query),1))
+            if self.kind=='pyr':q[q[:,2]>=1-1e-12]=center
+        else:q=np.broadcast_to(seed,(len(query),3)).copy()
         valid=np.ones(len(query),bool);done=np.zeros(len(query),bool)
         for _ in range(22):
             N=self.evaluate(q,False);r=N@points-query
@@ -69,6 +80,10 @@ class SolidElement:
     points: np.ndarray
     nodes: np.ndarray
     native_nodes: np.ndarray
+
+    def bounds(self):
+        control=self.shape.bounds_transform@self.points
+        return control.min(axis=0),control.max(axis=0)
 
 
 @dataclass

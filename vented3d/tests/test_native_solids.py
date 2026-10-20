@@ -19,6 +19,16 @@ def make_element(kind,curved=False):
 
 
 class NativeSolidTests(unittest.TestCase):
+    def test_native_curved_inverse_and_bernstein_bounds(self):
+        rng=np.random.default_rng(726)
+        for kind in ['tet','pyr','hex']:
+            e=make_element(kind,True);q=rng.uniform(.03,.3,(20,3))
+            if kind=='hex':q=rng.uniform(.03,.97,(20,3))
+            points=e.shape.evaluate(q,False)@e.points
+            inverse,valid=e.shape.inverse_points(e.points,points)
+            self.assertTrue(valid.all());np.testing.assert_allclose(inverse,q,atol=1e-10)
+            low,high=e.bounds();self.assertTrue(np.all(points>=low-1e-12));self.assertTrue(np.all(points<=high+1e-12))
+
     def test_thickness_interval_on_a_native_edge_is_not_snapped_to_search_grid(self):
         e=make_element('hex')
         segments=fiber_segments(e,np.array([0.,0,.2]),np.array([0.,0,1]),1.)
