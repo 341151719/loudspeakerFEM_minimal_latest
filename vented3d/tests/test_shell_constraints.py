@@ -7,6 +7,25 @@ from vented3d.shell_topology import build_topology
 
 
 class ShellConstraintTests(unittest.TestCase):
+    def test_director_reaction_is_converted_to_physical_moment(self):
+        from types import SimpleNamespace
+        from vented1.engine import _resultant
+        space=SimpleNamespace(offset=3,snode=np.array([0]),hnode=np.array([1]),director_normals=np.array([[0.,0,1]]))
+        model=SimpleNamespace(space=space,mesh=SimpleNamespace(x=np.array([[0.,0,0],[1,0,0]])))
+        force=np.array([0.,0,0,0,1,0,2,3,0])
+        result=_resultant(model,force)
+        np.testing.assert_allclose(result['force_N'],[0,1,0])
+        np.testing.assert_allclose(result['moment_Nm'],[-3,2,1])
+
+    def test_shared_boundary_selection_does_not_add_edge_or_point_ties(self):
+        from types import SimpleNamespace
+        from vented3d.native_solid_connections import connection_constraints
+        solids=SimpleNamespace(elements=[],surface_owners={})
+        topology=SimpleNamespace(elements=[SimpleNamespace(kind='quad',parent=0,tag=271,nodes=np.array([0]))],xyz=np.zeros((1,3)),normals=np.array([[0.,0,1]]))
+        C,report=connection_constraints(solids,topology,{'temperature_K':293.15,'connection':{}},12)
+        self.assertEqual(C.shape,(0,18));self.assertEqual(report['connected_nodes'],0)
+        self.assertEqual(report['connection_scope'],'shared_boundaries_only')
+
     def test_actual_hidden_settings_are_read_and_incompatible_angle_is_rejected(self):
         from vented3d.shell_settings import load_contract
         source=Path(__file__).resolve().parents[1]/'inputs/vented_enclosure'

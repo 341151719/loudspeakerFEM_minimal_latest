@@ -33,6 +33,8 @@ The recorded 40 Hz full solve used about 15.8 GiB peak process memory. Serialize
 
 ## What changed
 
+The `feature/vented3d-native-shell-interfaces` branch also provides an experimental native shell route. It replaces the three remaining shell/interface mechanisms with published MITC6a/MITC9 tensor tying on curved tri6/quad9 geometry, independent fold directors with fixed-angle constraints, and bounded finite-thickness hard solid–shell connections. Use `--config vented3d/configs/native_shell_mitc.json` with the `solve` command. Source settings such as `UseMITCInterp`, the fold angle and the hard connection type are checked against `live_settings.csv`; unsupported settings fail explicitly. See [the implementation and verification notes](NATIVE_SHELL_WORK.md). The completed accuracy table below describes the earlier acoustic repair; it does not establish the experimental shell route's accuracy.
+
 - Acoustic interpolation and geometry remain native tet10/pyr14/hex27. Splitting native mixed elements into straight P2 tetrahedra changed the high-frequency response substantially.
 - Each selected acoustic–solid and acoustic–shell coupling is assembled, including overlapping selections. Choosing only the shell at these locations omitted a contribution present in the reference model.
 - Curved interfaces use the same coupling matrix and its transpose for pressure work and structural-motion loading. The aperture uses a work-adjoint mortar into the existing P0 BEM.

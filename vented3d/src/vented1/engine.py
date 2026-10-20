@@ -195,7 +195,8 @@ def _resultant(model: Model, force: np.ndarray) -> dict:
     fh = force[s.offset:].reshape(-1, 6)
     total = fs.sum(axis=0)+fh[:, :3].sum(axis=0)
     moment = np.cross(m.x[s.snode], fs).sum(axis=0)
-    moment += np.cross(m.x[s.hnode], fh[:, :3]).sum(axis=0)+fh[:, 3:].sum(axis=0)
+    shell_moment=(np.cross(s.director_normals,fh[:,3:]) if hasattr(s,'director_normals') else fh[:,3:])
+    moment += np.cross(m.x[s.hnode], fh[:, :3]).sum(axis=0)+shell_moment.sum(axis=0)
     return {"force_N": total, "moment_Nm": moment}
 
 

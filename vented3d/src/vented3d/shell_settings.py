@@ -3,13 +3,15 @@ import csv
 
 
 def load_contract(source,cfg):
-    settings={(row[0],row[1]):row[2] for row in csv.reader((source/'live_settings.csv').open()) if len(row)==3}
+    with (source/'live_settings.csv').open() as stream:
+        settings={(row[0],row[1]):row[2] for row in csv.reader(stream) if len(row)==3}
     def value(path,key):
         raw=settings[path,key]
         if not raw.startswith('[[') or not raw.endswith(']]'):
             raise ValueError(f'Unsupported exported shell property {path}.{key}: {raw}')
         return raw[2:-2]
     checks=[('shell/prop/ShellAdvancedSettings','UseMITCInterp','1'),
+        ('solid/prop/ShapeProperty','order_displacement','2s'),
         ('shell/prop/ShapeProperty','order_displacement','2'),
         ('coupling/sshc1','connectionSettings','sharedBnd'),
         ('coupling/sshc1','connectionType','Hard'),
