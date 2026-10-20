@@ -30,10 +30,10 @@ class ShellConstraintTests(unittest.TestCase):
 
     def test_shared_boundary_selection_does_not_add_edge_or_point_ties(self):
         from types import SimpleNamespace
-        from vented3d.native_solid_connections import connection_constraints
+        from vented3d.native_solid_connections import finite_thickness_constraints
         solids=SimpleNamespace(elements=[],surface_owners={})
         topology=SimpleNamespace(elements=[SimpleNamespace(kind='quad',parent=0,tag=271,nodes=np.array([0]))],xyz=np.zeros((1,3)),normals=np.array([[0.,0,1]]))
-        C,report=connection_constraints(solids,topology,{'temperature_K':293.15,'connection':{}},12)
+        C,report=finite_thickness_constraints(solids,topology,{'temperature_K':293.15,'connection':{}},12)
         self.assertEqual(C.shape,(0,18));self.assertEqual(report['connected_nodes'],0)
         self.assertEqual(report['connection_scope'],'shared_boundaries_only')
 

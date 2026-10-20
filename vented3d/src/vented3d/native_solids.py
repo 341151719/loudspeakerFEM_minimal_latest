@@ -177,7 +177,7 @@ def solid_matrices(element,material,order=5):
 
 def assemble_solids(topology,cfg):
     width=3*len(topology.xyz);acc={k:Accumulator((width,width),cfg['triplet_entries']) for k in ['K','M','loss']}
-    gc=np.zeros(width);gm=np.zeros(width);vc=vm=0.;minimum=np.inf
+    gc=np.zeros(width);gm=np.zeros(width);vc=vm=0.;minimum=np.inf;volumes={};masses={}
     for e in topology.elements:
         material=solid_material(e.domain,cfg['temperature_K']);K,M,load,volume,jac=solid_matrices(e,material,cfg['shell'].get('solid_quadrature',5))
         dofs=(3*e.nodes[:,None]+np.arange(3)).ravel()
@@ -185,7 +185,10 @@ def assemble_solids(topology,cfg):
         if e.domain==26:np.add.at(gc,3*e.nodes,load);vc+=volume
         if e.domain in [23,27]:np.add.at(gm,3*e.nodes,load);vm+=volume
         minimum=min(minimum,jac)
+        volumes[str(e.domain)]=volumes.get(str(e.domain),0.)+volume
+        masses[str(e.domain)]=masses.get(str(e.domain),0.)+material.rho*volume
     if min(vc,vm)<=0:raise ValueError('Native motor integration domains are absent')
     gc/=vc;gm/=vm
     result={k:v.finish() for k,v in acc.items()};result.update(gc=gc,gm=gm,f=.5*Motor.BL*(gc-gm))
-    return result,{'minimum_volume_jacobian':minimum,'coil_volume_half_m3':vc,'magnetic_volume_half_m3':vm}
+    return result,{'minimum_volume_jacobian':minimum,'coil_volume_half_m3':vc,'magnetic_volume_half_m3':vm,
+        'domain_volumes_half_m3':volumes,'domain_masses_half_kg':masses}

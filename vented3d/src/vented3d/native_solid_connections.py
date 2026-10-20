@@ -1,4 +1,4 @@
-"""Selected shared-boundary thickness connections on native curved solids."""
+"""Branch-specific solid–shell connections on native curved solids."""
 import numpy as np
 from scipy import sparse
 from vented1.elements import shell_material
@@ -33,7 +33,48 @@ def fiber_segments(element,x,normal,h,offset=0.):
     return intervals
 
 
-def connection_constraints(solids,shell,cfg,offset):
+def shared_boundary_constraints(solids,shell,cfg,offset):
+    """Coincident shared faces: match displacement, leave directors free.
+
+    NoOffset is checked by shell_settings. The inactive Hard/Distance settings
+    do not turn shared faces into perpendicular shell-edge thickness sections.
+    Native solid traces also handle a quad9 shell on a serendipity solid face.
+    """
+    from .native_solids import surface_volume_coordinates
+    width=offset+6*len(shell.xyz);rows=[];cols=[];values=[];seen=set();nodes=set();tags=set();row=0
+    worst=0.
+    if any(abs(float(v))>0 for v in cfg.get('connection',{}).get('offset_by_boundary_m',{}).values()):
+        raise ValueError('Shared-boundary reference-surface connection requires the verified NoOffset contract')
+    for face in shell.elements:
+        owners=solids.surface_owners.get((face.kind,face.parent),[])
+        if not owners:continue
+        if len(owners)!=1:raise ValueError('Ambiguous shared-boundary solid owner')
+        index=owners[0];solid=solids.elements[index]
+        q=surface_volume_coordinates(face.kind,face.shape.local,solids.surface_coordinates[face.kind,face.parent,index])
+        N=solid.shape.evaluate(q,False)
+        error=float(np.linalg.norm(N@solid.points-face.points,axis=1).max());worst=max(worst,error)
+        if error>2e-12:raise ValueError('Shared solid/shell reference surfaces do not coincide')
+        tags.add(face.tag)
+        for node,weights in zip(face.nodes,N):
+            active=np.flatnonzero(abs(weights)>1e-12)
+            terms=sorted((int(solid.nodes[j]),float(weights[j])) for j in active)
+            key=(int(node),tuple((d,round(v,12)) for d,v in terms))
+            if key in seen:continue
+            seen.add(key);nodes.add(int(node))
+            for axis in range(3):
+                rows.append(row);cols.append(offset+6*node+axis);values.append(1.)
+                for dof,value in terms:rows.append(row);cols.append(3*dof+axis);values.append(-value)
+                row+=1
+    C=sparse.coo_matrix((values,(rows,cols)),shape=(row,width)).tocsr()
+    return C,{'method':'native_shared_boundary_displacement_continuity','connection_scope':'shared_boundaries_only',
+        'shared_shell_boundaries':sorted(tags),'connected_nodes':len(nodes),'connected_node_ids':sorted(nodes),
+        'constraint_rows':row,'director_constraints_added':0,'maximum_geometry_mismatch_m':worst,
+        'source_offsets':'NoOffset','inactive_properties':['connectionType=Hard','distanceEvaluation=ShellProperties'],
+        'solid_geometry':'native tet10/pyr13/hex20 curved geometry','bounded_solid_ownership':True}
+
+
+def finite_thickness_constraints(solids,shell,cfg,offset):
+    """Plane-section thickness operator; not the shared-face connection law."""
     width=offset+6*len(shell.xyz);assignments={};selected=set()
     by_geometry={}
     bounds=[e.bounds() for e in solids.elements]

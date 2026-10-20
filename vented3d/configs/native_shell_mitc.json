@@ -22,7 +22,7 @@
     "quadrature": 5
   },
   "connection": {
-    "method": "native_thickness_hard",
+    "method": "native_shared_boundary",
     "quadrature": 3,
     "min_fraction": 0.05
   },

@@ -13,9 +13,7 @@ def load_contract(source,cfg):
     checks=[('shell/prop/ShellAdvancedSettings','UseMITCInterp','1'),
         ('solid/prop/ShapeProperty','order_displacement','2s'),
         ('shell/prop/ShapeProperty','order_displacement','2'),
-        ('coupling/sshc1','connectionSettings','sharedBnd'),
-        ('coupling/sshc1','connectionType','Hard'),
-        ('coupling/sshc1','distanceEvaluation','ShellProperties')]
+        ('coupling/sshc1','connectionSettings','sharedBnd')]
     for path,key,expected in checks:
         if value(path,key)!=expected:raise ValueError(f'Native shell route does not support {path}.{key}={value(path,key)}')
     angle=float(value('shell/prop/FoldlineAngle','FoldlineAngle'))
@@ -25,6 +23,7 @@ def load_contract(source,cfg):
         if value('shell/'+feature,'OffsetDefinition')!='NoOffset':
             raise ValueError('Nonzero source shell offsets need an explicitly evaluated physical offset contract')
     return {'MITC_enabled':True,'fold_angle_rad':angle,'shell_displacement_order':2,
-        'solid_shell_connection':'shared boundaries / hard / shell properties',
+        'solid_shell_connection':'shared reference boundaries / displacement continuity / independent directors',
+        'inactive_connection_properties':{key:value('coupling/sshc1',key) for key in ['connectionType','distanceEvaluation']},
         'source_offsets':'NoOffset for every thickness feature',
         'properties_checked':[path+'.'+key for path,key,_ in checks]}

@@ -8,7 +8,7 @@ from vented1.core import atomic_json,normmax
 from .mitc_shell import shell_matrices
 from .shell_topology import build_topology
 from .shell_constraints import director_constraints,fold_constraints
-from .native_solid_connections import connection_constraints
+from .native_solid_connections import shared_boundary_constraints
 from .native_solids import load_solids,assemble_solids,surface_volume_coordinates
 
 
@@ -48,8 +48,8 @@ def upgrade(model,source,cfg,output,context,progress=None):
     from .native_surface_fields import surface_inverse
     from .shell_settings import load_contract
     physical_contract=load_contract(source,cfg)
-    if cfg['connection'].get('method')!='native_thickness_hard':
-        raise ValueError('Native MITC route requires connection.method=native_thickness_hard')
+    if cfg['connection'].get('method')!='native_shared_boundary':
+        raise ValueError('The exported sharedBnd route requires connection.method=native_shared_boundary')
     if progress:progress('native_shell_topology')
     topology=build_topology(source,physical_contract['fold_angle_rad'])
     solids=load_solids(source);legacy=model.space.mechanical_space;offset=3*len(solids.xyz)
@@ -61,7 +61,7 @@ def upgrade(model,source,cfg,output,context,progress=None):
     structural,solid_report=assemble_solids(solids,cfg)
     width=6*len(topology.xyz);acc={k:Accumulator((width,width),cfg['triplet_entries']) for k in ['K','M','loss','C']}
     if progress:progress('native_mitc_shell_assembly')
-    minimum=np.inf;area=0.
+    minimum=np.inf;area=0.;shell_mass=0.
     for element in topology.elements:
         material=shell_material(element.tag,cfg['temperature_K'])
         extra=cfg['connection'].get('offset_by_boundary_m',{}).get(str(element.tag),0.)
@@ -70,6 +70,7 @@ def upgrade(model,source,cfg,output,context,progress=None):
         dofs=(6*element.nodes[:,None]+np.arange(6)).ravel()
         for name,value in [('K',K),('M',M),('loss',material.loss*K),('C',material.beta*K)]:acc[name].add(dofs,dofs,value)
         minimum=min(minimum,a['minimum_volume_jacobian']);area+=a['area']
+        shell_mass+=float(M[::6,::6].sum())
     model.reduced.clear()
     for name in ['K','M','loss','C']:
         solid=structural[name] if name in structural else sparse.csr_matrix((offset,offset))
@@ -133,8 +134,8 @@ def upgrade(model,source,cfg,output,context,progress=None):
         error=abs(left-right)/max(abs(left),1e-30)
         if error>1e-10:raise ValueError('Native structural/acoustic virtual work is not adjoint')
         interface_work[key]=float(error)
-    if progress:progress('native_thickness_connection')
-    Cconnect,connection_report=connection_constraints(solids,topology,cfg,offset)
+    if progress:progress('native_shared_boundary_connection')
+    Cconnect,connection_report=shared_boundary_constraints(solids,topology,cfg,offset)
     Cnormal=director_constraints(np.arange(len(topology.xyz)),topology.normals,space.nm,offset)
     Cfold,fold_report=fold_constraints(topology.groups,topology.normals,space.nm,offset)
     R=rigid_modes(mesh,space,topology)
@@ -158,9 +159,19 @@ def upgrade(model,source,cfg,output,context,progress=None):
         'native_solids':{**solids.report,**solid_report},'solid_curvature_repaired':True,
         'COMSOL_internal_algorithm_identity_verified':False}
     model.report['native_shell_repair']=report
+    inherited=['pressure_nodes','converted_tetrahedra','domain_volumes_m3','shear_residual_cap_range',
+        'motor_resultants','sparse_factor_estimate_bytes','minimum_6V_over_h3']
+    model.report['legacy_geometry_summary']={key:model.report.pop(key) for key in inherited if key in model.report}
     model.report.update(solid_nodes=len(solids.xyz),shell_nodes=len(topology.xyz),mechanical_dofs_before_constraints=space.nm)
+    model.report.update(pressure_dofs=model.space.np,shell_mass_half_kg=shell_mass,
+        solid_mass_half_kg=solid_report['domain_masses_half_kg'],
+        coil_volume_half_m3=solid_report['coil_volume_half_m3'],
+        magnetic_union_volume_half_m3=solid_report['magnetic_volume_half_m3'])
+    model.report['matrix_symmetry']={key:normmax(model.full[key]-model.full[key].T)/max(normmax(model.full[key]),1e-30)
+        for key in ['K','M','C','loss']}
+    model.report['stiffness_rigid_residual']=normmax(model.full['K']@R)/max(normmax(model.full['K'])*normmax(R),1e-30)
     model.report['connection']=connection_report;model.report['constraints']=constraint_report
-    model.report['native_acoustic_repair']['remaining_approximations']=['faceted P0 BEM and aperture mortar','published MITC variant and hard connection enforcement not certified identical to COMSOL internals']
+    model.report['native_acoustic_repair']['remaining_approximations']=['faceted P0 BEM and aperture mortar','published MITC variant and elemental constraint enforcement not certified identical to COMSOL internals']
     atomic_json(output/'assembly_audit.json',model.report)
     sparse.save_npz(output/'native_Bi.npz',model.full['Bi']);sparse.save_npz(output/'native_Cp.npz',model.Cp)
     np.savez_compressed(output/'native_shell_topology.npz',xyz=topology.xyz,normals=topology.normals,native_nodes=topology.native_nodes)

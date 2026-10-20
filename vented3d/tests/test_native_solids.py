@@ -5,7 +5,7 @@ import numpy as np
 from vented1.elements import Material,cross,constitutive
 from vented3d.native_surface_fields import read_matrix
 from vented3d.native_solids import SolidShape,SolidElement,SolidTopology,load_solids,solid_matrices,surface_volume_coordinates
-from vented3d.native_solid_connections import connection_constraints,fiber_segments
+from vented3d.native_solid_connections import finite_thickness_constraints,shared_boundary_constraints,fiber_segments
 from vented3d.shell_topology import build_topology
 
 SOURCE=Path(__file__).resolve().parents[1]/'inputs/vented_enclosure'
@@ -19,6 +19,35 @@ def make_element(kind,curved=False):
 
 
 class NativeSolidTests(unittest.TestCase):
+    def test_shared_face_preserves_solid_normal_strain_and_free_shell_directors(self):
+        from vented3d.mitc_shell import SurfaceShape
+        solid=make_element('hex');local=np.array([[x,y] for y in [0.,.5,1.] for x in [0.,.5,1.]])
+        shape=SurfaceShape('quad',local);points=np.column_stack([local,np.zeros(9)])
+        face=SimpleNamespace(kind='quad',parent=0,tag=269,shape=shape,points=points,nodes=np.arange(9))
+        shell=SimpleNamespace(elements=[face],xyz=points)
+        solids=SolidTopology([solid],solid.points,{}, {('quad',0):[0]},
+            {('quad',0,0):np.array([[0.,0,0],[1,0,0],[0,1,0],[1,1,0]])},{})
+        offset=3*len(solid.nodes)
+        C,report=shared_boundary_constraints(solids,shell,{'connection':{}},offset)
+        self.assertEqual(report['director_constraints_added'],0)
+        self.assertEqual(C.shape[0],27)
+        U=np.zeros(offset+54);U[:offset]=(.03*solid.points[:,2,None]*np.array([1.,0,1.])).ravel()
+        U[offset:].reshape(-1,6)[:,3:]=np.random.default_rng(21).normal(size=(9,3))
+        np.testing.assert_allclose(C@U,0,atol=1e-14)
+        self.assertEqual(C[:,offset+6*4].nnz,1)  # quad9 face center has a native solid trace
+        U[offset+6*4]=.1;self.assertGreater(abs(C@U).max(),.09)
+
+    def test_actual_shared_faces_match_reference_trace_without_extra_rotation_constraints(self):
+        solids=load_solids(SOURCE);shell=build_topology(SOURCE);offset=3*len(solids.xyz)
+        C,report=shared_boundary_constraints(solids,shell,{'connection':{}},offset)
+        self.assertEqual(len(report['shared_shell_boundaries']),12)
+        self.assertEqual(report['connected_nodes'],1415)
+        self.assertEqual(C[:,offset:].tocoo().col.max()%6,2)
+        self.assertEqual(C.shape[0],3*report['connected_nodes'])
+        for axis in range(3,6):self.assertEqual(C[:,offset+axis::6].nnz,0)
+        with self.assertRaisesRegex(ValueError,'NoOffset'):
+            shared_boundary_constraints(solids,shell,{'connection':{'offset_by_boundary_m':{'269':.001}}},offset)
+
     def test_native_curved_inverse_and_bernstein_bounds(self):
         rng=np.random.default_rng(726)
         for kind in ['tet','pyr','hex']:
@@ -70,7 +99,7 @@ class NativeSolidTests(unittest.TestCase):
         e=make_element('hex');solids=SolidTopology([e],e.points,{('hex',0):0},{('quad',0):[0]}, {},{})
         n=np.array([1.,-1,0])/np.sqrt(2);t=np.array([1.,1,0])/np.sqrt(2);x=np.array([0.,0,.5])
         shell=SimpleNamespace(elements=[SimpleNamespace(kind='quad',parent=0,tag=269,nodes=[0])],xyz=x[None],normals=n[None])
-        C,report=connection_constraints(solids,shell,{'temperature_K':293.15,'connection':{}},3*len(e.nodes))
+        C,report=finite_thickness_constraints(solids,shell,{'temperature_K':293.15,'connection':{}},3*len(e.nodes))
         self.assertEqual(report['edge_corner_limit_count'],1)
         u=np.r_[(.03*(e.points@n)[:,None]*t).ravel(),.03*(x@n)*t,.03*t]
         np.testing.assert_allclose(C@u,0,atol=1e-12)

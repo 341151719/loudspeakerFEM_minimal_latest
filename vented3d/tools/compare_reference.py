@@ -34,6 +34,7 @@ def main():
         status=json.loads(file.read_text())
         if 'solver_success' not in status:continue
         f=float(status['frequency_Hz']);i=index[f]
+        if file.name!=frequency_key(f)+'.json':continue
         archive=args.run/(frequency_key(f)+'.npz')
         if not archive.exists():raise ValueError('Completed frequency report has no field checkpoint')
         with np.load(archive) as data:
