@@ -1,6 +1,6 @@
 # 三维倒相箱验证状态
 
-本路线以 Python 独立求解结构、电机、箱内声学和外部 BEM。COMSOL 是离线参考。**尚未达到全频段统一 1% 复现验收，模态匹配和网格收敛尚未闭环。**
+本路线以 Python 独立求解结构、电机、箱内声学和外部 BEM。COMSOL 是离线参考。**尚未达到全频段统一 3% 复现验收，模态匹配和网格收敛尚未闭环。**
 
 ## 已修复的声学问题
 
@@ -59,4 +59,8 @@
 |315|0.890% → 0.122%|1.102% → 1.028%|0.908% → 0.688%|1.589% → 0.213%|
 |3550|20.694% → 0.876%|23.398% → 1.730%|26.831% → 0.962%|34.890% → 2.255%|
 
-本次 3550 Hz 的 74 方向复声压 L2 误差为 1.515%，电流复误差为 0.0456%；用时 303.0 秒，进程峰值内存 9.13 GiB。未加入参考运动、参考声压或响应增益。完整复相量和数值残差见 [`native_shell_regression.json`](native_shell_regression.json)，源代码／输入／配置哈希见 [`native_shell_regression_provenance.json`](native_shell_regression_provenance.json)。本轮仅重算这两个代表频点，未宣称修复后 46 点均通过；全频段统一 1%、模态匹配和网格收敛仍未验收。
+本次 3550 Hz 的 74 方向复声压 L2 误差为 1.515%，电流复误差为 0.0456%；用时 303.0 秒，进程峰值内存 9.13 GiB。未加入参考运动、参考声压或响应增益。完整复相量和数值残差见 [`native_shell_regression.json`](native_shell_regression.json)，源代码／输入／配置哈希见 [`native_shell_regression_provenance.json`](native_shell_regression_provenance.json)。本轮仅重算这两个代表频点，未宣称修复后 46 点均通过；全频段统一 3%、模态匹配和网格收敛仍未验收。
+
+## 当前验收门限：3%
+
+2026-10-20 用户将后续精度目标由 1% 放宽到 **3%**。现有误差定义沿用；数值残差、模态和网格收敛条件保持原值。已完成的 315／3550 Hz 原生壳回归在现有六项误差指标上均通过 3% 门限，最大误差分别为 1.028% 和 2.255%。全 46 点修复后回归尚未完成，不能据此宣布全频段验收。详见 [`acceptance_policy.json`](acceptance_policy.json) 和 [`native_shell_acceptance_3percent.json`](native_shell_acceptance_3percent.json)。本次仅离线重评已有结果，无需重新计算；历史求解清单及哈希保持原样。

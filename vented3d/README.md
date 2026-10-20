@@ -2,7 +2,7 @@
 
 This is an independent route for the vented loudspeaker enclosure benchmark. It preserves the native quadratic acoustic tetrahedra, pyramids and hexahedra and their curved geometry. Both the solid and shell interfaces contribute where the COMSOL model selects both couplings. The existing axisymmetric and FR10 routes remain separate.
 
-**The full model has not passed a uniform 1% COMSOL reproduction gate.** See [the saved evidence and remaining work](benchmarks/STATUS.md). Prescribed-boundary acoustic controls and independent full-model solves are reported separately.
+**The full model has not passed a uniform 3% COMSOL reproduction gate.** See [the saved evidence and remaining work](benchmarks/STATUS.md). Prescribed-boundary acoustic controls and independent full-model solves are reported separately.
 
 ## Run from this repository
 
@@ -42,7 +42,7 @@ The `feature/vented3d-native-shell-interfaces` branch also provides an experimen
 
 The prescribed-reference-boundary acoustic controls reached about **0.095% and 0.115% interior complex-pressure error at 3550 Hz** in domains 17 and 25. Those figures do not describe independent whole-model accuracy.
 
-The corrected native-shell route has independently completed 315/3550 Hz regression. At 3550 Hz, coil velocity error is **0.876%** (previously 20.694%), +X/+Z pressure errors are **1.730% / 0.962%** (23.398% / 26.831%), and native pressure-field L2 error is **2.255%** (34.890%). See the separate native-shell table and provenance in [benchmarks/STATUS.md](benchmarks/STATUS.md). This remains short of a uniform 1% gate.
+The corrected native-shell route has independently completed 315/3550 Hz regression. At 3550 Hz, coil velocity error is **0.876%** (previously 20.694%), +X/+Z pressure errors are **1.730% / 0.962%** (23.398% / 26.831%), and native pressure-field L2 error is **2.255%** (34.890%). See the separate native-shell table and provenance in [benchmarks/STATUS.md](benchmarks/STATUS.md). Both tested frequencies pass the recorded scalar and field L2 metrics under the user’s current 3% accuracy target. A complete repaired 46-point sweep remains unverified. See [the policy](benchmarks/acceptance_policy.json) and [offline reassessment](benchmarks/native_shell_acceptance_3percent.json).
 
 ## Remaining approximations
 

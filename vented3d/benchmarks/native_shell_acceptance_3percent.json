@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-20",
+  "kind": "offline_reassessment_of_existing_completed_solves",
+  "relative_error_limit": 0.03,
+  "evidence_file": "native_shell_regression.json",
+  "evidence_sha256": "8cee0d646e814487180d02a1b2c66845788c805d787a470eafb9a5566e5fd062",
+  "records": [
+    {
+      "frequency_Hz": 315.0,
+      "solver_success": true,
+      "relative_errors": {
+        "coil_velocity": 0.001220810026396915,
+        "current": 0.0002681888364960089,
+        "X_pressure": 0.010279855526202428,
+        "Z_pressure": 0.006879584785114668,
+        "radiation_74_relative_L2_error": 0.009660218389488896,
+        "native_pressure_dof_relative_L2_error": 0.002130963977415505
+      },
+      "maximum_relative_error": 0.010279855526202428,
+      "within_three_percent": true
+    },
+    {
+      "frequency_Hz": 3550.0,
+      "solver_success": true,
+      "relative_errors": {
+        "coil_velocity": 0.008759190526428888,
+        "current": 0.0004555316389647653,
+        "X_pressure": 0.01729507323524839,
+        "Z_pressure": 0.00962004248930952,
+        "radiation_74_relative_L2_error": 0.015146876434529355,
+        "native_pressure_dof_relative_L2_error": 0.02254501969272153
+      },
+      "maximum_relative_error": 0.02254501969272153,
+      "within_three_percent": true
+    }
+  ],
+  "all_available_native_shell_points_within_limit": true,
+  "full_46_point_acceptance": false,
+  "note": "Only the corrected 315/3550 Hz checkpoints are covered. Full repaired 46-point regression, modal matching and mesh convergence remain open. No new solve was run."
+}

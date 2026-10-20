@@ -44,3 +44,7 @@ The official theory distinguishes shared cladding faces from shell edges perpend
 |3550|20.694% → 0.876%|23.398% → 1.730%|26.831% → 0.962%|34.890% → 2.255%|
 
 Both frequencies pass numerical residual checks. These are independent solves; references enter only the offline comparator. The corrected route has not passed a uniform 1% gate or a fresh 46-point sweep. See benchmarks/native_shell_regression.json and native_shell_regression_provenance.json.
+
+## Current acceptance policy (user update)
+
+From 2026-10-20 the future reproduction accuracy target is 3%, replacing the earlier 1% target. Existing independent 315/3550 Hz results pass all six recorded metrics at 3%; maximum errors are 1.028% and 2.255%. Historical statements above describe the original goal. Full repaired 46-point coverage, modal matching and convergence remain open. No new calculation is needed to apply this policy to saved evidence.
